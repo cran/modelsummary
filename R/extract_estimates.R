@@ -1,65 +1,79 @@
 #' Extract estimates and statistics from a single model
-#' @importFrom broom tidy
+#' @importFrom generics tidy
 #' @param model object type with an available `tidy` method.
 #' @return data.frame with side-by-side model summaries
 #' @inheritParams modelsummary 
 extract_estimates <- function(model,
                               statistic = 'std.error',
                               statistic_override = NULL,
+                              statistic_vertical = TRUE,
                               conf_level = .95,
                               fmt = '%.3f',
                               stars = FALSE) {
 
-    # extract estimates
-    if (statistic == 'conf.int') {
-        est <- generics::tidy(model, conf.int = TRUE, conf.level = conf_level)
-    } else {
-        est <- generics::tidy(model)
-    }
-
     # statistic override
     if (!is.null(statistic_override)) {
+
+        # extract overriden statistics
         so <- extract_statistic_override(model, 
                                          statistic = statistic,
                                          statistic_override = statistic_override)
         if (!statistic %in% colnames(so)) {
             stop(paste0(statistic, " cannot be extracted through the `statistic_override` argument. You might want to look at the `modelsummary:::extract_statistic_override` function to diagnose the problem."))
         }
-        idx <- base::intersect(colnames(est), colnames(so))
-        idx <- idx[idx != 'term']
-        est <- est[, !colnames(est) %in% idx] 
+        # extract estimates, but keep only columns that do not appear in so
+        est <- tidy(model)
+        est <- est[, c('term', base::setdiff(colnames(est), colnames(so)))]
         est <- dplyr::left_join(est, so, by = 'term')
+
+    } else { # if statistic_override is not used
+
+        # extract estimates
+        if ('conf.int' %in% statistic) {
+            est <- tidy(model, conf.int = TRUE, conf.level = conf_level)
+        } else {
+            est <- tidy(model)
+        }
     }
 
-    # extract estimates with confidence intervals
-    if (statistic == 'conf.int') {
-        if (!all(c('conf.low', 'conf.high') %in% colnames(est))) {
-            stop('broom::tidy cannot not extract confidence intervals for a model of this class.')
-        }
-        est <- est %>%
-              # rounding
-              dplyr::mutate(estimate = rounding(estimate, fmt),
-                            conf.low = rounding(conf.low, fmt),
-                            conf.high = rounding(conf.high, fmt),
-                            statistic = paste0('[', conf.low, ', ', conf.high, ']'))
+    # round estimates
+    est$estimate <- rounding(est$estimate, fmt)
 
-    # extract estimates with another statistic
-    } else {
-        if (!statistic %in% colnames(est)) {
-            stop('argument statistic must be `conf.int` or match a column name in the output of broom::tidy(model). Typical values are: `std.error`, `p.value`, `statistic`.')
+    # extract statistics
+    for (i in seq_along(statistic)) {
+
+        s <- statistic[i]
+
+        # extract confidence intervals
+        if (s == 'conf.int') {
+            if (!all(c('conf.low', 'conf.high') %in% colnames(est))) {
+                stop('tidy cannot not extract confidence intervals for a model of this class.')
+            }
+
+            # rounding and brackets
+            est$conf.high <- rounding(est$conf.high, fmt)
+            est$conf.low <- rounding(est$conf.low, fmt)
+            est[[paste0('statistic', i)]] <- paste0('[', est$conf.low, ', ', est$conf.high, ']')
+
+        # extract other types of statistics
+        } else {
+
+            # rounding non-character values and parentheses
+            if (!is.character(est[[s]])) {
+                est[[s]] <- rounding(est[[s]], fmt)
+                est[[s]] <- ifelse(est[[s]] != '',  # avoid empty parentheses for NAs
+                                   paste0('(', est[[s]], ')'),
+                                   est[[s]])
+                est[[paste0('statistic', i)]] <- est[[s]]
+            }
+
         }
-        est$statistic <- est[[statistic]]
-              # rounding
-        est <- est %>%
-               dplyr::mutate(estimate = rounding(estimate, fmt),
-                             statistic = rounding(statistic, fmt),
-                             statistic = paste0('(', statistic, ')'))
     }
 
     # stars
     if (is.numeric(stars)) {
         if (!'p.value' %in% colnames(est)) {
-            stop('To use the `stars` argument, the `broom::tidy` function must produce a column called "p.value"')
+            stop('To use the `stars` argument, the `tidy` function must produce a column called "p.value"')
         }
         est$stars <- ''
         for (n in names(stars)) {
@@ -68,14 +82,20 @@ extract_estimates <- function(model,
         est$estimate <- paste0(est$estimate, est$stars)
     }
 
-    # prune columns
-    est <- est %>% dplyr::select(term, estimate, statistic)
+    # subset columns
+    cols <- c('term', 'estimate', paste0('statistic', seq_along(statistic)))
+    est <- est[, cols]
 
-    # reshape
-    est <- est %>%
-           tidyr::gather(statistic, value, -term) %>%
-           dplyr::arrange(term, statistic)
-
+    # reshape to vertical
+    if (statistic_vertical) {
+        est <- est %>%
+               tidyr::gather(statistic, value, -term) %>%
+               dplyr::arrange(term, statistic)
+    } else {
+        est$statistic <- 'estimate'
+        est$value <- paste(est$estimate, est$statistic1)
+        est$estimate <- est$statistic1 <- NULL
+    }
 
     # output
     return(est)

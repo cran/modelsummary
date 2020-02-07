@@ -15,12 +15,14 @@
 extract <- function(models,
                     statistic = 'std.error',
                     statistic_override = NULL,
+                    statistic_vertical = TRUE,
                     conf_level = 0.95,
                     coef_map = NULL,
                     coef_omit = NULL,
                     gof_map = modelsummary::gof_map,
                     gof_omit = NULL,
                     add_rows = NULL,
+                    add_rows_location = NULL,
                     stars = FALSE,
                     fmt = '%.3f') {
 
@@ -55,6 +57,7 @@ extract <- function(models,
                                       fmt = fmt,
                                       statistic = statistic,
                                       statistic_override = statistic_override[[i]],
+                                      statistic_vertical = statistic_vertical,
                                       conf_level = conf_level,
                                       stars = stars)
 
@@ -95,14 +98,6 @@ extract <- function(models,
            purrr::reduce(dplyr::full_join, by = 'term') %>%
            stats::setNames(c('term', model_names))
 
-    # add_rows to bottom of gof
-    if (!is.null(add_rows)) {
-        add_rows <- lapply(add_rows, as.character) %>%  # TODO: remove once sanity checks are complete
-                    do.call('rbind', .) %>%
-                    data.frame(stringsAsFactors = FALSE) %>%
-                    stats::setNames(names(gof))
-        gof <- dplyr::bind_rows(gof, add_rows)
-    }
 
     # add gof row identifier
     gof <- gof %>%
@@ -115,7 +110,6 @@ extract <- function(models,
                dplyr::filter(!stringr::str_detect(term, gof_omit))
     }
 
-
     # gof_map: omit, reorder, rename
     gof <- gof[!gof$term %in% gof_map$raw[gof_map$omit],] # omit (black list)
 	gof_names <- gof_map$clean[match(gof$term, gof_map$raw)] # rename
@@ -124,8 +118,40 @@ extract <- function(models,
 	idx <- match(gof$term, gof_map$clean) # reorder
     gof <- gof[order(idx, gof$term),] 
 
+    # add_rows: this needs to be done after sorting and combining to preserve
+    # user-selected row order
+    if (!is.null(add_rows)) {
+        add_rows <- lapply(add_rows, as.character) %>%  # TODO: remove once sanity checks are complete
+                    do.call('rbind', .) %>%
+                    data.frame(stringsAsFactors = FALSE) %>%
+                    stats::setNames(c('term', model_names)) %>%
+                    dplyr::mutate(group = 'gof', statistic = '')
+        add_rows <- add_rows[, colnames(gof)]
+
+        # sanity check add_rows_location
+        checkmate::assert_numeric(add_rows_location, null.ok = TRUE,
+                                  max.len = 1, lower = 0, upper = nrow(gof))
+        if (is.null(add_rows_location)) { # bottom if location is not specified
+            gof <- dplyr::bind_rows(gof, add_rows)
+        } else {
+            if (add_rows_location == 0) { # top if location is 0
+                gof <- dplyr::bind_rows(add_rows, gof)
+            } else if (add_rows_location == nrow(gof)) { # bottom if location is nrow(gof)
+                gof <- dplyr::bind_rows(gof, add_rows)
+            } else { # middle otherwise
+                top <- gof[1:add_rows_location,]
+                bot <- gof[(add_rows_location + 1):nrow(gof),]
+                gof <- dplyr::bind_rows(top, add_rows, bot)
+            }
+        }
+    }
+
+    # combine estimates and gof
+    tab <- dplyr::bind_rows(est, gof)
+
+    # empty cells
+    tab[is.na(tab)] <- ''
+
     # output
-    out <- dplyr::bind_rows(est, gof)
-    out[is.na(out)] <- ''
-    return(out)
+    return(tab)
 }

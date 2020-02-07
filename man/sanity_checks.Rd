@@ -4,11 +4,25 @@
 \alias{sanity_checks}
 \title{internal function to check the sanity of user input}
 \usage{
-sanity_checks(models, statistic = "std.error",
-  statistic_override = NULL, conf_level = 0.95, coef_map = NULL,
-  coef_omit = NULL, gof_map = NULL, gof_omit = NULL, fmt = "\%.3f",
-  stars = NULL, stars_note = TRUE, title = NULL, subtitle = NULL,
-  notes = NULL, add_rows = NULL, filename = NULL)
+sanity_checks(
+  models,
+  statistic = "std.error",
+  statistic_override = NULL,
+  statistic_vertical = TRUE,
+  conf_level = 0.95,
+  coef_map = NULL,
+  coef_omit = NULL,
+  gof_map = NULL,
+  gof_omit = NULL,
+  fmt = "\%.3f",
+  stars = NULL,
+  stars_note = TRUE,
+  title = NULL,
+  subtitle = NULL,
+  notes = NULL,
+  add_rows = NULL,
+  filename = NULL
+)
 }
 \arguments{
 \item{models}{a single model object or a (potentially named) list of models
@@ -17,7 +31,8 @@ to summarize}
 \item{statistic}{string name of the statistic to include in parentheses
 below estimates. Must be either "conf.int", or one of the column names
 produced by the `broom::tidy` function. Typical values include: "std.error",
-"conf.int", "statistic", "p.value".}
+"conf.int", "statistic", "p.value". A character vector will stack several
+uncertainty estimates on top of one another (in different rows).}
 
 \item{statistic_override}{manually override the uncertainy estimates. This 
 argument accepts three types of input:
@@ -26,6 +41,9 @@ argument accepts three types of input:
   \item a list of length(models) variance-covariance matrices with row and column names equal to the names of your coefficient estimates.
   \item a list of length(models) numeric vectors with names equal to the names of your coefficient estimates.
 }}
+
+\item{statistic_vertical}{TRUE if statistics should be printed below
+estimates. FALSE if statistics should be printed beside estimates.}
 
 \item{conf_level}{confidence level to use for confidence intervals}
 

@@ -4,7 +4,7 @@
 
 The `modelsummary` package for `R` produces beautiful, customizable, publication-ready tables to summarize statistical models. Results from several models are presented side-by-side, with uncertainty estimates in parentheses (or brackets) underneath coefficient estimates. Tables can be saved to HTML, LaTeX and RTF (MS Word-ready) formats, or they can be fed to a dynamic report pipeline like `knitr` or `Sweave`.
 
-<img src="https://raw.githubusercontent.com/vincentarelbundock/modelsummary/master/examples/complex_table.png" width="40%">
+<img src="https://imgur.com/oXkB4up.png" width="40%">
 
 # Table of contents
 
@@ -27,7 +27,7 @@ The `modelsummary` package for `R` produces beautiful, customizable, publication
 + [A complex example](https://github.com/vincentarelbundock/modelsummary#a-complex-example)
 + [Other useful features](https://github.com/vincentarelbundock/modelsummary#other-useful-features)
     * [Output formats](https://github.com/vincentarelbundock/modelsummary#output-formats)
-    * [Dynamic documents with knitr](https://github.com/vincentarelbundock/modelsummary#dynamic-documents-with-knitr)
+    * [LaTeX output and dynamic documents with knitr](https://github.com/vincentarelbundock/modelsummary#latex-output-and-dynamic-documents-with-knitr)
     * [Unsupported models and custom tidiers](https://github.com/vincentarelbundock/modelsummary#unsupported-models-and-custom-tidiers)
     * [Pooled multiple imputation results](https://github.com/vincentarelbundock/modelsummary#pooled-multiple-imputation-results)
     * [Power users](https://github.com/vincentarelbundock/modelsummary#power-users)
@@ -56,7 +56,7 @@ CFITCRS!
 
 At the `modelsummary` factory, we are *serious* about customizability. Are your bored of regression tables with good ol' "Intercept"? If so, we have [a solution for you:](https://github.com/vincentarelbundock/modelsummary#images)
 
-<img src="https://raw.githubusercontent.com/vincentarelbundock/modelsummary/master/examples/squirrel_table.png" width="40%">
+<img src="https://imgur.com/CQp4uXl.png" width="40%">
 
 # Installation
 
@@ -79,6 +79,7 @@ install.packages('tidyverse')
 Load packages and download some data from the [RDatasets](https://vincentarelbundock.github.io/Rdatasets/) repository. Then, estimate 5 different models and store them in a named list. The name of each model in that list will be used as a column label:
 
 ```r
+library(gt)
 library(MASS)
 library(modelsummary)
 
@@ -119,6 +120,13 @@ msummary(models, statistic = 'p.value')
 msummary(models, statistic = 'statistic')
 msummary(models, statistic = 'conf.int', conf_level = .99)
 ```
+
+Display the uncertainty estimate next to the coefficient instead of below it:
+
+```r
+msummary(models, statistic_vertical = FALSE)
+```
+
 You can override the uncertainty estimates in a number of ways. First, you can specify a function that produces variance-covariance matrices:
 
 ```r
@@ -151,6 +159,16 @@ custom_stats <- list(`OLS 1` = c(`(Intercept)` = 2, Crime_prop = 3, Infants = 4)
 msummary(models, statistic_override = custom_stats)
 ```
 
+You can also display several different uncertainty estimates below the coefficient estimates. For example,
+
+```r
+msummary(models, statistic = c('std.error', 'p.value', 'conf.int'))
+```
+
+Will produce something like this:
+
+<img src="https://imgur.com/yNLr5Nt.png" width="30%">
+
 ## Titles and subtitles
 
 You can add titles and subtitles to your table as follows:
@@ -174,17 +192,16 @@ msummary(models,
 Add numbered footnotes to a column, a row, or a cell:
 
 ```r
-library(gt)
 msummary(models) %>% 
     tab_footnote(                                                                                                                                                                                  
         footnote = md("This is a **very** important model, so we are pointing it out in a column-specific footnote."),                        
         locations = cells_column_labels(columns = vars(`OLS 1`))) %>%  
     tab_footnote(                                                                                                                                                                               
         footnote = "This is the variable of interest.",                                                                                           
-        locations = cells_stub(rows = vars(Infants))) %>%                                                                                                                                      
+        locations = cells_body(columns = 1, rows = 3)) %>%                                                                                                                                      
     tab_footnote(                                                                                                                      
         footnote = "Most important model + most important variable = most important estimate.",
-        locations = cells_data(columns = vars(`OLS 1`), rows = vars(Infants)))
+        locations = cells_body(columns = vars(`OLS 1`), rows = 3))
 ```
 
 ## Rename, reorder, and subset
@@ -239,9 +256,9 @@ Create spanning labels to group models (columns):
 
 ```r
 msummary(models) %>%
-    gt::tab_spanner(label = 'Literacy', columns = c('OLS 1', 'NBin 1')) %>%
-    gt::tab_spanner(label = 'Desertion', columns = c('OLS 2', 'NBin 2')) %>%
-    gt::tab_spanner(label = 'Clergy', columns = 'Logit 1')
+    tab_spanner(label = 'Literacy', columns = c('OLS 1', 'NBin 1')) %>%
+    tab_spanner(label = 'Desertion', columns = c('OLS 2', 'NBin 2')) %>%
+    tab_spanner(label = 'Clergy', columns = 'Logit 1')
 ```
 
 ## Stars: Statistical significance markers
@@ -286,16 +303,17 @@ The power of the `gt` package makes `modelsummary` tables endlessly customizable
 
 ```r
 msummary(models) %>%
-    tab_style(style = cells_styles(bkgd_color = "lightcyan",
-                                   text_weight = "bold"),
-              locations = cells_data(columns = vars(`OLS 1`))) %>%
-    tab_style(style = cells_styles(bkgd_color = "#F9E3D6",
-                                   text_style = "italic"),
-              locations = cells_data(columns = vars(`NBin 2`),
-                                     rows = 2:6))
+    tab_style(style = cell_fill(color = "lightcyan"), 
+			  locations = cells_body(columns = vars(`OLS 1`))) %>% 
+    tab_style(style = cell_fill(color = "#F9E3D6"),
+              locations = cells_data(columns = vars(`NBin 2`), rows = 2:6)) %>%
+    tab_style(style = cell_text(weight = "bold"), 
+		      locations = cells_body(columns = vars(`OLS 1`))) %>%
+	tab_style(style = cell_text(style = "italic"), 
+              locations = cells_data(columns = vars(`NBin 2`), rows = 2:6))
 ```
 
-<img src="https://raw.githubusercontent.com/vincentarelbundock/modelsummary/master/examples/colors.png" width="50%">
+<img src="https://i.imgur.com/1u9hgm2.png" width="50%">
 
 ## Fancy text with markdown: bold, italics, etc.
 
@@ -309,14 +327,12 @@ msummary(models,
 
 ## Font size
 
-This will produce a table with extra large row labels and extra small coefficient estimates.
+This will produce a table with extra large variable names.
+
 ```r
-library(gt)
 msummary(models) %>%
-    tab_style(style = cells_styles(text_size = 'x-large'),
-              locations = cells_stub()) %>%
-    tab_style(style = cells_styles(text_size = 'x-small'),
-              locations = cells_data())
+    tab_style(style = cell_text(size = 'x-large'),
+              locations = cells_body(columns = 1)) 
 ```
 
 Note that `gt`'s `tab_style` function is more developed for HTML output than for RTF or LaTeX, so some styling options may not be availble yet. The `gt` package is under heavy development, so feel free to file an issue on github if you have a special request, and stay tuned for more!
@@ -331,17 +347,27 @@ row2 <- c('Custom row 2', 5:1)
 msummary(models, add_rows = list(row1, row2))
 ```
 
-## Images
+Use the `add_rows` argument to specify where the custom rows should be displayed in the bottom panel. For example, this prints custom rows after the coefficients, but at first position in the goodness of fit measures:
 
+```r
+msummary(models, add_rows = list(row1, row2), add_rows_location = 0)
+```
+
+This prints custom rows after the 2nd GOF statistic:
+
+```r
+msummary(models, add_rows = list(row1, row2), add_rows_location = 2)
+```
+
+## Images
 
 Insert images in your tables using the `gt::text_transform` and `gt::local_image` functions.
 
 ```r
-library(gt)
 msummary(models) %>%
     text_transform(
-        locations = cells_data(columns = 1, rows = 1),
-        fn = function(x) {local_image(file = "examples/squirrel.png", height = 120)}
+        locations = cells_body(columns = 1, rows = 1),
+        fn = function(x) {web_image(url = "https://raw.githubusercontent.com/vincentarelbundock/modelsummary/master/examples/squirrel.png", height = 120)}
     )
 ```
 
@@ -350,7 +376,6 @@ msummary(models) %>%
 This is the code I used to generate the "complex" table posted at the top of this README.
 
 ```r
-library(gt)
 cm <- c('Crime_prop' = 'Crime / Population',
         'Donations' = 'Donations',
         'Infants' = 'Infants',
@@ -373,13 +398,13 @@ msummary(models,
        locations = cells_column_labels(columns = vars(`OLS 1`))) %>%  
     tab_footnote(                                                                                                                                                                               
         footnote = "This is the variable of interest.",                                                                                           
-        locations = cells_stub(rows = vars(Infants))) %>%                                                                                                                                      
+        locations = cells_body(rows =5)) %>%                                                                                                                                      
     tab_footnote(                                                                                                                      
         footnote = "Most important model + most important variable = most important estimate.",
-        locations = cells_data(columns = vars(`OLS 1`), rows = vars(Infants))) %>%   
+        locations = cells_body(columns = vars(`OLS 1`), rows = 5)) %>%   
     # color and bold
-    tab_style(style = cells_styles(text_color = "red", text_weight = "bold"),
-              locations = cells_data(columns = vars(`OLS 1`), rows = vars(Infants)))
+    tab_style(style = cell_text(color = "red", weight = "bold"),
+              locations = cells_body(columns = vars(`OLS 1`), rows = 5))
 ```
 
 # Other useful features
@@ -393,37 +418,52 @@ msummary(models, filename = 'table.tex')
 msummary(models, filename = 'table.rtf')
 msummary(models, filename = 'table.html')
 msummary(models, filename = 'table.jpeg')
+msummary(models, filename = 'table.png')
 ```
 
-If `filename` is not specified, `modelsummary` returns a `gt` object which can be further customized and rendered by the relevant functions in the `gt` package, such as `as_raw_html`, `as_latex`, or `as_rtf`. RStudio renders the html version of this object automatically.
+If `filename` is not specified, `modelsummary` returns a `gt` object which can be further customized and rendered by the `gtsave` function from the `gt` package. RStudio renders the html version of this object automatically.
 
 *Warning*: When creating complex tables by chaining multiple `gt` functions with the `%>%` pipe operator, the `filename` argument will not work. The problem is that `modelsummary` is trying to write-to-file immediately at the main `msummary()` call, before the rest of the functions in the chain are executed. In that case, it is better to use `gt::gtsave` explicitly at the very end of your chain. For example, 
 
 ```r
 msummary(models) %>%
-       gt::tab_spanner(label = 'Literacy', columns = c('OLS 1', 'NBin 1')) %>%
-       gt::tab_spanner(label = 'Desertion', columns = c('OLS 2', 'NBin 2')) %>%
-       gt::tab_spanner(label = 'Clergy', columns = 'Logit 1') %>%
-       gt::gtsave('table.tex')
+       tab_spanner(label = 'Literacy', columns = c('OLS 1', 'NBin 1')) %>%
+       tab_spanner(label = 'Desertion', columns = c('OLS 2', 'NBin 2')) %>%
+       tab_spanner(label = 'Clergy', columns = 'Logit 1') %>%
+       gtsave('table.tex')
 ```
 
-## Dynamic documents with `knitr`
+## LaTeX output and dynamic documents with `knitr`
 
-You can use `knitr` and `modelsummary` to create dynamic documents with nice summary tables. When knitting in html format, adding a `msummary(models)` call to a code chunk should work out of the box.
+You can use `modelsummary` to produce LaTeX tables and to create dynamic documents with `knitr`. When knitting in html format, adding a `msummary(models)` call to a code chunk should work out of the box.
 
-When knitting to PDF output, things are slightly different. Indeed, the `gt` output functionality for LaTeX is still in development and it is somewhat limited. To avoid common sources of compilation errors, and to allow users to use `\label{}`, `modelsummary` includes the `knit_latex` function. To knit to PDF, simply use:
+When creating LaTeX tables to generate PDF document, things are slightly different. Indeed, the `gt` output functionality for LaTeX is still in development and it is somewhat limited. To avoid common sources of compilation errors, and to allow users to use `\label{}`, `modelsummary` includes two convencience function: 
+
+1. `clean_latex` returns a LaTeX table as a string.
+2. `knit_latex` returns an object of type `as_is`, which can be used directly by the `knitr` package.
+
+For instance, this code will produce a LaTeX table in as a string object:
+
+```r
+msummary(models, title = 'Model summary') %>% 
+    clean_latex(label = 'tab:example')
+```
+
+This code will produce a table inside a `knitr` PDF document:
 
 ```r
 msummary(models, title = 'Model summary') %>% 
     knit_latex(label = 'tab:example')
 ```
 
-My goal is to deprecate `knit_latex` when `gt` LaTeX export features improve. 
+Please note that the tables produced by `modelsummary` require the following LaTeX packages to compile: caption, longtable, booktabs. You will need to include those in your header or preamble if you want documents to compile properly.
 
 Here are two minimal working examples of markdown files which can be converted to HTML or PDF using the `knitr` package. Just open one the `.Rmd` files in RStudio and click the "Knit" button:
 
 * [markdown_to_pdf.Rmd](https://github.com/vincentarelbundock/modelsummary/blob/master/examples/markdown_to_pdf.Rmd) / [markdown_to_pdf.pdf](https://github.com/vincentarelbundock/modelsummary/blob/master/examples/markdown_to_pdf.pdf) 
 * [markdown_to_html.Rmd](https://github.com/vincentarelbundock/modelsummary/blob/master/examples/markdown_to_html.Rmd) / [markdown_to_html.html](https://github.com/vincentarelbundock/modelsummary/blob/master/examples/markdown_to_html.html) 
+
+My goal is to deprecate the `clean_latex` and `knit_latex` functions when `gt` LaTeX export features improve. 
 
 ## Unsupported models and custom tidiers
 

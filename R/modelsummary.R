@@ -25,7 +25,8 @@ globalVariables(c('.', 'term', 'group', 'estimate', 'conf.high', 'conf.low', 'va
 #' @param statistic string name of the statistic to include in parentheses
 #' below estimates. Must be either "conf.int", or one of the column names
 #' produced by the `broom::tidy` function. Typical values include: "std.error",
-#' "conf.int", "statistic", "p.value".
+#' "conf.int", "statistic", "p.value". A character vector will stack several
+#' uncertainty estimates on top of one another (in different rows).
 #' @param statistic_override manually override the uncertainy estimates. This 
 #' argument accepts three types of input:
 #' \itemize{
@@ -33,6 +34,8 @@ globalVariables(c('.', 'term', 'group', 'estimate', 'conf.high', 'conf.low', 'va
 #'   \item a list of length(models) variance-covariance matrices with row and column names equal to the names of your coefficient estimates.
 #'   \item a list of length(models) numeric vectors with names equal to the names of your coefficient estimates.
 #' }
+#' @param statistic_vertical TRUE if statistics should be printed below
+#' estimates. FALSE if statistics should be printed beside estimates.
 #' @param conf_level confidence level to use for confidence intervals
 #' @param coef_map named character vector. Names refer to the original variable
 #' names. Values refer to the variable names that will appear in the table.
@@ -46,6 +49,9 @@ globalVariables(c('.', 'term', 'group', 'estimate', 'conf.high', 'conf.low', 'va
 #' the table (using `stringr::str_detect`).
 #' @param add_rows list of character vectors, each of length equal to the number
 #' of models + 1.
+#' @param add_rows_location integer or NULL. custom rows will be added to the
+#' bottom of the table if this parameter is NULL, or after the position set by
+#' this integer.
 #' @param title string
 #' @param subtitle string
 #' @param notes list of notes to append to the bottom of the table.
@@ -85,6 +91,7 @@ globalVariables(c('.', 'term', 'group', 'estimate', 'conf.high', 'conf.low', 'va
 modelsummary <- function(models,
                          statistic = 'std.error',
                          statistic_override = NULL,
+                         statistic_vertical = TRUE,
                          conf_level = 0.95,
                          coef_map = NULL,
                          coef_omit = NULL,
@@ -97,6 +104,7 @@ modelsummary <- function(models,
                          subtitle = NULL,
                          notes = NULL,
                          add_rows = NULL,
+                         add_rows_location = NULL,
                          filename = NULL) {
 
     # models must be a list of models or a single model
@@ -108,6 +116,7 @@ modelsummary <- function(models,
     sanity_checks(models,
                   statistic = statistic,
                   statistic_override = statistic_override,
+                  statistic_vertical = statistic_vertical,
                   conf_level = conf_level,
                   coef_map = coef_map,
                   coef_omit = coef_omit,
@@ -137,6 +146,7 @@ modelsummary <- function(models,
     dat <- modelsummary::extract(models,
                               statistic = statistic,
                               statistic_override = statistic_override,
+                              statistic_vertical = statistic_vertical,
                               conf_level = conf_level,
                               coef_map = coef_map,
                               coef_omit = coef_omit,
@@ -144,11 +154,13 @@ modelsummary <- function(models,
                               gof_omit = gof_omit,
                               stars = stars,
                               add_rows = add_rows,
+                              add_rows_location = add_rows_location,
                               fmt = fmt)
 
     # remove duplicate term labels
+    idx <- stringr::str_detect(dat$statistic, 'statistic\\d*$')
     tab <- dat %>%
-           dplyr::mutate(term = ifelse(statistic == 'statistic', '', term))
+           dplyr::mutate(term = ifelse(idx, '', term))
 
     # check if gt is installed and warn otherwise (not available from CRAN yet)
     gt_loc <- try(base::find.package('gt'), silent = TRUE)
@@ -161,17 +173,17 @@ modelsummary <- function(models,
     } else {
 
         # create gt table object
-        idx <- (1:nrow(tab))[tab$group == 'estimates']
+	    idx_row <- match('gof', tab$group)
+	    idx_col <- ncol(tab) - 2
         tab <- tab %>%
                # remove columns not fit for printing
                dplyr::select(-statistic, -group) %>%
-               ## group statistics (alternate mechanism. probably better, but I
-               ## can't find a way to suppress group labels)
-               #dplyr::group_by(group) %>%
                # gt object
-               gt::gt(rowname_col = 'term') %>%
-               # group statistics
-               gt::tab_row_group(group = '', rows = idx)
+               dplyr::rename(`       ` = term) %>% # HACK: arbitrary 7 spaces to avoid name conflict
+               gt::gt() %>%
+			   # horizontal rule to separate coef/gof
+			   gt::tab_style(style = gt::cell_borders(sides = 'bottom', color = '#000000'),
+                             locations = gt::cells_body(columns = 1:idx_col, rows = idx_row))
 
         # titles
         if (!is.null(title)) {
