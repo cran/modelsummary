@@ -1,7 +1,7 @@
 #' Extract estimates and statistics from a single model
 #' @importFrom generics tidy
 #' @param model object type with an available `tidy` method.
-#' @inheritParams modelsummary 
+#' @inheritParams modelsummary
 #' @return data.frame with side-by-side model summaries
 #' @keywords internal
 extract_estimates <- function(model,
@@ -16,7 +16,7 @@ extract_estimates <- function(model,
     if (!is.null(statistic_override)) {
 
         # extract overriden statistics
-        so <- extract_statistic_override(model, 
+        so <- extract_statistic_override(model,
                                          statistic = statistic,
                                          statistic_override = statistic_override)
         if (!statistic %in% colnames(so)) {
@@ -66,13 +66,18 @@ extract_estimates <- function(model,
                                    paste0('(', est[[s]], ')'),
                                    est[[s]])
                 est[[paste0('statistic', i)]] <- est[[s]]
+            } else if (is.character(est[[s]])) {
+                # renaming character columns for later subsetting
+                est[[paste0('statistic', i)]] <- est[[s]]
             }
 
         }
     }
 
     # stars
-    if (is.numeric(stars)) {
+    stars <- clean_stars(stars)
+
+    if (!is.null(stars)) {
         if (!'p.value' %in% colnames(est)) {
             stop('To use the `stars` argument, the `tidy` function must produce a column called "p.value"')
         }

@@ -1,7 +1,7 @@
 #' internal function to check the sanity of user input
 #'
 #' @return error if sanity checks fail
-#' @inheritParams modelsummary 
+#' @inheritParams modelsummary
 #' @keywords internal
 sanity_checks <- function(models,
 						  statistic = 'std.error',
@@ -14,7 +14,6 @@ sanity_checks <- function(models,
 						  gof_omit = NULL,
 						  fmt = '%.3f',
 						  stars = NULL,
-						  stars_note = TRUE,
 						  title = NULL,
 						  subtitle = NULL,
 						  notes = NULL,
@@ -27,7 +26,6 @@ sanity_checks <- function(models,
     checkmate::assert_character(coef_omit, len = 1, null.ok = TRUE)
     checkmate::assert_character(gof_omit, len = 1, null.ok = TRUE)
     checkmate::assert_character(fmt, len = 1, null.ok = FALSE)
-    checkmate::assert_logical(stars_note, null.ok = FALSE)
     checkmate::assert_character(filename, len = 1, null.ok = TRUE)
 
 
@@ -46,12 +44,12 @@ sanity_checks <- function(models,
     # statistic_vertical = FALSE: only one statistic can be displayed horizontally
     checkmate::assert_logical(statistic_vertical, len = 1, null.ok = FALSE)
     if (!statistic_vertical) {
-        if ((length(statistic_override) > 1) | (length(statistic) > 1)) {
-            stop("Only one statistic can be displayed next to the estimate. Check the statistic_vertical argument.")
-        }
+      if (length(statistic) > 1 | (length(statistic_override) > 1) & !is.vector(statistic_override[1])) {
+        stop("Only one statistic can be displayed next to the estimate. Check the statistic_vertical argument.")
+      }
     }
 
-    # gof_map 
+    # gof_map
     checkmate::assert(
         checkmate::check_data_frame(gof_map, null.ok = TRUE),
         checkmate::check_tibble(gof_map, null.ok = TRUE)

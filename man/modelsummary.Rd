@@ -16,7 +16,6 @@ modelsummary(
   gof_omit = NULL,
   fmt = "\%.3f",
   stars = FALSE,
-  stars_note = TRUE,
   title = NULL,
   subtitle = NULL,
   notes = NULL,
@@ -35,12 +34,12 @@ produced by the `broom::tidy` function. Typical values include: "std.error",
 "conf.int", "statistic", "p.value". A character vector will stack several
 uncertainty estimates on top of one another (in different rows).}
 
-\item{statistic_override}{manually override the uncertainy estimates. This 
+\item{statistic_override}{manually override the uncertainy estimates. This
 argument accepts three types of input:
 \itemize{
   \item a function or list of functions of length(models) which produce variance-covariance matrices with row and column names equal to the names of your coefficient estimates. For example, `R` supplies the `vcov` function, and the `sandwich` package supplies `vcovHC`, `vcovHAC`, etc.
   \item a list of length(models) variance-covariance matrices with row and column names equal to the names of your coefficient estimates.
-  \item a list of length(models) numeric vectors with names equal to the names of your coefficient estimates.
+  \item a list of length(models) vectors with names equal to the names of your coefficient estimates. Numeric vectors are formatted according to `fmt` and placed in brackets, character vectors printed as given.
 }}
 
 \item{statistic_vertical}{TRUE if statistics should be printed below
@@ -70,9 +69,6 @@ use exponential notation. See `?sprintf` for more options.}
 \item{stars}{FALSE for no significance stars. TRUE for default significance
 stars (*=.1, **=.05, ***=.01). Named numeric vector for custom significance
 stars. For example, `c('*' = .1, '+' = .05)`}
-
-\item{stars_note}{logical include a note at the bottom of the table to describe
-the contents of the `stars` argument. The note will be omitted if `stars==NULL`}
 
 \item{title}{string}
 
@@ -127,6 +123,13 @@ msummary(models, title = gt::md('This is *the* title'))
 
 # notes at the bottom of the table (here, the second note includes markdown bold characters)
 msummary(models, notes = list('A first note', gt::md('A **bold** note')))
+
+# modify list of GOF statistics and their format using the built-in
+# 'gof_map' data frame as a starting point
+gof_custom <- modelsummary::gof_map 
+gof_custom$omit[gof_custom$raw == 'deviance'] <- FALSE 
+gof_custom$fmt[gof_custom$raw == 'r.squared'] <- "\%.5f" 
+msummary(models, gof_map = gof_custom)
 }
 
 

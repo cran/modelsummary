@@ -20,19 +20,17 @@ globalVariables(c('.', 'term', 'group', 'estimate', 'conf.high', 'conf.low', 'va
 #' @param stars FALSE for no significance stars. TRUE for default significance
 #' stars (*=.1, **=.05, ***=.01). Named numeric vector for custom significance
 #' stars. For example, `c('*' = .1, '+' = .05)`
-#' @param stars_note logical include a note at the bottom of the table to describe
-#' the contents of the `stars` argument. The note will be omitted if `stars==NULL`
 #' @param statistic string name of the statistic to include in parentheses
 #' below estimates. Must be either "conf.int", or one of the column names
 #' produced by the `broom::tidy` function. Typical values include: "std.error",
 #' "conf.int", "statistic", "p.value". A character vector will stack several
 #' uncertainty estimates on top of one another (in different rows).
-#' @param statistic_override manually override the uncertainy estimates. This 
+#' @param statistic_override manually override the uncertainy estimates. This
 #' argument accepts three types of input:
 #' \itemize{
 #'   \item a function or list of functions of length(models) which produce variance-covariance matrices with row and column names equal to the names of your coefficient estimates. For example, `R` supplies the `vcov` function, and the `sandwich` package supplies `vcovHC`, `vcovHAC`, etc.
 #'   \item a list of length(models) variance-covariance matrices with row and column names equal to the names of your coefficient estimates.
-#'   \item a list of length(models) numeric vectors with names equal to the names of your coefficient estimates.
+#'   \item a list of length(models) vectors with names equal to the names of your coefficient estimates. Numeric vectors are formatted according to `fmt` and placed in brackets, character vectors printed as given.
 #' }
 #' @param statistic_vertical TRUE if statistics should be printed below
 #' estimates. FALSE if statistics should be printed beside estimates.
@@ -83,6 +81,13 @@ globalVariables(c('.', 'term', 'group', 'estimate', 'conf.high', 'conf.low', 'va
 #'
 #' # notes at the bottom of the table (here, the second note includes markdown bold characters)
 #' msummary(models, notes = list('A first note', gt::md('A **bold** note')))
+#'
+#' # modify list of GOF statistics and their format using the built-in
+#' # 'gof_map' data frame as a starting point
+#' gof_custom <- modelsummary::gof_map 
+#' gof_custom$omit[gof_custom$raw == 'deviance'] <- FALSE 
+#' gof_custom$fmt[gof_custom$raw == 'r.squared'] <- "%.5f" 
+#' msummary(models, gof_map = gof_custom)
 #' }
 #'
 # see the README on github for a lot more examples: https://github.com/vincentarelbundock/modelsummary
@@ -99,7 +104,6 @@ modelsummary <- function(models,
                          gof_omit = NULL,
                          fmt = '%.3f',
                          stars = FALSE,
-                         stars_note = TRUE,
                          title = NULL,
                          subtitle = NULL,
                          notes = NULL,
@@ -124,23 +128,11 @@ modelsummary <- function(models,
                   gof_omit = gof_omit,
                   fmt = fmt,
                   stars = stars,
-                  stars_note = stars_note,
                   title = title,
                   subtitle = subtitle,
                   notes = notes,
                   add_rows = add_rows,
                   filename = filename)
-
-    # stars
-    if (is.logical(stars)) {
-        if (stars) {
-            stars <- c('*' = .1, '**' = .05, '***' = .01)
-        } else {
-            stars_note <- FALSE
-        }
-    } else {
-        stars <- sort(stars, decreasing = TRUE)
-    }
 
     # extract estimates and gof
     dat <- modelsummary::extract(models,
@@ -170,11 +162,11 @@ modelsummary <- function(models,
            dplyr::select(-statistic, -group) %>%
            # gt object
            dplyr::rename(`       ` = term) %>% # HACK: arbitrary 7 spaces to avoid name conflict
-           gt::gt() 
+           gt::gt()
 
     # horizontal rule to separate coef/gof
     if (!is.na(idx_row)) { # check if there are >0 GOF
-        tab <- tab %>% 
+        tab <- tab %>%
                gt::tab_style(style = gt::cell_borders(sides = 'bottom', color = '#000000'),
                              locations = gt::cells_body(columns = 1:idx_col, rows = (idx_row - 1)))
     }
@@ -185,11 +177,9 @@ modelsummary <- function(models,
     }
 
     # stars note
-    if (stars_note & !is.null(stars)) {
-        stars_note <- paste0(names(stars), ' p < ', stars)
-        stars_note <- paste(stars_note, collapse = ', ')
-        tab = tab %>%
-              gt::tab_source_note(source_note = stars_note)
+    stars_note <- make_stars_note(stars)
+    if (!is.null(stars_note)) {
+        tab = tab %>% gt::tab_source_note(source_note = stars_note)
     }
 
     # user-supplied notes at the bottom of table
@@ -210,6 +200,7 @@ modelsummary <- function(models,
 
 #' Beautiful, customizable summaries of statistical models
 #'
+#' `msummary()` is a shortcut to `modelsummary()`
 #' @inherit modelsummary
 #' @export
 msummary <- modelsummary
