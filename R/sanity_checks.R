@@ -15,19 +15,36 @@ sanity_checks <- function(models,
 						  fmt = '%.3f',
 						  stars = NULL,
 						  title = NULL,
-						  subtitle = NULL,
 						  notes = NULL,
 						  add_rows = NULL,
-						  filename = NULL) {
+                          output = NULL) {
 
     # simple parameters
+    checkmate::assert_character(title, len = 1, null.ok = TRUE)
     checkmate::assert_character(statistic, null.ok = FALSE)
     checkmate::assert_character(coef_map, null.ok = TRUE)
     checkmate::assert_character(coef_omit, len = 1, null.ok = TRUE)
     checkmate::assert_character(gof_omit, len = 1, null.ok = TRUE)
     checkmate::assert_character(fmt, len = 1, null.ok = FALSE)
-    checkmate::assert_character(filename, len = 1, null.ok = TRUE)
 
+    # output 
+    bad <- FALSE
+    checkmate::assert_character(output, null.ok = FALSE)
+    extension <- tools::file_ext(output)
+    if (extension == '') {
+        if (!output %in% c('default', 'gt', 'markdown', 'html', 'latex')) {
+            bad <- TRUE
+        }
+    } else {
+        if (!extension %in% c('', 'html', 'tex', 'jpg', 'png', 'md', 'txt', 'rtf')) {
+            bad <- TRUE
+        }
+    }
+    if (bad) {
+        stop('The `output` argument must be "gt", "markdown", "html", "latex",
+             or a valid file name with one of these extensions: ".html",
+             ".tex", ".rtf", ".md", ".txt", ".jpg", ".png"')
+    }
 
     # statistic_override
     checkmate::assert(checkmate::check_list(statistic_override, null.ok = TRUE),
@@ -49,19 +66,14 @@ sanity_checks <- function(models,
       }
     }
 
+
     # gof_map
     checkmate::assert(
         checkmate::check_data_frame(gof_map, null.ok = TRUE),
         checkmate::check_tibble(gof_map, null.ok = TRUE)
     )
 
-    # title & subtitle
-    checkmate::assert_character(title, len = 1, null.ok = TRUE)
-    if (!is.null(title)) {
-        checkmate::assert_character(subtitle, len = 1, null.ok = TRUE)
-    } else {
-        checkmate::assert_null(subtitle)
-    }
+
 
     # stars
     checkmate::assert(

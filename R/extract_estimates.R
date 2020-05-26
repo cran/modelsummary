@@ -10,7 +10,8 @@ extract_estimates <- function(model,
                               statistic_vertical = TRUE,
                               conf_level = .95,
                               fmt = '%.3f',
-                              stars = FALSE) {
+                              stars = FALSE,
+                              ...) {
 
     # statistic override
     if (!is.null(statistic_override)) {
@@ -19,21 +20,26 @@ extract_estimates <- function(model,
         so <- extract_statistic_override(model,
                                          statistic = statistic,
                                          statistic_override = statistic_override)
+
         if (!statistic %in% colnames(so)) {
-            stop(paste0(statistic, " cannot be extracted through the `statistic_override` argument. You might want to look at the `modelsummary:::extract_statistic_override` function to diagnose the problem."))
+            stop(paste0(statistic, " cannot be extracted through the
+                        `statistic_override` argument. You might want to look
+                        at the `modelsummary:::extract_statistic_override`
+                        function to diagnose the problem."))
         }
+
         # extract estimates, but keep only columns that do not appear in so
-        est <- tidy(model)
+        est <- tidy(model, ...)
         est <- est[, c('term', base::setdiff(colnames(est), colnames(so)))]
-        est <- dplyr::left_join(est, so, by = 'term')
+        est <- suppressWarnings(dplyr::left_join(est, so, by = 'term'))
 
     } else { # if statistic_override is not used
 
         # extract estimates
         if ('conf.int' %in% statistic) {
-            est <- tidy(model, conf.int = TRUE, conf.level = conf_level)
+            est <- tidy(model, conf.int = TRUE, conf.level = conf_level, ...)
         } else {
-            est <- tidy(model)
+            est <- tidy(model, ...)
         }
     }
 
@@ -94,8 +100,8 @@ extract_estimates <- function(model,
 
     # reshape to vertical
     if (statistic_vertical) {
-        est <- est %>%
-               tidyr::gather(statistic, value, -term) %>%
+        est <- suppressWarnings(tidyr::pivot_longer(est, -term, names_to='statistic'))
+        est <- est %>% 
                dplyr::arrange(term, statistic)
     } else {
         est$statistic <- 'estimate'

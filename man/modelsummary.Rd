@@ -6,33 +6,47 @@
 \usage{
 modelsummary(
   models,
+  output = "default",
+  fmt = "\%.3f",
   statistic = "std.error",
   statistic_override = NULL,
   statistic_vertical = TRUE,
   conf_level = 0.95,
+  stars = FALSE,
   coef_map = NULL,
   coef_omit = NULL,
   gof_map = modelsummary::gof_map,
   gof_omit = NULL,
-  fmt = "\%.3f",
-  stars = FALSE,
-  title = NULL,
-  subtitle = NULL,
-  notes = NULL,
   add_rows = NULL,
   add_rows_location = NULL,
-  filename = NULL
+  title = NULL,
+  notes = NULL,
+  filename = NULL,
+  subtitle = NULL,
+  ...
 )
 }
 \arguments{
 \item{models}{a single model object or a (potentially named) list of models
 to summarize}
 
+\item{output}{filename or object type (string)
+\itemize{
+  \item Supported filename extensions: .html, .tex, .md, .txt, .png, .jpg. 
+  \item Supported object types: "gt", "html", "markdown", "latex". "gt" objects are created by the `gt` package; other object types are created by the `kableExtra` package.
+  \item When a file name is supplied to the `output` argument, the table is written immediately to file. If you want to customize your table by post-processing it with functions provided by the `gt` or `kableExtra` packages, you need to choose a different output format (e.g., "gt", "latex", "html", "markdown"), and you need to save the table after post-processing using the `gt::gtsave`, `kable::save_kable`, or `cat` functions.
+}}
+
+\item{fmt}{string which specifies how numeric values will be rounded. This
+string is passed to the `sprintf` function. '\%.3f' will keep 3 digits after
+the decimal point with trailing zero. '\%.5f' will keep 5 digits. '\%.3e' will
+use exponential notation. See `?sprintf` for more options.}
+
 \item{statistic}{string name of the statistic to include in parentheses
-below estimates. Must be either "conf.int", or one of the column names
-produced by the `broom::tidy` function. Typical values include: "std.error",
-"conf.int", "statistic", "p.value". A character vector will stack several
-uncertainty estimates on top of one another (in different rows).}
+\itemize{
+  \item Typical values: "conf.int", "std.error", "statistic", "p.value"
+  \item Alternative values: any column name produced by `broom::tidy(model)`
+}}
 
 \item{statistic_override}{manually override the uncertainy estimates. This
 argument accepts three types of input:
@@ -46,6 +60,13 @@ argument accepts three types of input:
 estimates. FALSE if statistics should be printed beside estimates.}
 
 \item{conf_level}{confidence level to use for confidence intervals}
+
+\item{stars}{to indicate statistical significance
+\itemize{
+  \item FALSE (default): no significance stars. 
+  \item TRUE: *=.1, **=.05, ***=.01
+  \item Named numeric vector for custom stars such as `c('*' = .1, '+' = .05)`
+}}
 
 \item{coef_map}{named character vector. Names refer to the original variable
 names. Values refer to the variable names that will appear in the table.
@@ -61,21 +82,6 @@ from the table (using `stringr::str_detect`).}
 \item{gof_omit}{string regular expression. Omits all matching gof statistics from
 the table (using `stringr::str_detect`).}
 
-\item{fmt}{string which specifies how numeric values will be rounded. This
-string is passed to the `sprintf` function. '\%.3f' will keep 3 digits after
-the decimal point with trailing zero. '\%.5f' will keep 5 digits. '\%.3e' will
-use exponential notation. See `?sprintf` for more options.}
-
-\item{stars}{FALSE for no significance stars. TRUE for default significance
-stars (*=.1, **=.05, ***=.01). Named numeric vector for custom significance
-stars. For example, `c('*' = .1, '+' = .05)`}
-
-\item{title}{string}
-
-\item{subtitle}{string}
-
-\item{notes}{list of notes to append to the bottom of the table.}
-
 \item{add_rows}{list of character vectors, each of length equal to the number
 of models + 1.}
 
@@ -83,12 +89,18 @@ of models + 1.}
 bottom of the table if this parameter is NULL, or after the position set by
 this integer.}
 
-\item{filename}{the file name to create on disk. Ensure that an extension
-compatible with the output types is provided (`.html`, `.tex`, `.ltx`,
-`.rtf`). Read `?gt::gtsave` for further details. When the table produced by
-`modelsummary` is post-processed by another `gt` function, users need to use
-the `gtsave` function from the `gt` package; using the `filename` argument
-will produce an error.}
+\item{title}{string}
+
+\item{notes}{list of notes to append to the bottom of the table.}
+
+\item{filename}{This argument was deprecated in favor of the `output` argument.}
+
+\item{subtitle}{This argument is deprecated. Use `title` or the `tab_header`
+function from the `gt` package.}
+
+\item{...}{all other arguments are passed to the `tidy` method used to
+extract estimates from the model. For example, this allows users to set
+`exponentiate=TRUE` to exponentiate logistic regression coefficients.}
 }
 \value{
 a 'gt' table object.
@@ -115,8 +127,8 @@ msummary(models, statistic = 'statistic', conf_level = 0.99)
 # rename and re-order coefficients
 msummary(models, coef_map = c('Volume' = 'Large', 'Height' = 'Tall'))
 
-# titles and subtitles
-msummary(models, title = 'This is the title', subtitle = 'And a subtitle')
+# titles 
+msummary(models, title = 'This is the title')
 
 # title with italicized text
 msummary(models, title = gt::md('This is *the* title'))

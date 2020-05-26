@@ -24,7 +24,8 @@ extract <- function(models,
                     add_rows = NULL,
                     add_rows_location = NULL,
                     stars = FALSE,
-                    fmt = '%.3f') {
+                    fmt = '%.3f',
+                    ...) {
 
 
     # models must be a list of models or a single model 
@@ -59,7 +60,8 @@ extract <- function(models,
                                       statistic_override = statistic_override[[i]],
                                       statistic_vertical = statistic_vertical,
                                       conf_level = conf_level,
-                                      stars = stars)
+                                      stars = stars,
+                                      ...)
 
         # coef_map: omit, rename (must be done before join to collapse rows)
         if (!is.null(coef_map)) {
@@ -83,8 +85,13 @@ extract <- function(models,
         colnames(est[[i]])[3] <- model_names[i]
     }
 
+
+    # TODO: Remove suppressWarnings
+    # full_join warns: Column `term` has different attributes on LHS and RHS of join
+    f <- function(x, y) suppressWarnings(dplyr::full_join(x, y, by = c('term', 'statistic')))
     est <- est %>% 
-           purrr::reduce(dplyr::full_join, by = c('term', 'statistic'))  %>%
+           #purrr::reduce(dplyr::full_join, by = c('term', 'statistic'))  %>%
+           purrr::reduce(f)  %>%
            dplyr::mutate(group = 'estimates') %>%
            dplyr::select(group, term, statistic, names(.))
 

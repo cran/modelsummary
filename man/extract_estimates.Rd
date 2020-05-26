@@ -11,17 +11,18 @@ extract_estimates(
   statistic_vertical = TRUE,
   conf_level = 0.95,
   fmt = "\%.3f",
-  stars = FALSE
+  stars = FALSE,
+  ...
 )
 }
 \arguments{
 \item{model}{object type with an available `tidy` method.}
 
 \item{statistic}{string name of the statistic to include in parentheses
-below estimates. Must be either "conf.int", or one of the column names
-produced by the `broom::tidy` function. Typical values include: "std.error",
-"conf.int", "statistic", "p.value". A character vector will stack several
-uncertainty estimates on top of one another (in different rows).}
+\itemize{
+  \item Typical values: "conf.int", "std.error", "statistic", "p.value"
+  \item Alternative values: any column name produced by `broom::tidy(model)`
+}}
 
 \item{statistic_override}{manually override the uncertainy estimates. This
 argument accepts three types of input:
@@ -41,9 +42,16 @@ string is passed to the `sprintf` function. '\%.3f' will keep 3 digits after
 the decimal point with trailing zero. '\%.5f' will keep 5 digits. '\%.3e' will
 use exponential notation. See `?sprintf` for more options.}
 
-\item{stars}{FALSE for no significance stars. TRUE for default significance
-stars (*=.1, **=.05, ***=.01). Named numeric vector for custom significance
-stars. For example, `c('*' = .1, '+' = .05)`}
+\item{stars}{to indicate statistical significance
+\itemize{
+  \item FALSE (default): no significance stars. 
+  \item TRUE: *=.1, **=.05, ***=.01
+  \item Named numeric vector for custom stars such as `c('*' = .1, '+' = .05)`
+}}
+
+\item{...}{all other arguments are passed to the `tidy` method used to
+extract estimates from the model. For example, this allows users to set
+`exponentiate=TRUE` to exponentiate logistic regression coefficients.}
 }
 \value{
 data.frame with side-by-side model summaries

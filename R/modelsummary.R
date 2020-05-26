@@ -1,30 +1,33 @@
 # https://stackoverflow.com/questions/9439256/how-can-i-handle-r-cmd-check-no-visible-binding-for-global-variable-notes-when#comment20826625_12429344
 # 2012 hadley says "globalVariables is a hideous hack and I will never use it"
 # 2014 hadley updates his own answer with globalVariables as one of "two solutions"
-globalVariables(c('.', 'term', 'group', 'estimate', 'conf.high', 'conf.low', 'value', 'p.value', 'std.error', 'statistic'))
+globalVariables(c('.', 'term', 'group', 'estimate', 'conf.high', 'conf.low', 'value', 'p.value', 'std.error', 'statistic', 'stars_note'))
 
 #' Beautiful, customizable summaries of statistical models
 #'
 #' @param models a single model object or a (potentially named) list of models
 #' to summarize
+#' @param output filename or object type (string)
+#' \itemize{
+#'   \item Supported filename extensions: .html, .tex, .md, .txt, .png, .jpg. 
+#'   \item Supported object types: "gt", "html", "markdown", "latex". "gt" objects are created by the `gt` package; other object types are created by the `kableExtra` package.
+#'   \item When a file name is supplied to the `output` argument, the table is written immediately to file. If you want to customize your table by post-processing it with functions provided by the `gt` or `kableExtra` packages, you need to choose a different output format (e.g., "gt", "latex", "html", "markdown"), and you need to save the table after post-processing using the `gt::gtsave`, `kable::save_kable`, or `cat` functions.
+#' }
 #' @param fmt string which specifies how numeric values will be rounded. This
 #' string is passed to the `sprintf` function. '\%.3f' will keep 3 digits after
 #' the decimal point with trailing zero. '\%.5f' will keep 5 digits. '\%.3e' will
 #' use exponential notation. See `?sprintf` for more options.
-#' @param filename the file name to create on disk. Ensure that an extension
-#' compatible with the output types is provided (`.html`, `.tex`, `.ltx`,
-#' `.rtf`). Read `?gt::gtsave` for further details. When the table produced by
-#' `modelsummary` is post-processed by another `gt` function, users need to use
-#' the `gtsave` function from the `gt` package; using the `filename` argument
-#' will produce an error.
-#' @param stars FALSE for no significance stars. TRUE for default significance
-#' stars (*=.1, **=.05, ***=.01). Named numeric vector for custom significance
-#' stars. For example, `c('*' = .1, '+' = .05)`
+#' @param stars to indicate statistical significance
+#' \itemize{
+#'   \item FALSE (default): no significance stars. 
+#'   \item TRUE: *=.1, **=.05, ***=.01
+#'   \item Named numeric vector for custom stars such as `c('*' = .1, '+' = .05)`
+#' }
 #' @param statistic string name of the statistic to include in parentheses
-#' below estimates. Must be either "conf.int", or one of the column names
-#' produced by the `broom::tidy` function. Typical values include: "std.error",
-#' "conf.int", "statistic", "p.value". A character vector will stack several
-#' uncertainty estimates on top of one another (in different rows).
+#' \itemize{
+#'   \item Typical values: "conf.int", "std.error", "statistic", "p.value"
+#'   \item Alternative values: any column name produced by `broom::tidy(model)`
+#' }
 #' @param statistic_override manually override the uncertainy estimates. This
 #' argument accepts three types of input:
 #' \itemize{
@@ -51,8 +54,13 @@ globalVariables(c('.', 'term', 'group', 'estimate', 'conf.high', 'conf.low', 'va
 #' bottom of the table if this parameter is NULL, or after the position set by
 #' this integer.
 #' @param title string
-#' @param subtitle string
 #' @param notes list of notes to append to the bottom of the table.
+#' @param filename This argument was deprecated in favor of the `output` argument.
+#' @param subtitle This argument is deprecated. Use `title` or the `tab_header`
+#' function from the `gt` package.
+#' @param ... all other arguments are passed to the `tidy` method used to
+#' extract estimates from the model. For example, this allows users to set
+#' `exponentiate=TRUE` to exponentiate logistic regression coefficients.
 #' @return a 'gt' table object.
 #' @examples
 #' \donttest{
@@ -73,8 +81,8 @@ globalVariables(c('.', 'term', 'group', 'estimate', 'conf.high', 'conf.low', 'va
 #' # rename and re-order coefficients
 #' msummary(models, coef_map = c('Volume' = 'Large', 'Height' = 'Tall'))
 #'
-#' # titles and subtitles
-#' msummary(models, title = 'This is the title', subtitle = 'And a subtitle')
+#' # titles 
+#' msummary(models, title = 'This is the title')
 #'
 #' # title with italicized text
 #' msummary(models, title = gt::md('This is *the* title'))
@@ -94,22 +102,33 @@ globalVariables(c('.', 'term', 'group', 'estimate', 'conf.high', 'conf.low', 'va
 #'
 #' @export
 modelsummary <- function(models,
+                         output = "default",
+                         fmt = '%.3f',
                          statistic = 'std.error',
                          statistic_override = NULL,
                          statistic_vertical = TRUE,
                          conf_level = 0.95,
+                         stars = FALSE,
                          coef_map = NULL,
                          coef_omit = NULL,
                          gof_map = modelsummary::gof_map,
                          gof_omit = NULL,
-                         fmt = '%.3f',
-                         stars = FALSE,
-                         title = NULL,
-                         subtitle = NULL,
-                         notes = NULL,
                          add_rows = NULL,
                          add_rows_location = NULL,
-                         filename = NULL) {
+                         title = NULL,
+                         notes = NULL,
+                         filename = NULL,
+                         subtitle = NULL,
+                         ...) {
+
+    # deprecation warnings
+    if (!is.null(filename)) {
+        stop('The `filename` argument is deprecated. Please use `output` instead.') 
+    }
+    if (!is.null(subtitle)) {
+        stop('The `subtitle` argument is deprecated. If you want to add a subtitle to an HTML table, you can use the `tab_header` function from the `gt` package.') 
+    }
+
 
     # models must be a list of models or a single model
     if (!'list' %in% class(models)) {
@@ -129,10 +148,9 @@ modelsummary <- function(models,
                   fmt = fmt,
                   stars = stars,
                   title = title,
-                  subtitle = subtitle,
                   notes = notes,
                   add_rows = add_rows,
-                  filename = filename)
+                  output = output)
 
     # extract estimates and gof
     dat <- modelsummary::extract(models,
@@ -147,55 +165,60 @@ modelsummary <- function(models,
                               stars = stars,
                               add_rows = add_rows,
                               add_rows_location = add_rows_location,
-                              fmt = fmt)
+                              fmt = fmt,
+                              ...)
 
     # remove duplicate term labels
     idx <- stringr::str_detect(dat$statistic, 'statistic\\d*$')
     tab <- dat %>%
            dplyr::mutate(term = ifelse(idx, '', term))
 
-    # create gt table object
-    idx_row <- match('gof', tab$group)
-    idx_col <- ncol(tab) - 2
-    tab <- tab %>%
-           # remove columns not fit for printing
-           dplyr::select(-statistic, -group) %>%
-           # gt object
-           dplyr::rename(`       ` = term) %>% # HACK: arbitrary 7 spaces to avoid name conflict
-           gt::gt()
-
-    # horizontal rule to separate coef/gof
-    if (!is.na(idx_row)) { # check if there are >0 GOF
-        tab <- tab %>%
-               gt::tab_style(style = gt::cell_borders(sides = 'bottom', color = '#000000'),
-                             locations = gt::cells_body(columns = 1:idx_col, rows = (idx_row - 1)))
-    }
-
-    # titles
-    if (!is.null(title)) {
-        tab <- tab %>% gt::tab_header(title = title, subtitle = subtitle)
-    }
-
-    # stars note
-    stars_note <- make_stars_note(stars)
-    if (!is.null(stars_note)) {
-        tab = tab %>% gt::tab_source_note(source_note = stars_note)
-    }
-
-    # user-supplied notes at the bottom of table
-    if (!is.null(notes)) {
-        for (n in notes) {
-            tab <- tab %>% gt::tab_source_note(source_note = n)
-        }
-    }
-
-    # output
-    if (!is.null(filename)) {
-        gt::gtsave(tab, filename)
+    # get `output_type` from `output` or filename extension
+    ext <- tools::file_ext(output)
+    if (ext == '') {
+        output_type <- output
     } else {
-        return(tab)
+        output_type <- ext
     }
 
+    # knitr compilation target as default
+    knitr_target <- knitr::opts_knit$get("rmarkdown.pandoc.to")
+    if (output_type == 'default') {
+        if (!is.null(knitr_target)) {
+            output <- output_type <- knitr_target
+        } 
+    }
+
+    # choose table builder
+    build_list <- list('default' = 'gt',
+                       'gt' = 'gt',
+                       'jpg' = 'gt',
+                       'png' = 'gt',
+                       'rtf' = 'gt',
+                       'markdown' = 'kableExtra',
+                       'md' = 'kableExtra',
+                       'txt' = 'kableExtra',
+                       'html' = getOption('modelsummary_html', default = 'gt'),
+                       'tex' = getOption('modelsummary_latex', default = 'kableExtra'),
+                       'latex' = getOption('modelsummary_latex', default = 'kableExtra'))
+
+    if (build_list[[output_type]] == 'gt') {
+        build_table <- build_gt
+    } else if (build_list[[output_type]] == 'kableExtra') {
+        build_table <- build_kableExtra
+    }
+
+    # build table
+    build_table(tab, 
+                title = title,
+                subtitle = subtitle,
+                stars = stars,
+                stars_note = stars_note,
+                notes = notes,
+                filename = filename,
+                output = output,
+                ...)
+  
 }
 
 #' Beautiful, customizable summaries of statistical models
@@ -204,3 +227,4 @@ modelsummary <- function(models,
 #' @inherit modelsummary
 #' @export
 msummary <- modelsummary
+

@@ -17,10 +17,9 @@ sanity_checks(
   fmt = "\%.3f",
   stars = NULL,
   title = NULL,
-  subtitle = NULL,
   notes = NULL,
   add_rows = NULL,
-  filename = NULL
+  output = NULL
 )
 }
 \arguments{
@@ -28,10 +27,10 @@ sanity_checks(
 to summarize}
 
 \item{statistic}{string name of the statistic to include in parentheses
-below estimates. Must be either "conf.int", or one of the column names
-produced by the `broom::tidy` function. Typical values include: "std.error",
-"conf.int", "statistic", "p.value". A character vector will stack several
-uncertainty estimates on top of one another (in different rows).}
+\itemize{
+  \item Typical values: "conf.int", "std.error", "statistic", "p.value"
+  \item Alternative values: any column name produced by `broom::tidy(model)`
+}}
 
 \item{statistic_override}{manually override the uncertainy estimates. This
 argument accepts three types of input:
@@ -65,25 +64,26 @@ string is passed to the `sprintf` function. '\%.3f' will keep 3 digits after
 the decimal point with trailing zero. '\%.5f' will keep 5 digits. '\%.3e' will
 use exponential notation. See `?sprintf` for more options.}
 
-\item{stars}{FALSE for no significance stars. TRUE for default significance
-stars (*=.1, **=.05, ***=.01). Named numeric vector for custom significance
-stars. For example, `c('*' = .1, '+' = .05)`}
+\item{stars}{to indicate statistical significance
+\itemize{
+  \item FALSE (default): no significance stars. 
+  \item TRUE: *=.1, **=.05, ***=.01
+  \item Named numeric vector for custom stars such as `c('*' = .1, '+' = .05)`
+}}
 
 \item{title}{string}
-
-\item{subtitle}{string}
 
 \item{notes}{list of notes to append to the bottom of the table.}
 
 \item{add_rows}{list of character vectors, each of length equal to the number
 of models + 1.}
 
-\item{filename}{the file name to create on disk. Ensure that an extension
-compatible with the output types is provided (`.html`, `.tex`, `.ltx`,
-`.rtf`). Read `?gt::gtsave` for further details. When the table produced by
-`modelsummary` is post-processed by another `gt` function, users need to use
-the `gtsave` function from the `gt` package; using the `filename` argument
-will produce an error.}
+\item{output}{filename or object type (string)
+\itemize{
+  \item Supported filename extensions: .html, .tex, .md, .txt, .png, .jpg. 
+  \item Supported object types: "gt", "html", "markdown", "latex". "gt" objects are created by the `gt` package; other object types are created by the `kableExtra` package.
+  \item When a file name is supplied to the `output` argument, the table is written immediately to file. If you want to customize your table by post-processing it with functions provided by the `gt` or `kableExtra` packages, you need to choose a different output format (e.g., "gt", "latex", "html", "markdown"), and you need to save the table after post-processing using the `gt::gtsave`, `kable::save_kable`, or `cat` functions.
+}}
 }
 \value{
 error if sanity checks fail
