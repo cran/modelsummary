@@ -25,16 +25,25 @@ extract <- function(models,
                     add_rows_location = NULL,
                     stars = FALSE,
                     fmt = '%.3f',
+                    estimate = 'estimate',
                     ...) {
 
-
-    # models must be a list of models or a single model 
-    # TODO: this is code repetition from modelsummary(), but we need it over there
-    # as well for sanity checks. This doesn't matter at all, but maybe there's
-    # a more elegant solution.
+    # models must be a list of models
     if (!'list' %in% class(models)) {
         models <- list(models)
     }
+
+    # sanity check functions are hosted in R/sanity_checks.R
+    sanity_statistic(statistic, statistic_override, statistic_vertical, models)
+    sanity_conf_level(conf_level)
+    sanity_coef_map(coef_map)
+    sanity_coef_omit(coef_omit)
+    sanity_gof_map(gof_map)
+    sanity_gof_omit(gof_omit)
+    sanity_add_rows(add_rows, add_rows_location, models)
+    sanity_stars(stars)
+    sanity_fmt(fmt)
+    sanity_estimate(estimate)
 
     # model names
     if (is.null(names(models))) {
@@ -56,6 +65,7 @@ extract <- function(models,
     for (i in seq_along(models)) {
         est[[i]] <- extract_estimates(model = models[[i]],
                                       fmt = fmt,
+                                      estimate = estimate,
                                       statistic = statistic,
                                       statistic_override = statistic_override[[i]],
                                       statistic_vertical = statistic_vertical,
@@ -85,13 +95,8 @@ extract <- function(models,
         colnames(est[[i]])[3] <- model_names[i]
     }
 
-
-    # TODO: Remove suppressWarnings
-    # full_join warns: Column `term` has different attributes on LHS and RHS of join
-    f <- function(x, y) suppressWarnings(dplyr::full_join(x, y, by = c('term', 'statistic')))
     est <- est %>% 
-           #purrr::reduce(dplyr::full_join, by = c('term', 'statistic'))  %>%
-           purrr::reduce(f)  %>%
+           purrr::reduce(dplyr::full_join, by = c('term', 'statistic'))  %>%
            dplyr::mutate(group = 'estimates') %>%
            dplyr::select(group, term, statistic, names(.))
 

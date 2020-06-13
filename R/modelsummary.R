@@ -1,7 +1,8 @@
 # https://stackoverflow.com/questions/9439256/how-can-i-handle-r-cmd-check-no-visible-binding-for-global-variable-notes-when#comment20826625_12429344
 # 2012 hadley says "globalVariables is a hideous hack and I will never use it"
 # 2014 hadley updates his own answer with globalVariables as one of "two solutions"
-globalVariables(c('.', 'term', 'group', 'estimate', 'conf.high', 'conf.low', 'value', 'p.value', 'std.error', 'statistic', 'stars_note'))
+globalVariables(c('.', 'term', 'group', 'estimate', 'conf.high', 'conf.low', 'value', 'p.value', 'std.error', 'statistic', 'stars_note', 'logLik', 'formatBicLL'))
+
 
 #' Beautiful, customizable summaries of statistical models
 #'
@@ -10,7 +11,7 @@ globalVariables(c('.', 'term', 'group', 'estimate', 'conf.high', 'conf.low', 'va
 #' @param output filename or object type (string)
 #' \itemize{
 #'   \item Supported filename extensions: .html, .tex, .md, .txt, .png, .jpg. 
-#'   \item Supported object types: "gt", "html", "markdown", "latex". "gt" objects are created by the `gt` package; other object types are created by the `kableExtra` package.
+#'   \item Supported object types: "default", "html", "markdown", "latex", "gt", "kableExtra", "huxtable", "flextable".
 #'   \item When a file name is supplied to the `output` argument, the table is written immediately to file. If you want to customize your table by post-processing it with functions provided by the `gt` or `kableExtra` packages, you need to choose a different output format (e.g., "gt", "latex", "html", "markdown"), and you need to save the table after post-processing using the `gt::gtsave`, `kable::save_kable`, or `cat` functions.
 #' }
 #' @param fmt string which specifies how numeric values will be rounded. This
@@ -54,7 +55,10 @@ globalVariables(c('.', 'term', 'group', 'estimate', 'conf.high', 'conf.low', 'va
 #' bottom of the table if this parameter is NULL, or after the position set by
 #' this integer.
 #' @param title string
-#' @param notes list of notes to append to the bottom of the table.
+#' @param notes list or vector of notes to append to the bottom of the table.
+#' @param estimate character name of the estimate to display. Must be a column
+#' name in the dataframe produced by `tidy(model)`. In the vast majority of
+#' cases, the default value of this argument should not be changed.
 #' @param filename This argument was deprecated in favor of the `output` argument.
 #' @param subtitle This argument is deprecated. Use `title` or the `tab_header`
 #' function from the `gt` package.
@@ -117,108 +121,120 @@ modelsummary <- function(models,
                          add_rows_location = NULL,
                          title = NULL,
                          notes = NULL,
+                         estimate = 'estimate',
                          filename = NULL,
                          subtitle = NULL,
                          ...) {
 
-    # deprecation warnings
-    if (!is.null(filename)) {
-        stop('The `filename` argument is deprecated. Please use `output` instead.') 
-    }
-    if (!is.null(subtitle)) {
-        stop('The `subtitle` argument is deprecated. If you want to add a subtitle to an HTML table, you can use the `tab_header` function from the `gt` package.') 
-    }
 
-
-    # models must be a list of models or a single model
-    if (!'list' %in% class(models)) {
-        models <- list(models)
-    }
-
-    # check sanity of user input
-    sanity_checks(models,
-                  statistic = statistic,
-                  statistic_override = statistic_override,
-                  statistic_vertical = statistic_vertical,
-                  conf_level = conf_level,
-                  coef_map = coef_map,
-                  coef_omit = coef_omit,
-                  gof_map = gof_map,
-                  gof_omit = gof_omit,
-                  fmt = fmt,
-                  stars = stars,
-                  title = title,
-                  notes = notes,
-                  add_rows = add_rows,
-                  output = output)
+    # sanity check functions are hosted in R/sanity_checks.R
+    # more sanity checks are conducted in modelsummary::extract()
+    sanity_output(output)
+    sanity_title(title)
+    sanity_notes(notes)
+    sanity_filename(filename)
+    sanity_subtitle(subtitle)
 
     # extract estimates and gof
     dat <- modelsummary::extract(models,
-                              statistic = statistic,
-                              statistic_override = statistic_override,
-                              statistic_vertical = statistic_vertical,
-                              conf_level = conf_level,
-                              coef_map = coef_map,
-                              coef_omit = coef_omit,
-                              gof_map = gof_map,
-                              gof_omit = gof_omit,
-                              stars = stars,
-                              add_rows = add_rows,
-                              add_rows_location = add_rows_location,
-                              fmt = fmt,
-                              ...)
+                                 statistic = statistic,
+                                 statistic_override = statistic_override,
+                                 statistic_vertical = statistic_vertical,
+                                 conf_level = conf_level,
+                                 coef_map = coef_map,
+                                 coef_omit = coef_omit,
+                                 gof_map = gof_map,
+                                 gof_omit = gof_omit,
+                                 stars = stars,
+                                 add_rows = add_rows,
+                                 add_rows_location = add_rows_location,
+                                 fmt = fmt,
+                                 estimate = estimate,
+                                 ...)
 
     # remove duplicate term labels
     idx <- stringr::str_detect(dat$statistic, 'statistic\\d*$')
     tab <- dat %>%
            dplyr::mutate(term = ifelse(idx, '', term))
 
-    # get `output_type` from `output` or filename extension
+    # choose table factory
+    factory_dict <- list('default' = getOption('modelsummary_default', default = 'gt'),
+                         'gt' = 'gt',
+                         'huxtable' = 'huxtable',
+                         'flextable' = 'flextable',
+                         'kableExtra' = 'kableExtra',
+                         'html' = getOption('modelsummary_html', default = 'gt'),
+                         'rtf' = getOption('modelsummary_rtf', default = 'gt'),
+                         'latex' = getOption('modelsummary_latex', default = 'kableExtra'),
+                         'markdown' = 'kableExtra',
+                         'word' =  getOption('modelsummary_word', default = 'flextable'),
+                         'powerpoint' =  getOption('modelsummary_powerpoint', default = 'flextable'),
+                         'png' = getOption('modelsummary_png', default = 'flextable'),
+                         'jpg' = getOption('modelsummary_jpg', default = 'flextable'))
+
+    # sanity check: are user-supplied global options ok?
+    sanity_factory(factory_dict)
+
+    # decide which table factory to use based on user input
     ext <- tools::file_ext(output)
-    if (ext == '') {
-        output_type <- output
+
+    # override default if knitting to latex. otherwise gt would break compilation
+    if (output == 'default') {
+        if (knitr::is_latex_output()) {
+            idx <- 'latex'
+        } else {
+            idx <- 'default'
+        }
+
+    # kableExtra produces minimal/readable code
+    } else if (output %in% c('html', 'latex', 'markdown')) { 
+        idx <- 'kableExtra'
+
+    # file extensions to output format
+    } else if (ext %in% c('md', 'Rmd', 'txt')) {
+        idx <- 'markdown'
+    } else if (ext %in% c('tex', 'ltx')) {
+        idx <- 'latex'
+    } else if (ext %in% c('docx', 'doc')) {
+        idx <- 'word'
+    } else if (ext %in% c('pptx', 'ppt')) {
+        idx <- 'powerpoint'
+
+    # human-readable html, latex, markdown 
+    } else if (ext == '') {
+        idx <- output
+
+    # file extension is self-explanatory
     } else {
-        output_type <- ext
+        idx <- ext
     }
 
-    # knitr compilation target as default
-    knitr_target <- knitr::opts_knit$get("rmarkdown.pandoc.to")
-    if (output_type == 'default') {
-        if (!is.null(knitr_target)) {
-            output <- output_type <- knitr_target
-        } 
-    }
+    # table factory
+    factory <- factory_dict[[idx]]
+    factory <- list('gt' = factory_gt,
+                    'kableExtra' = factory_kableExtra,
+                    'huxtable' = factory_huxtable,
+                    'flextable' = factory_flextable)[[factory]]
 
-    # choose table builder
-    build_list <- list('default' = 'gt',
-                       'gt' = 'gt',
-                       'jpg' = 'gt',
-                       'png' = 'gt',
-                       'rtf' = 'gt',
-                       'markdown' = 'kableExtra',
-                       'md' = 'kableExtra',
-                       'txt' = 'kableExtra',
-                       'html' = getOption('modelsummary_html', default = 'gt'),
-                       'tex' = getOption('modelsummary_latex', default = 'kableExtra'),
-                       'latex' = getOption('modelsummary_latex', default = 'kableExtra'))
-
-    if (build_list[[output_type]] == 'gt') {
-        build_table <- build_gt
-    } else if (build_list[[output_type]] == 'kableExtra') {
-        build_table <- build_kableExtra
-    }
+    # clean and measure table
+    gof_idx <- match('gof', tab$group)
+    tab <- tab %>%
+           dplyr::select(-statistic, -group) %>%
+           # HACK: arbitrary 7 spaces to avoid name conflict
+           dplyr::rename(`       ` = term)
 
     # build table
-    build_table(tab, 
-                title = title,
-                subtitle = subtitle,
-                stars = stars,
-                stars_note = stars_note,
-                notes = notes,
-                filename = filename,
-                output = output,
-                ...)
-  
+    factory(tab, 
+            title = title,
+            subtitle = subtitle,
+            stars = stars,
+            stars_note = stars_note,
+            notes = notes,
+            filename = filename,
+            gof_idx = gof_idx,
+            output = output,
+            ...)
+      
 }
 
 #' Beautiful, customizable summaries of statistical models

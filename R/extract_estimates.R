@@ -11,7 +11,10 @@ extract_estimates <- function(model,
                               conf_level = .95,
                               fmt = '%.3f',
                               stars = FALSE,
+                              estimate = 'estimate',
                               ...) {
+
+
 
     # statistic override
     if (!is.null(statistic_override)) {
@@ -28,10 +31,12 @@ extract_estimates <- function(model,
                         function to diagnose the problem."))
         }
 
-        # extract estimates, but keep only columns that do not appear in so
+        # extract estimates
         est <- tidy(model, ...)
+
+        # keep only columns that do not appear in so
         est <- est[, c('term', base::setdiff(colnames(est), colnames(so)))]
-        est <- suppressWarnings(dplyr::left_join(est, so, by = 'term'))
+        est <- dplyr::left_join(est, so, by = 'term')
 
     } else { # if statistic_override is not used
 
@@ -43,8 +48,21 @@ extract_estimates <- function(model,
         }
     }
 
+    # tidy_custom if availablee
+    est_custom <- tidy_custom(model)
+
+    # did tidy and tidy_custom produce useable output?
+    sanity_tidy(est, est_custom, estimate, statistic, class(model)[1])
+
+    # combine (or overwrite) tidy and tidy_custom
+    if (!is.null(est_custom)) {
+        for (n in colnames(est_custom)) {
+            est[[n]] <- est_custom[[n]]
+        }
+    }
+
     # round estimates
-    est$estimate <- rounding(est$estimate, fmt)
+    est[[estimate]] <- rounding(est[[estimate]], fmt)
 
     # extract statistics
     for (i in seq_along(statistic)) {
@@ -91,22 +109,22 @@ extract_estimates <- function(model,
         for (n in names(stars)) {
             est$stars <- ifelse(est$p.value < stars[n], n, est$stars)
         }
-        est$estimate <- paste0(est$estimate, est$stars)
+        est[[estimate]] <- paste0(est[[estimate]], est$stars)
     }
 
     # subset columns
-    cols <- c('term', 'estimate', paste0('statistic', seq_along(statistic)))
+    cols <- c('term', estimate, paste0('statistic', seq_along(statistic)))
     est <- est[, cols]
 
     # reshape to vertical
     if (statistic_vertical) {
-        est <- suppressWarnings(tidyr::pivot_longer(est, -term, names_to='statistic'))
-        est <- est %>% 
+        est <- est %>%
+               tidyr::pivot_longer(-term, names_to='statistic') %>%
                dplyr::arrange(term, statistic)
     } else {
         est$statistic <- 'estimate'
-        est$value <- paste(est$estimate, est$statistic1)
-        est$estimate <- est$statistic1 <- NULL
+        est$value <- paste(est[[estimate]], est$statistic1)
+        est[[estimate]] <- est$statistic1 <- NULL
     }
 
     # output

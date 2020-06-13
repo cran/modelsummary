@@ -1,3 +1,14 @@
+# modelsummary 0.4.0
+
+* huxtable support
+* flextable support
+* estimate argument
+* fixest tidiers
+* website and vignette improvements
+* gof_map additions
+* glance_custom
+* tidy_custom
+
 # modelsummary 0.3.0
 
 * Out-of-the-box Rmarkdown compilation to HTML, PDF, RTF
