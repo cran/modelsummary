@@ -1,3 +1,9 @@
+# modelsummary 0.4.1
+
+* add_rows now accepts a data.frame with "position" and "section" columns
+* add_rows_location is deprecated
+* bug in sanity_output prevented overwriting files
+
 # modelsummary 0.4.0
 
 * huxtable support
