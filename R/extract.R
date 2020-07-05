@@ -3,14 +3,6 @@
 #'
 #' @inheritParams modelsummary
 #' @return tibble
-#' @examples
-#' library(modelsummary)
-#' data(trees)
-#' models <- list()
-#' models[['Bivariate']] <- lm(Girth ~ Height, data = trees)
-#' models[['Multivariate']] <- lm(Girth ~ Height + Volume, data = trees)
-#' extract(models)
-#'
 #' @export
 extract <- function(models,
                     statistic = 'std.error',
@@ -21,11 +13,9 @@ extract <- function(models,
                     coef_omit = NULL,
                     gof_map = modelsummary::gof_map,
                     gof_omit = NULL,
-                    add_rows = NULL,
                     stars = FALSE,
                     fmt = '%.3f',
                     estimate = 'estimate',
-                    add_rows_location = NULL,
                     ...) {
 
     # models must be a list of models
@@ -40,8 +30,6 @@ extract <- function(models,
     sanity_coef_omit(coef_omit)
     sanity_gof_map(gof_map)
     sanity_gof_omit(gof_omit)
-    sanity_add_rows_location(add_rows_location) # deprecated 
-    sanity_add_rows(add_rows, models)
     sanity_stars(stars)
     sanity_fmt(fmt)
     sanity_estimate(estimate)
@@ -50,13 +38,12 @@ extract <- function(models,
     if (is.null(names(models))) {
         model_names <- paste('Model', 1:length(models))
     } else {
-        if (any(names(models) == '')) {
-            stop('Model names cannot include empty strings. Please make sure that every object in the `models` list has a unique, non-empty name. If the `models` list has no names at all, `modelsummary` will create some automatically.')
-        }
         model_names <- names(models)
     }
+    model_names <- pad(model_names)
 
-    # if statistics_override is a single function, repeat it in a list to allow map
+    # if statistics_override is a single function, repeat it in a list to allow
+    # map
     if (is.function(statistic_override)) {
         statistic_override <- rep(list(statistic_override), length(models))
     }
@@ -81,11 +68,15 @@ extract <- function(models,
             est[[i]]$term <- coef_map[idx] # rename
 
             # defensive programming
-            if (any(table(est[[i]]$term) > 2)) {
-                msg <- paste('You are trying to assign the same name to two different variables in model', i)
-                stop(msg)
+            # make sure no duplicate estimate names *within* a single model.
+            # this cannot be in input sanity checks. idx paste allows multiple
+            # statistics
+            idx <- paste(est[[i]]$term, est[[i]]$statistic)
+            if (anyDuplicated(idx) > 2) {
+                stop('Two coefficients from a single model cannot share the same name. Check model ', i)
             }
         }
+
         # coef_omit
         if (!is.null(coef_omit)) {
             est[[i]] <- est[[i]] %>%
@@ -131,35 +122,6 @@ extract <- function(models,
     gof$term <- gof_names
 	idx <- match(gof$term, gof_map$clean) # reorder
     gof <- gof[order(idx, gof$term),] 
-
-    # add_rows: this needs to be done after sorting and combining to preserve
-    # user-selected row order. We need the 'section' information otherwise we
-    # won't know where to draw the line which separates estimates from gof. 
-    if (!is.null(add_rows)) {
-
-        if (inherits(add_rows, 'list')) {
-            add_rows <- do.call('rbind', add_rows) %>%
-                        data.frame(stringsAsFactors = FALSE) %>%
-                        stats::setNames(colnames(gof)[2:ncol(gof)]) %>%
-                        dplyr::mutate(section = 'bottom', position = 1e6)
-        }
-
-        for (i in 1:nrow(add_rows)) {
-            newrow <- add_rows[i, ] %>% dplyr::select(-section, -position)
-            if (add_rows$section[i] == 'bottom') {
-                newrow <- newrow %>% dplyr::mutate(group = 'gof') 
-                gof <- gof %>%
-                       tibble::add_row(newrow, .before = add_rows$position[i])
-            } else {
-                newrow <- newrow %>% 
-                          dplyr::mutate(group = 'estimates',
-                                 statistic = 'estimate') 
-                est <- est %>%
-                       tibble::add_row(newrow, .before = add_rows$position[i])
-            }
-        }
-
-    }
 
     # combine estimates and gof
     if (nrow(gof) > 0) {

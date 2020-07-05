@@ -1,23 +1,25 @@
 #' Internal function to build table with `flextable`
 #'
-#' @inheritParams modelsummary
-#' @param stars_note passed by `modelsummary()`
+#' @inheritParams factory_gt
 #' @keywords internal
 #' @return flextable object
 factory_flextable <- function(tab,
-                              title,
-                              stars,
-                              stars_note,
-                              notes,
-                              gof_idx,
-                              output,
+                              align = NULL,
+                              hrule = NULL,
+                              notes = NULL,
+                              output_file = NULL,
+                              output_format = 'flextable',
+                              title = NULL,
                               ...) {
+
+
   
-    # is huxtable installed?
+    # is flextable installed?
     if (!requireNamespace('flextable', quietly = TRUE)) {
         stop("Please install the `flextable` package.")
     }
- 
+
+    # measurements 
     table_width <- ncol(tab)
 
     # flextable object
@@ -29,38 +31,33 @@ factory_flextable <- function(tab,
     }
 
     # horizontal rule to separate coef/gof
-    out <- flextable::border(out, 
-                             i = gof_idx, 
-                             border.top = officer::fp_border())
+    if (!is.null(hrule)) {
+        for (pos in hrule) {
+            out <- flextable::border(out, 
+                                     i = pos, 
+                                     border.top = officer::fp_border())
+        }
+    }
 
     # user-supplied notes at the bottom of table
     if (!is.null(notes)) {
-        for (i in length(notes):1) {
+        for (i in seq_along(notes)) {
             out <- flextable::add_footer_row(out,
                                              values = notes[[i]],
                                              colwidths = table_width)
         }
     }
 
-    # stars note
-    stars_note <- make_stars_note(stars)
-    if (!is.null(stars_note)) {
-        out <- flextable::add_footer_row(out,
-                                         values = stars_note,
-                                         colwidths = table_width)
-    }
-
-    ext <- tools::file_ext(output)
-    if (output == 'flextable') {
+    if (is.null(output_file)) {
         return(out)
-    } else if (ext == 'docx') {
-        flextable::save_as_docx(out, path = output)
-    } else if (ext == 'pptx') {
-        flextable::save_as_pptx(out, path = output)
-    } else if (ext %in% c('png')) {
-        flextable::save_as_image(out, path = output)
-    } else if (ext %in% c('htm', 'html')) {
-        flextable::save_as_html(out, path = output)
+    } else if (output_format == 'word') {
+        flextable::save_as_docx(out, path = output_file)
+    } else if (output_format == 'powerpoint') {
+        flextable::save_as_pptx(out, path = output_file)
+    } else if (output_format == 'png') {
+        flextable::save_as_image(out, path = output_file)
+    } else if (output_format == 'html') {
+        flextable::save_as_html(out, path = output_file)
     }
 
 }

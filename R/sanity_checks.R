@@ -1,27 +1,21 @@
 #' sanity check
 #'
 #' @keywords internal
-sanity_filename <- function(filename) {
-    if (!is.null(filename)) {
-        stop('The `filename` argument is deprecated. Please use `output` instead.') 
-    }
+sanity_model_names <- function(modelnames) {
+    if (any(modelnames == '')) {
+        stop('Model names cannot include empty strings. Please make sure that every object in the `models` list has a unique, non-empty name. If the `models` list has no names at all (NULL), `modelsummary` will create some automatically.')
+	}
 }
 
 #' sanity check
 #'
 #' @keywords internal
-sanity_subtitle <- function(subtitle) {
-    if (!is.null(subtitle)) {
-        stop('The `subtitle` argument is deprecated. If you want to add a subtitle to an HTML table, you can use the `tab_header` function from the `gt` package.') 
-    }
-}
-
-#' sanity check
-#'
-#' @keywords internal
-sanity_add_rows_location <- function(add_rows_location) {
-    if (!is.null(add_rows_location)) {
-        stop('The `add_rows_location` argument is deprecated. Please use a data.frame (or tibble) as described in the `add_rows` argument documentation.')
+sanity_align <- function(align, tab) {
+    checkmate::assert_string(align, null.ok = TRUE)
+    if (!is.null(align)) {
+        checkmate::assert_true(nchar(align) == ncol(tab))
+        align <- strsplit(align, '')[[1]]
+        checkmate::assert_true(all(align %in% c('l', 'c', 'r')))
     }
 }
 
@@ -38,7 +32,11 @@ sanity_title <- function(title) checkmate::assert_character(title, len = 1, null
 #' sanity check
 #'
 #' @keywords internal
-sanity_coef_map <- function(coef_map) checkmate::assert_character(coef_map, null.ok = TRUE)
+sanity_coef_map <- function(coef_map) {
+    checkmate::assert_character(coef_map, null.ok = TRUE)
+    checkmate::assert_character(names(coef_map), null.ok = TRUE,
+                                unique = TRUE)
+}
 
 #' sanity check
 #'
@@ -132,7 +130,7 @@ sanity_notes <- function(notes) {
 #' @keywords internal
 sanity_output <- function(output) {
 
-    object_types <- c('default', 'gt', 'kableExtra', 'flextable', 'huxtable', 'html', 'latex', 'markdown')
+    object_types <- c('default', 'gt', 'kableExtra', 'flextable', 'huxtable', 'html', 'latex', 'markdown', 'dataframe', 'data.frame')
     extension_types <- c('html', 'tex', 'md', 'txt', 'docx', 'pptx', 'rtf', 'jpg', 'png')
 
     checkmate::assert_string(output)
@@ -251,4 +249,31 @@ sanity_tidy <- function(tidy_output, tidy_custom, estimate, statistic, modelclas
                       ' (or possibly conf.int)')
         stop(msg)
     }
+}
+
+#' sanity check: datasummary
+#' 
+# warn if a character or logical variable is nested (common mistake)
+#' @keywords internal
+sanity_ds_nesting_factor <- function(formula, data) {
+  idx <- sapply(data, function(x) is.character(x) | is.logical(x))
+  idx <- names(idx)[idx]
+  idx <- c(paste0('^', idx, ':'), paste0(':', idx, '$'))
+  termlabs <- labels(stats::terms(formula))
+  warn <- any(sapply(idx, function(x) any(stringr::str_detect(x, termlabs))))
+  if (warn) {
+    warning(
+      'You are trying to create a nested table by applying the * operator to a character or a logical variable. It is usually a good idea to convert such variables to a factor before calling datasummary: dat$y<-as.factor(dat$y). Alternatively, you could wrap your categorical variable inside Factor() in the datasummary call itself: datasummary(x ~ Factor(y) * z, data)\n')
+  }
+}
+
+#' sanity check: datasummary_table1
+#' 
+#' @param formula
+#' right-handed formulae only
+sanity_ds_right_handed_formula <- function(formula) {
+  termlabels <- labels(stats::terms(formula))
+  if (length(termlabels) > 1) {
+    stop("The 'table1' template for `datasummary` only accepts a single right-hand side variable of type factor, character, or logical. If you do not want to transform your variable in the original data, you can wrap it in a Factor() call: datasummary_table1(~Factor(x), data). the name of your variablePlease visit the `modelsummary` website to learn how to build your own, more complex, Table 1. It's easy, I promise! https://vincentarelbundock.github.io/modelsummary/datasummary.html")
+  }
 }

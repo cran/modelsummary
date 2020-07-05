@@ -35,7 +35,7 @@ extract_estimates <- function(model,
         est <- tidy(model, ...)
 
         # keep only columns that do not appear in so
-        est <- est[, c('term', base::setdiff(colnames(est), colnames(so)))]
+        est <- est[, c('term', base::setdiff(colnames(est), colnames(so))), drop = FALSE]
         est <- dplyr::left_join(est, so, by = 'term')
 
     } else { # if statistic_override is not used
@@ -63,6 +63,20 @@ extract_estimates <- function(model,
 
     # round estimates
     est[[estimate]] <- rounding(est[[estimate]], fmt)
+
+    # stars
+    stars <- clean_stars(stars)
+
+    if (!is.null(stars)) {
+        if (!'p.value' %in% colnames(est)) {
+            stop('To use the `stars` argument, the `tidy` function must produce a column called "p.value"')
+        }
+        est$stars <- ''
+        for (n in names(stars)) {
+            est$stars <- ifelse(est$p.value < stars[n], n, est$stars)
+        }
+        est[[estimate]] <- paste0(est[[estimate]], est$stars)
+    }
 
     # extract statistics
     for (i in seq_along(statistic)) {
@@ -98,23 +112,9 @@ extract_estimates <- function(model,
         }
     }
 
-    # stars
-    stars <- clean_stars(stars)
-
-    if (!is.null(stars)) {
-        if (!'p.value' %in% colnames(est)) {
-            stop('To use the `stars` argument, the `tidy` function must produce a column called "p.value"')
-        }
-        est$stars <- ''
-        for (n in names(stars)) {
-            est$stars <- ifelse(est$p.value < stars[n], n, est$stars)
-        }
-        est[[estimate]] <- paste0(est[[estimate]], est$stars)
-    }
-
     # subset columns
     cols <- c('term', estimate, paste0('statistic', seq_along(statistic)))
-    est <- est[, cols]
+    est <- est[, cols, drop = FALSE]
 
     # reshape to vertical
     if (statistic_vertical) {

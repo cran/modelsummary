@@ -1,87 +1,66 @@
-#' Internal function to build table with `gt`
+#' Internal function to build table with `kableExtra`
 #'
-#' @inheritParams modelsummary
-#' @param stars_note passed by `modelsummary()`
+#' @inheritParams factory_gt
 #' @keywords internal
 #' @return tbl_gt object
 factory_kableExtra <- function(tab,
-                               title,
-                               stars,
-                               stars_note,
-                               notes,
-                               gof_idx,
-                               output,
+                               align = NULL,
+                               hrule = NULL,
+                               notes = NULL,
+                               output_file = NULL,
+                               output_format = 'kableExtra',
+                               title = NULL,
                                ...) {
-  
-    # kableExtra needs to know the output format ex ante 
-    ext <- tools::file_ext(output)
 
-    # modelsummary call 
-    if (output %in% c('html', 'latex', 'markdown')) {
-        output_format <- output
-    } else if (ext == 'tex') {
-        output_format <- 'latex'
-    } else if (ext %in% c('md', 'txt', 'Rmd')) {
-        output_format <- 'markdown'
-    } else if (ext %in% c('htm', 'html')) {
-        output_format <- 'html'
+    out <- kableExtra::kable(tab,
+                        align = align,
+                        format = output_format,
+                        caption = title,
+                        booktabs = TRUE, 
+                        linesep = "",
+                        ...)
 
-    # global options
-    } else if (output %in% c('default', 'kableExtra')) {
-        output_format <- getOption('modelsummary_kableExtra')
-
-        if (is.null(output_format)) {
-            output_format <- getOption('knitr.table.format')
-
-            if (is.null(output_format)) {
-
-                if (knitr::is_latex_output()) {
-                    output_format <- 'latex'
-                } else {
-                    output_format <- 'html'
-                }
-
+    # horizontal rule to separate coef/gof not supported in markdown
+    # TODO: support HTML
+    if (!is.null(hrule)) {
+        if (output_format %in% 'latex') {
+            for (pos in hrule) {
+                out <- out %>% 
+                       kableExtra::row_spec(row = pos - 1,  
+                                            extra_latex_after = '\\midrule')
             }
-
         }
-    } 
-
-    if (!is.null(output_format)) {
-        tab <- kableExtra::kable(tab,
-                                 format = output_format,
-                                 caption = title,
-                                 booktabs = TRUE, 
-                                 linesep = "")
-    } 
-
-    # horizontal rule to separate coef/gof
-    if (output_format != 'markdown') {
-        if (!is.na(gof_idx)) { # check if there are >0 GOF
-            tab <- tab %>%
-                   kableExtra::row_spec(gof_idx - 1, 
-                                        extra_latex_after = '\\midrule') %>%
-                   kableExtra::kable_styling()
-        }
-    }
-
-    # stars note
-    stars_note <- make_stars_note(stars)
-    if (!is.null(stars_note)) {
-        tab <- tab %>% 
-               kableExtra::add_footnote(label = stars_note, notation = 'none')
     }
 
     # user-supplied notes at the bottom of table
     if (!is.null(notes)) {
+        # threeparttable only works with 1 note. But it creates a weird bug
+        # when using coef_map and stars in Rmarkdown PDF output
         for (n in notes) {
-            tab <- tab %>% 
-                   kableExtra::add_footnote(label = n, notation = 'none')
+            out <- out %>% 
+                   kableExtra::add_footnote(label = n, notation = 'none') 
+        }
+    }
+    
+    span <- attr(tab, 'span_kableExtra')
+    if (!is.null(span)) {
+        # add_header_above not supported in markdown
+        if (output_format %in% c('latex', 'html')) {
+            span <- rev(span) # correct vertical order
+            for (s in span) {
+                out <- out %>% kableExtra::add_header_above(s)
+            }   
         }
     }
 
+    # styling (can be overriden manually by calling again)
+    if (output_format %in% c('latex', 'html')) {
+        out <- out %>% kableExtra::kable_styling(full_width = FALSE)
+    }
+
     # output
-    if (ext == '') {
-        return(tab)
+    if (is.null(output_file)){
+        return(out)
     } else {
         # function stolen from kableExtra (MIT license). Not exported and CRAN
         # doesn't like :::
@@ -90,8 +69,8 @@ factory_kableExtra <- function(tab,
             mostattributes(out) <- attributes(x)
             return(out)
         }
-        filecon <- file(output)
-        writeLines(solve_enc(tab), con = filecon, useBytes = TRUE)
+        filecon <- file(output_file)
+        writeLines(solve_enc(out), con = filecon, useBytes = TRUE)
         close(filecon)
     } 
 

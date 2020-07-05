@@ -1,58 +1,77 @@
 #' Internal function to build table with `gt`
 #'
-#' @inheritParams modelsummary
-#' @param stars_note argument passed by `modelsummary()`
+#' @inheritParams factory
+#' @param output_file file path (character or NULL)
+#' @param output_format character
 #' @keywords internal
 #' @return tbl_gt object
 factory_gt <- function(tab,
-                       title,
-                       subtitle,
-                       stars,
-                       stars_note,
-                       notes,
-                       gof_idx,
-                       output,
+                       align = NULL,
+                       hrule = NULL,
+                       notes = NULL,
+                       output_file = NULL,
+                       output_format = 'gt',
+                       title = NULL,
                        ...) {
   
     # create gt table object
     idx_col <- ncol(tab)
-    tab <- tab %>% 
+    out <- tab %>% 
            gt::gt()
 
     # horizontal rule to separate coef/gof
-    if (!is.na(gof_idx)) { # check if there are >0 GOF
-        tab <- tab %>%
-               gt::tab_style(style = gt::cell_borders(sides = 'bottom', color = '#000000'),
-                             locations = gt::cells_body(columns = 1:idx_col, rows = (gof_idx - 1)))
+    if (!is.null(hrule)) { # check if there are >0 GOF
+        for (pos in hrule) {
+            out <- out %>%
+                   gt::tab_style(style = gt::cell_borders(sides = 'bottom', color = '#000000'),
+                                 locations = gt::cells_body(columns = 1:idx_col, rows = (pos - 1)))
+        }
     }
 
     # titles
     if (!is.null(title)) {
-        tab <- tab %>% gt::tab_header(title = title)
-    }
-
-    # stars note
-    stars_note <- make_stars_note(stars)
-    if (!is.null(stars_note)) {
-        tab = tab %>% gt::tab_source_note(source_note = stars_note)
+        out <- out %>% gt::tab_header(title = title)
     }
 
     # user-supplied notes at the bottom of table
     if (!is.null(notes)) {
         for (n in notes) {
-            tab <- tab %>% gt::tab_source_note(source_note = n)
+            out <- out %>% gt::tab_source_note(source_note = n)
+        }
+    }
+    
+    # column span labels
+    span <- attr(tab, 'span_gt') 
+
+    if (!is.null(span)) {
+        for (s in span) {
+            out <- out %>% gt::tab_spanner(label = s$label, columns = s$position)
         }
     }
 
+    # column alignment
+    if (!is.null(align)) {
+        align <- strsplit(align, '')[[1]]
+        left <- grep('l', align)
+        center <- grep('c', align)
+        right <- grep('r', align)
+        out <- out %>%
+               gt::cols_align('left', left) %>%
+               gt::cols_align('center', center) %>%
+               gt::cols_align('right', right)
+    }
+
     # output
-    if (output == 'html') {
-        return(as.character(gt::as_raw_html(tab)))
-    } else if (output == 'latex') {
-        return(as.character(gt::as_latex(tab))) 
-    } else if (output %in% c('default', 'gt')) {
-        return(tab)
+    if (is.null(output_file)) {
+        if (output_format == 'html') {
+            return(as.character(gt::as_raw_html(out)))
+        } else if (output_format == 'latex') {
+            return(as.character(gt::as_latex(out))) 
+        } else if (output_format %in% c('default', 'gt')) {
+            return(out)
+        }
     } else {
-        gt::gtsave(tab, output)
+        gt::gtsave(out, output_file)
     }
 
 }

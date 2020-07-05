@@ -1,3 +1,15 @@
+# modelsummary 0.4.1.9000
+
+* datasummary
+* datasummary_skim
+* datasummary_balance
+* datasummary_correlation
+* modelplot
+* allow duplicate model names
+* bug: can't use coef_map with multiple statistics (thanks @sbw78)
+* bug: wrong number of stars w/ statistic='p.value' (thanks @torfason)
+* output='data.frame'. `extract` is no longer documented.
+
 # modelsummary 0.4.1
 
 * add_rows now accepts a data.frame with "position" and "section" columns

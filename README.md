@@ -7,20 +7,33 @@
 Status](https://travis-ci.org/vincentarelbundock/modelsummary.svg?branch=master)](https://travis-ci.org/vincentarelbundock/modelsummary)
 [![AppVeyor build
 status](https://ci.appveyor.com/api/projects/status/github/vincentarelbundock/modelsummary?branch=master&svg=true)](https://ci.appveyor.com/project/vincentarelbundock/modelsummary)
+[![R build status](https://github.com/vincentarelbundock/modelsummary/workflows/R-CMD-check/badge.svg)](https://github.com/vincentarelbundock/modelsummary/actions)
+[![Codecov test coverage](https://codecov.io/gh/vincentarelbundock/modelsummary/branch/master/graph/badge.svg)](https://codecov.io/gh/vincentarelbundock/modelsummary?branch=master)
 <!-- badges: end -->
 
-`modelsummary` creates beautiful and customizable tables to summarize statistical models in `R`.
+`modelsummary` creates tables and plots to summarize statistical models and data in `R`. 
 
-Results from several models are presented side-by-side. Tables can be echoed to the `R` console or viewed in the `RStudio` Viewer. They can be saved to HTML, PDF, Text/Markdown, LaTeX, MS Word, RTF, JPG, and PNG formats. Tables can easily be embedded in dynamic document pipelines like `Rmarkdown`, `knitr`, or `Sweave`.
+The tables produced by `modelsummary` are beautiful and highly customizable. They can be echoed to the `R` console or displayed in the `RStudio` Viewer. They can be saved to a wide variety of formats, including HTML, PDF, Text/Markdown, LaTeX, MS Word, RTF, JPG, and PNG. Tables can easily be embedded in dynamic documents with `Rmarkdown`, `knitr`, or `Sweave`. `modelsummary` supports dozens of model types out-of-the-box. 
 
-These two tables were created using `modelsummary` without any manual editing at all. The first is an HTML table. The second is a LaTeX table.
+`modelsummary` includes three families of functions:
 
-<center>
+1. `modelsummary`: Display results from several statistical models side-by-side. 
+2. `modelplot`: Plot model coefficients and confidence intervals.
+3. `datasummary`: A flexible tool to create crosstabs and data summaries.
+    - `datasummary_balance`: Balance tables with subgroup statistics and difference in means (aka "Table 1").
+    - `datasummary_correlation`: Correlation tables.
+    - `datasummary_skim`: Quick overview of a dataset.
+    
+Click on the links at the top of this page to see how these functions are used: https://vincentarelbundock.github.io/modelsummary
 
-<img src="https://user-images.githubusercontent.com/987057/82853752-90558300-9ed4-11ea-88af-12cf20cb367f.png" width="40%">
-<img src="https://user-images.githubusercontent.com/987057/82855711-0a3c3b00-9eda-11ea-8a81-1eebfbb7cb73.png" width="40%">
+These tables and plots were created using `modelsummary`, without any manual editing at all:
 
-</center>
+| | |
+|:-------------------------:|:-------------------------:|
+|<img width="2406" src="https://user-images.githubusercontent.com/987057/82853752-90558300-9ed4-11ea-88af-12cf20cb367f.png">|<img width="2406" src="https://user-images.githubusercontent.com/987057/86512021-50839480-bdcc-11ea-893c-8c1e7a277895.png">
+|<img width="2406" src="https://user-images.githubusercontent.com/987057/82855711-0a3c3b00-9eda-11ea-8a81-1eebfbb7cb73.png">|<img width="2406" src="https://user-images.githubusercontent.com/987057/85772292-b1cfa780-b6ea-11ea-8ae1-b95c6ddbf0a9.png">|
+|<img width="2406" src="https://user-images.githubusercontent.com/987057/86502482-9eb77a00-bd71-11ea-80da-dc935c1fbd90.jpeg">|<img width="2406" src="https://user-images.githubusercontent.com/987057/86511490-cb967c00-bdc7-11ea-9d9b-0ef188840faf.png">
+
 
 # Contents
 
@@ -28,8 +41,9 @@ These two tables were created using `modelsummary` without any manual editing at
   - [Installation](#installation)
   - [Getting started](#getting-started)
   - [Saving and viewing: output formats](#saving-and-viewing-output-formats)
-  - [Customizing the information in your table](https://vincentarelbundock.github.io/modelsummary/articles/content.html)
-  - [Customizing the look of your table](https://vincentarelbundock.github.io/modelsummary/articles/appearance.html)
+  - [modelsummary](https://vincentarelbundock.github.io/modelsummary/articles/modelsummary.html)
+  - [modelplot](https://vincentarelbundock.github.io/modelsummary/articles/modelplot.html)
+  - [datasummary](https://vincentarelbundock.github.io/modelsummary/articles/datasummary.html)
   - [Dynamic documents with `Rmarkdown` and `knitr`](https://vincentarelbundock.github.io/modelsummary/articles/rmarkdown.html)
   - [Adding and customizing models](https://vincentarelbundock.github.io/modelsummary/articles/newmodels.html)
   - [Multiple imputation](https://vincentarelbundock.github.io/modelsummary/articles/multiple_imputation.html)
@@ -190,6 +204,34 @@ There are four ways to display and save `modelsummary` tables.
 2. Save a table to file.
 3. Insert a [table in `Rmarkdown` or `knitr` documents](https://vincentarelbundock.github.io/modelsummary/articles/rmarkdown.html),
 4. Convert the table to human-readable html, latex, or markdown code.
+
+To display, simply choose the output format. For example,
+
+```{r}
+msummary(models, output = 'latex')
+msummary(models, output = 'markdown')
+msummary(models, output = 'gt')
+msummary(models, output = 'kableExtra')
+msummary(models, output = 'flextable')
+```
+
+To save a table, choose the file path with the extension you want. For example,
+
+```{r}
+msummary(models, output = 'table.tex')
+msummary(models, output = 'table.docx')
+msummary(models, output = 'table.html')
+msummary(models, output = 'table.md')
+```
+
+To customize a table with the `gt`, `kableExtra`, `flextable`, or `huxtable` packages, choose the output format. Then, you can use functions from those packages to modify the resulting objects:
+
+```{r}
+library(kableExtra)
+
+tab <- msummary(models, output = 'kableExtra')
+tab %>% row_spec(3, bold = TRUE, color = 'green')
+```
 
 `modelsummary` uses sensible defaults to choose an appopriate table-making package for each output format (`gt`, `kableExtra`, `flextable`, or `huxtable`). This table summarizes how to modify `modelsummary`'s `output` argument to display and save tables: 
 
