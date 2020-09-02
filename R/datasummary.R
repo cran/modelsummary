@@ -21,6 +21,7 @@
 #' @examples
 #' 
 #' \dontrun{
+#'
 #' # The left-hand side of the formula describes rows, and the right-hand side
 #' # describes columns. This table uses the "mpg" variable as a row and the "mean"
 #' # function as a column:
@@ -107,6 +108,7 @@
 #' new_rows <- data.frame(a = 1:2, b = 2:3, c = 4:5)
 #' attr(new_rows, 'position') <- c(1, 3)
 #' datasummary(mpg + hp ~ mean + sd, data = mtcars, add_rows = new_rows)
+#'
 #' }
 #'
 #' @details
@@ -141,6 +143,9 @@ datasummary <- function(formula,
             dplyr::mutate(dplyr::across(where(is.character) |
                                         where(is.logical),
                                         factor))
+
+    # tibble -> data.frame (for All())
+    data <- as.data.frame(data)
     
     # factor check
     sanity_ds_nesting_factor(formula, data)
@@ -150,7 +155,7 @@ datasummary <- function(formula,
 
     # informative error message
     if (inherits(tab, 'error')) {
-        if (stringr::str_detect(tab$message, 'Duplicate values:')) {
+        if (grepl('Duplicate values:', tab$message)) {
             message('This error often occurs when the "*" nesting operator is used, but none of the nested terms are categorical variables (factor, logical or character types). You can transform your variable in the original data, or wrap it in a Factor() function in the `datasummary` formula.')
         }
         stop(tab$message)

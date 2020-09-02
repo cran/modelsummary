@@ -2,7 +2,7 @@
 #'
 #' @inheritParams factory_gt
 #' @keywords internal
-#' @return tbl_gt object
+#' @return kableExtra object
 factory_kableExtra <- function(tab,
                                align = NULL,
                                hrule = NULL,
@@ -12,13 +12,19 @@ factory_kableExtra <- function(tab,
                                title = NULL,
                                ...) {
 
-    out <- kableExtra::kable(tab,
-                        align = align,
-                        format = output_format,
-                        caption = title,
-                        booktabs = TRUE, 
-                        linesep = "",
-                        ...)
+    if (is.null(output_format) || 
+        !output_format %in% c("latex", "markdown")) {
+      output_format <- "html"
+    }
+
+    out <- kableExtra::kbl(
+        tab,
+        align = align,
+        format = output_format,
+        caption = title,
+        booktabs = TRUE, 
+        linesep = "",
+        ...)
 
     # horizontal rule to separate coef/gof not supported in markdown
     # TODO: support HTML
@@ -54,24 +60,15 @@ factory_kableExtra <- function(tab,
     }
 
     # styling (can be overriden manually by calling again)
-    if (output_format %in% c('latex', 'html')) {
-        out <- out %>% kableExtra::kable_styling(full_width = FALSE)
+    if (output_format %in% c("latex", "html")) {
+      out <- out %>% kableExtra::kable_styling(full_width = FALSE)
     }
 
     # output
     if (is.null(output_file)){
         return(out)
     } else {
-        # function stolen from kableExtra (MIT license). Not exported and CRAN
-        # doesn't like :::
-        solve_enc <- function(x) {
-            out <- enc2utf8(as.character(base::format(x, trim = TRUE, justify = 'none')))
-            mostattributes(out) <- attributes(x)
-            return(out)
-        }
-        filecon <- file(output_file)
-        writeLines(solve_enc(out), con = filecon, useBytes = TRUE)
-        close(filecon)
+        kableExtra::save_kable(out, file=output_file)
     } 
 
 }

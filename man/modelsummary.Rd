@@ -15,7 +15,7 @@ modelsummary(
   stars = FALSE,
   coef_map = NULL,
   coef_omit = NULL,
-  gof_map = modelsummary::gof_map,
+  gof_map = NULL,
   gof_omit = NULL,
   add_rows = NULL,
   title = NULL,
@@ -66,19 +66,21 @@ estimates. FALSE if statistics should be printed beside estimates.}
   \item Named numeric vector for custom stars such as `c('*' = .1, '+' = .05)`
 }}
 
-\item{coef_map}{named character vector. Names refer to the original variable
-names. Values refer to the variable names that will appear in the table.
-Coefficients which are omitted from this vector will be omitted from the
-table. The table will be ordered in the same order as this vector.}
+\item{coef_map}{named character vector.  Values refer to the variable names
+that will appear in the table. Names refer to the original term names stored
+in the model object (e.g., "hp:mpg" for an interaction term). Coefficients
+that are omitted from this vector will be omitted from the table. The table
+will be ordered in the same order as this vector.}
 
 \item{coef_omit}{string regular expression. Omits all matching coefficients
-from the table (using `stringr::str_detect`).}
+from the table (using `grepl`).}
 
 \item{gof_map}{data.frame with four columns: `raw`, `clean`, `fmt`, and
-`omit`. See `modelsummary::gof_map`}
+`omit`. If `gof_map` is NULL, then `modelsummary` will use this data frame
+by default: `modelsummary::gof_map`}
 
 \item{gof_omit}{string regular expression. Omits all matching gof statistics from
-the table (using `stringr::str_detect`).}
+the table (using `grepl`).}
 
 \item{add_rows}{a data.frame (or tibble) with the same number of columns as
 your main table. By default, rows are appended to the bottom of the table.
@@ -104,7 +106,8 @@ a 'gt' table object.
 Beautiful, customizable summaries of statistical models
 }
 \examples{
-\donttest{
+\dontrun{
+
 library(modelsummary)
 
 # load data and estimate models
@@ -147,6 +150,7 @@ gof_custom <- modelsummary::gof_map
 gof_custom$omit[gof_custom$raw == 'deviance'] <- FALSE 
 gof_custom$fmt[gof_custom$raw == 'r.squared'] <- "\%.5f" 
 msummary(models, gof_map = gof_custom)
+
 }
 
 

@@ -5,22 +5,19 @@
 #' @inheritParams modelsummary
 #' @return tibble with goodness-of-fit  statistics
 #' @keywords internal
-extract_gof <- function(model, fmt, gof_map = NULL, ...) {
+extract_gof <- function(model, fmt, gof_map, ...) {
 
-    # define gof_map
+    # define gof_map if not supplied
     if (is.null(gof_map)) {
         gof_map <- modelsummary::gof_map 
+        if (isTRUE(inherits(model, "lm"))) {
+            gof_map$clean[gof_map$raw == "statistic"] <- "F"
+            gof_map$omit[gof_map$raw == "statistic"] <- FALSE
+        }
     }
 
     # extract gof from model object
     gof <- generics::glance(model)
-
-    # extract nobs if not in glance but gof_map says we want it
-    # TODO: This should be fixed upstream in broom
-    if ((!'nobs' %in% names(gof)) & ('nobs' %in% gof_map$raw)) { 
-        gof$nobs <- tryCatch(stats::nobs(model, use.fallback = TRUE), 
-                             error = function(e) NULL)
-    }
 
     # glance_custom
     gof_custom <- glance_custom(model)
@@ -72,12 +69,11 @@ extract_gof <- function(model, fmt, gof_map = NULL, ...) {
         }
 
         # reshape
-        out <- gof %>%
-               tidyr::pivot_longer(cols = 1:ncol(.), 
-                                   names_to = 'term')
+        out <- tibble::tibble(term=names(gof), value=unlist(gof))
 
     } else { # all gof are excluded return an empty tibble (needs character to match merge type)
-        out <- tibble::tibble(term = NA_character_, value = NA_character_) %>% tidyr::drop_na()
+        out <- tibble::tibble(term = NA_character_, value = NA_character_) %>% 
+               stats::na.omit()
     }
 
     # output

@@ -1,3 +1,11 @@
+# modelsummary 0.6.0
+
+* default HTML output factory is now kableExtra
+* interaction ":" gsubbed by "\u00d7"
+* dependencies: removed 1 depends, 3 imports, and 3 suggests
+* word_document knitr works out-of-the-box
+* bug fixes
+
 # modelsummary 0.5.1
 
 * glance_custom.fixest ships with modelsummary

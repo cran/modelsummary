@@ -11,6 +11,8 @@
 #' 'geom_pointrange' that 'modelplot' draws.
 #' @importFrom ggplot2 ggplot theme_minimal theme element_blank geom_pointrange geom_point aes facet_grid position_dodge labs
 #' @examples
+#' \dontrun{
+#' 
 #' library(modelsummary)
 #' 
 #' # single model
@@ -50,6 +52,8 @@
 #'           geom_point(aes(y = term, x = estimate), alpha = .3,
 #'                      size = 10, color = 'red', shape = 'square'))
 #' modelplot(mod, background = b)
+#'
+#' }
 #' 
 #' @export
 modelplot <- function(models, 
@@ -66,34 +70,33 @@ modelplot <- function(models,
                                   coef_map,
                                   coef_omit) {
         clean <- function(x) {
-            x %>% stringr::str_remove_all('\\[|\\]|,') %>%
-                  as.numeric
+            as.numeric(gsub('\\[|\\]|,', '', x))
         }
         if (!is.null(conf_level)) {
-            out <- extract(models, 
-                           statistic = 'conf.int',
-                           conf_level = conf_level, 
-                           coef_map = coef_map,
-                           coef_omit = coef_omit,
-                           fmt = '%.50f') %>% 
+            out <- extract_models(models, 
+                                  statistic = 'conf.int',
+                                  conf_level = conf_level, 
+                                  coef_map = coef_map,
+                                  coef_omit = coef_omit,
+                                  fmt = '%.50f') %>% 
                    dplyr::filter(group == 'estimates') %>%
                    dplyr::select(-group) %>%
                    tidyr::pivot_longer(3:ncol(.),  names_to = 'model') %>%
                    tidyr::pivot_wider(names_from = 'statistic') %>%
                    dplyr::mutate(estimate = clean(estimate)) %>%
-                   tidyr::drop_na() %>%
+                   stats::na.omit() %>%
                    tidyr::separate(statistic1, into = c('conf.low', 'conf.high'), sep = ', ') %>%
                    dplyr::mutate(dplyr::across(c(conf.low, conf.high), clean))
         } else {
-            out <- extract(models, 
-                           coef_map = coef_map,
-                           coef_omit = coef_omit,
-                           fmt = '%.50f') %>% 
+            out <- extract_models(models, 
+                                  coef_map = coef_map,
+                                  coef_omit = coef_omit,
+                                  fmt = '%.50f') %>% 
                    dplyr::filter(group == 'estimates', statistic == 'estimate') %>%
                    dplyr::select(-group, -statistic) %>%
                    tidyr::pivot_longer(-term, names_to = 'model', values_to = 'estimate') %>%
                    dplyr::mutate(estimate = clean(estimate)) %>%
-                   tidyr::drop_na()
+                   stats::na.omit()
         }
         out <- out %>%
                dplyr::mutate(term = factor(term, rev(unique(term))),

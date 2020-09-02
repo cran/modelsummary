@@ -13,10 +13,7 @@ factory_huxtable <- function(tab,
                              ...) {
 
 
-    # is huxtable installed?
-    if (!requireNamespace('huxtable', quietly = TRUE)) {
-        stop("Please install the `huxtable` package.")
-    }
+    check_dependency("huxtable")
 
     ## warning on align
     #if (!is.null(align)) {
@@ -72,7 +69,7 @@ factory_huxtable <- function(tab,
         } else if (output_format == 'rtf') {
             huxtable::quick_rtf(out, file = output_file, open = FALSE)
         } else if (output_format == 'latex') {
-            huxtable::quick_rtf(out, file = output_file, open = FALSE)
+            huxtable::quick_latex(out, file = output_file, open = FALSE)
         }
     }
 

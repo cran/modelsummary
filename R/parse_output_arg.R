@@ -6,9 +6,9 @@ parse_output_arg <- function(output) {
 
     # kableExtra produces human-readable code
     if (output %in% c('markdown', 'html', 'latex')) {
-        out <- list('output_factory' = 'kableExtra',
-                    'output_file' = NULL,
-                    'output_format' = output)
+        out <- list('output_factory'='kableExtra',
+                    'output_file'=NULL,
+                    'output_format'=output)
         return(out)
     }
 
@@ -39,22 +39,38 @@ parse_output_arg <- function(output) {
         output_format <- output
     }
 
+    # different spellings
+    if (output_format == "data.frame") {
+      output_format <- "dataframe"
+    }
+
+    # if knit to word
+    fmt <- try(rmarkdown::default_output_format(knitr::current_input())$name,
+               silent=TRUE)
+    if (!inherits(fmt, "try-error")) {
+      if ("word_document" %in% fmt) {
+        output_format <- "word"
+      }
+    }
+
     # output_factory
-    factory_list <- c('default' = getOption('modelsummary_default', default = 'gt'),
-                      'dataframe' = 'dataframe',
-                      'data.frame' = 'dataframe',
-                      'flextable' = 'flextable',
-                      'gt' = 'gt',
-                      'html' = getOption('modelsummary_html', default = 'gt'),
-                      'huxtable' = 'huxtable',
-                      'jpg' = getOption('modelsummary_jpg', default = 'flextable'),
-                      'kableExtra' = 'kableExtra',
-                      'latex' = getOption('modelsummary_latex', default = 'kableExtra'),
-                      'markdown' = 'kableExtra',
-                      'png' = getOption('modelsummary_png', default = 'gt'),
-                      'powerpoint' =  getOption('modelsummary_powerpoint', default = 'flextable'),
-                      'rtf' = getOption('modelsummary_rtf', default = 'gt'),
-                      'word' =  getOption('modelsummary_word', default = 'flextable'))
+    factory_list <- c(
+        'default'=getOption('modelsummary_default', default='kableExtra'),
+        'dataframe'='dataframe',
+        'data.frame'='dataframe',
+        'flextable'='flextable',
+        'gt'='gt',
+        'html'=getOption('modelsummary_html', default='kableExtra'),
+        'huxtable'='huxtable',
+        'jpg'=getOption('modelsummary_jpg', default='kableExtra'),
+        'kableExtra'='kableExtra',
+        'latex'=getOption('modelsummary_latex', default='kableExtra'),
+        'markdown'='kableExtra',
+        'png'=getOption('modelsummary_png', default='kableExtra'),
+        'powerpoint'= getOption('modelsummary_powerpoint', default='flextable'),
+        'rtf'=getOption('modelsummary_rtf', default='gt'),
+        'word'= getOption('modelsummary_word', default='flextable')
+    )
 
     # sanity check: are user-supplied global options ok?
     sanity_factory(factory_list)
@@ -73,15 +89,14 @@ parse_output_arg <- function(output) {
     if (output_factory == 'kableExtra') {
         if (output_format %in% c('default', 'kableExtra')) {
             automatic <- ifelse(knitr::is_latex_output(), 'latex', 'html')
-            output_format <- getOption('modelsummary_kableExtra', default = automatic)
+            output_format <- getOption('modelsummary_kableExtra', default=automatic)
         }
     }
 
     # result
-    out <- list('output_factory' = output_factory,
-                'output_file' = output_file,
-                'output_format' = output_format)
+    out <- list('output_factory'=output_factory,
+                'output_file'=output_file,
+                'output_format'=output_format)
     return(out)
 
 }
-

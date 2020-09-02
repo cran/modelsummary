@@ -39,16 +39,18 @@ globalVariables(c('.', 'term', 'group', 'estimate', 'conf.high', 'conf.low', 'va
 #' @param statistic_vertical TRUE if statistics should be printed below
 #' estimates. FALSE if statistics should be printed beside estimates.
 #' @param conf_level confidence level to use for confidence intervals
-#' @param coef_map named character vector. Names refer to the original variable
-#' names. Values refer to the variable names that will appear in the table.
-#' Coefficients which are omitted from this vector will be omitted from the
-#' table. The table will be ordered in the same order as this vector.
+#' @param coef_map named character vector.  Values refer to the variable names
+#' that will appear in the table. Names refer to the original term names stored
+#' in the model object (e.g., "hp:mpg" for an interaction term). Coefficients
+#' that are omitted from this vector will be omitted from the table. The table
+#' will be ordered in the same order as this vector.
 #' @param coef_omit string regular expression. Omits all matching coefficients
-#' from the table (using `stringr::str_detect`).
+#' from the table (using `grepl`).
 #' @param gof_map data.frame with four columns: `raw`, `clean`, `fmt`, and
-#' `omit`. See `modelsummary::gof_map`
+#' `omit`. If `gof_map` is NULL, then `modelsummary` will use this data frame
+#' by default: `modelsummary::gof_map`
 #' @param gof_omit string regular expression. Omits all matching gof statistics from
-#' the table (using `stringr::str_detect`).
+#' the table (using `grepl`).
 #' @param add_rows a data.frame (or tibble) with the same number of columns as
 #' your main table. By default, rows are appended to the bottom of the table.
 #' You can define a "position" attribute of integers to set the row positions.
@@ -63,7 +65,8 @@ globalVariables(c('.', 'term', 'group', 'estimate', 'conf.high', 'conf.low', 'va
 #' `exponentiate=TRUE` to exponentiate logistic regression coefficients.
 #' @return a 'gt' table object.
 #' @examples
-#' \donttest{
+#' \dontrun{
+#' 
 #' library(modelsummary)
 #'
 #' # load data and estimate models
@@ -106,6 +109,7 @@ globalVariables(c('.', 'term', 'group', 'estimate', 'conf.high', 'conf.low', 'va
 #' gof_custom$omit[gof_custom$raw == 'deviance'] <- FALSE 
 #' gof_custom$fmt[gof_custom$raw == 'r.squared'] <- "%.5f" 
 #' msummary(models, gof_map = gof_custom)
+#'
 #' }
 #'
 # see the README on github for a lot more examples: https://github.com/vincentarelbundock/modelsummary
@@ -121,7 +125,7 @@ modelsummary <- function(models,
                          stars = FALSE,
                          coef_map = NULL,
                          coef_omit = NULL,
-                         gof_map = modelsummary::gof_map,
+                         gof_map = NULL,
                          gof_omit = NULL,
                          add_rows = NULL,
                          title = NULL,
@@ -131,37 +135,51 @@ modelsummary <- function(models,
 
 
     # extract estimates and gof
-    dat <- extract(models,
-                   statistic = statistic,
-                   statistic_override = statistic_override,
-                   statistic_vertical = statistic_vertical,
-                   conf_level = conf_level,
-                   coef_map = coef_map,
-                   coef_omit = coef_omit,
-                   gof_map = gof_map,
-                   gof_omit = gof_omit,
-                   stars = stars,
-                   fmt = fmt,
-                   estimate = estimate,
-                   ...)
+    dat <- extract_models(
+      models,
+      statistic = statistic,
+      statistic_override = statistic_override,
+      statistic_vertical = statistic_vertical,
+      conf_level = conf_level,
+      coef_map = coef_map,
+      coef_omit = coef_omit,
+      gof_map = gof_map,
+      gof_omit = gof_omit,
+      stars = stars,
+      fmt = fmt,
+      estimate = estimate,
+      ...)
 
     # remove duplicate term labels
-    idx <- stringr::str_detect(dat$statistic, 'statistic\\d*$')
+    idx <- grepl('statistic\\d*$', dat$statistic)
     tab <- dat %>%
            dplyr::mutate(term = ifelse(idx, '', term))
 
-    # measure table
-    hrule <- match('gof', tab$group)
-    if (!is.null(add_rows) && !is.null(attr(add_rows, 'position'))) {
-        hrule <- hrule + sum(attr(add_rows, 'position') < hrule)
+    # interaction : becomes ×
+    if (is.null(coef_map)) {
+        if (parse_output_arg(output)$output_format != 'rtf') {
+            idx <- tab$group != 'gof'
+            tab$term <- ifelse(idx, gsub(':', ' \u00d7 ', tab$term), tab$term)
+        }
     }
 
-    # clean table
-    tab <- tab %>%
-           dplyr::select(-statistic, -group) %>%
-           # HACK: arbitrary 7 spaces to avoid name conflict
-           dplyr::rename(`       ` = term)
+    # measure table
+    hrule <- match('gof', tab$group)
+    if (!is.na(hrule) &&
+        !is.null(add_rows) && 
+        !is.null(attr(add_rows, 'position'))) {
+        hrule <- hrule + sum(attr(add_rows, 'position') < hrule)
+    } else {
+      hrule <- NULL
+    }
 
+    # clean table but keep metadata for data.frame output
+    if (parse_output_arg(output)$output_format != "dataframe") {
+      tab <- tab %>%
+             dplyr::select(-statistic, -group) %>%
+             # HACK: arbitrary 7 spaces to avoid name conflict
+             dplyr::rename(`       ` = term)
+    }
 
     # stars
     if (!isFALSE(stars)) {

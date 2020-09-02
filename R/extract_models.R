@@ -3,20 +3,20 @@
 #'
 #' @inheritParams modelsummary
 #' @return tibble
-#' @export
-extract <- function(models,
-                    statistic = 'std.error',
-                    statistic_override = NULL,
-                    statistic_vertical = TRUE,
-                    conf_level = 0.95,
-                    coef_map = NULL,
-                    coef_omit = NULL,
-                    gof_map = modelsummary::gof_map,
-                    gof_omit = NULL,
-                    stars = FALSE,
-                    fmt = '%.3f',
-                    estimate = 'estimate',
-                    ...) {
+#' @keywords internal
+extract_models <- function(models,
+                           statistic = 'std.error',
+                           statistic_override = NULL,
+                           statistic_vertical = TRUE,
+                           conf_level = 0.95,
+                           coef_map = NULL,
+                           coef_omit = NULL,
+                           gof_map = NULL,
+                           gof_omit = NULL,
+                           stars = FALSE,
+                           fmt = '%.3f',
+                           estimate = 'estimate',
+                           ...) {
 
     # models must be a list of models
     if (!'list' %in% class(models)) {
@@ -80,15 +80,15 @@ extract <- function(models,
         # coef_omit
         if (!is.null(coef_omit)) {
             est[[i]] <- est[[i]] %>%
-                        dplyr::filter(!stringr::str_detect(term, coef_omit))
+                        dplyr::filter(!grepl(coef_omit, term))
         }
 
         # set model name
         colnames(est[[i]])[3] <- model_names[i]
     }
 
-    est <- est %>% 
-           purrr::reduce(dplyr::full_join, by = c('term', 'statistic'))  %>%
+    f <- function(x, y) dplyr::full_join(x, y, by = c('term', 'statistic'))
+    est <- Reduce(f, est) %>% 
            dplyr::mutate(group = 'estimates') %>%
            dplyr::select(group, term, statistic, names(.))
 
@@ -99,9 +99,10 @@ extract <- function(models,
     }
 
     # extract and combine gof
+    f <- function(x, y) dplyr::full_join(x, y, by = 'term')
     gof <- models %>%
-           purrr::map(extract_gof, fmt = fmt, gof_map = gof_map)  %>%
-           purrr::reduce(dplyr::full_join, by = 'term') %>%
+           lapply(extract_gof, fmt = fmt, gof_map = gof_map)  %>%
+           Reduce(f, .) %>%
            stats::setNames(c('term', model_names))
 
     # add gof row identifier
@@ -112,7 +113,12 @@ extract <- function(models,
     # omit gof using regex
     if (!is.null(gof_omit)) {
         gof <- gof %>%
-               dplyr::filter(!stringr::str_detect(term, gof_omit))
+               dplyr::filter(!grepl(gof_omit, term))
+    }
+
+    # otherwise defined at the model level in extract_gof
+    if (is.null(gof_map)) {
+        gof_map <- modelsummary::gof_map
     }
 
     # gof_map: omit, reorder, rename

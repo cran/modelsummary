@@ -21,13 +21,14 @@ to summarize}
 
 \item{conf_level}{confidence level to use for confidence intervals}
 
-\item{coef_map}{named character vector. Names refer to the original variable
-names. Values refer to the variable names that will appear in the table.
-Coefficients which are omitted from this vector will be omitted from the
-table. The table will be ordered in the same order as this vector.}
+\item{coef_map}{named character vector.  Values refer to the variable names
+that will appear in the table. Names refer to the original term names stored
+in the model object (e.g., "hp:mpg" for an interaction term). Coefficients
+that are omitted from this vector will be omitted from the table. The table
+will be ordered in the same order as this vector.}
 
 \item{coef_omit}{string regular expression. Omits all matching coefficients
-from the table (using `stringr::str_detect`).}
+from the table (using `grepl`).}
 
 \item{facet}{TRUE or FALSE. When the 'models' argument includes several
 model objects, TRUE draws terms in separate facets, and FALSE draws terms
@@ -48,6 +49,8 @@ extract estimates from the model. For example, this allows users to set
 Plot model coefficients using points or point-ranges
 }
 \examples{
+\dontrun{
+
 library(modelsummary)
 
 # single model
@@ -87,5 +90,7 @@ b <- list(geom_vline(xintercept = 0, color = 'orange'),
           geom_point(aes(y = term, x = estimate), alpha = .3,
                      size = 10, color = 'red', shape = 'square'))
 modelplot(mod, background = b)
+
+}
 
 }
