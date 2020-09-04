@@ -9,7 +9,7 @@ Description: Create beautiful and customizable tables to summarize several
     and it can produce tables in HTML, LaTeX, Word, Markdown, PDF, PowerPoint,
     Excel, RTF, JPG, or PNG. Tables can easily be embedded in 'Rmarkdown' or 
     'knitr' dynamic documents.
-Version: 0.6.0
+Version: 0.6.1
 Authors@R: person("Vincent", "Arel-Bundock", 
                   email = "vincent.arel-bundock@umontreal.ca", 
                   role = c("aut", "cre"),
@@ -28,9 +28,9 @@ Encoding: UTF-8
 LazyData: false
 RoxygenNote: 7.1.1
 NeedsCompilation: no
-Packaged: 2020-09-02 19:38:21 UTC; vincent-imac
+Packaged: 2020-09-04 19:35:39 UTC; vincent-imac
 Author: Vincent Arel-Bundock [aut, cre]
     (<https://orcid.org/0000-0003-2042-7063>)
 Maintainer: Vincent Arel-Bundock <vincent.arel-bundock@umontreal.ca>
 Repository: CRAN
-Date/Publication: 2020-09-02 22:40:13 UTC
+Date/Publication: 2020-09-04 21:42:08 UTC

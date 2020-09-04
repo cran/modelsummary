@@ -1,3 +1,7 @@
+# modelsummary 0.6.1
+
+* bug fixes
+
 # modelsummary 0.6.0
 
 * default HTML output factory is now kableExtra

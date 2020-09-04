@@ -169,8 +169,9 @@ modelsummary <- function(models,
         !is.null(add_rows) && 
         !is.null(attr(add_rows, 'position'))) {
         hrule <- hrule + sum(attr(add_rows, 'position') < hrule)
-    } else {
-      hrule <- NULL
+    }
+    if (is.na(hrule)) { 
+        hrule <- NULL
     }
 
     # clean table but keep metadata for data.frame output

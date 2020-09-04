@@ -1,7 +1,7 @@
-86cb44b457f3817fd513afdc7a03699d *DESCRIPTION
+b4af88b74d013c90fcc9545799a09a60 *DESCRIPTION
 1219c0da9ef3a93b9fb2f630103ebb53 *NAMESPACE
-62bd65644b3f93faca0fb636bc3efdce *NEWS.md
-9485ed0af76842ae4aed7a4ac09ff7a6 *R/convenience.R
+b5853898bf0043f58417c81f12a31bb4 *NEWS.md
+2cc6b19a754604e163ac8753c506da3c *R/convenience.R
 493fa64aa8940e2f6f54efca2def3986 *R/datasummary.R
 5c0fc6e40af6df4f5837af31077c49b2 *R/datasummary_balance.R
 cd02e0670fde665796355df65cbe47cd *R/datasummary_correlation.R
@@ -21,7 +21,7 @@ bc28adede13f7eba1dcc92735488d94d *R/factory_huxtable.R
 ddd9c9194c8786ded2bb0dcffa8acb7f *R/glance_custom.R
 43faee8d29e33572cd739c20c04a59d6 *R/gof_map.R
 7e2ed942d2a36297e58d40e86174161f *R/modelplot.R
-9027e6e51ab6c8f9cc4ee1b10169578a *R/modelsummary.R
+1ad6498d1d841da508b279a827bb4023 *R/modelsummary.R
 ce50121af2fe613864b1e0eee19fcb91 *R/parse_output_arg.R
 e4cf1bbfd892b1e6623ec007edfa5b75 *R/reexport.R
 fe341074fb057122beaf4f269c38b8c1 *R/sanity_checks.R
@@ -30,8 +30,8 @@ fe341074fb057122beaf4f269c38b8c1 *R/sanity_checks.R
 eea8e9a1692a496f4d0e7383f12d5976 *R/utils_pad.R
 9aab2581ff22019c5db573e06686f2e1 *R/utils_pipe.R
 add151639e9dd10d830a35e4cd9e5698 *R/utils_rounding.R
-cf2f33d8f3d71ffeedd12394c39a8c95 *README.md
-c22346bda607926bc7e539c8e6d31f86 *build/modelsummary.pdf
+0a5a0e387f4601a11e0f15ce88bf1221 *README.md
+5b46fcc42ee1723af2def2d115522870 *build/modelsummary.pdf
 64923f9f56fe05126a302092f58616d8 *man/All.Rd
 0c143e9fa7f3cbcf7ccde5e491e93f12 *man/AllObs.Rd
 5a49c4fdaf2eda8b9efe259001aff513 *man/Arguments.Rd
@@ -64,6 +64,7 @@ ff2a2da94207bb6c061b0c7fe556203b *man/SD.Rd
 f1595a7570a483b43fb3db222771f2c3 *man/Var.Rd
 235d7d15baefa0ec42db608e7c7d7d87 *man/check_dependency.Rd
 4d262c67823ed70286ad3a1114156ad5 *man/clean_stars.Rd
+6a9c1d6a29eb7f9786e0c1361917d07b *man/coef_map_felm_iv.Rd
 8fa01f529b54bd54373e41a6f64b4a11 *man/colLabels.Rd
 0da44a852c4d03640fc811f107077616 *man/datasummary.Rd
 49ab87ca8879c01cbe0b594cf379c345 *man/datasummary_balance.Rd
@@ -84,7 +85,7 @@ df949f7e6e5d94f1de4172318a4ba02c *man/fmt_labels_md.Rd
 1f9796d50998c67df70547819cc48cde *man/glance_custom.Rd
 07a07ca142e46569e116ac56f03aedad *man/glance_custom.default.Rd
 07427b4905283aa27cdfa245f4a5f333 *man/glance_custom.fixest.Rd
-c24576773ef236a4a8bd17c96f3b0d98 *man/gof_map.Rd
+ee5d6330f27ce4dbab7e934e4581b78b *man/gof_map.Rd
 b0a77b90bdc723dcaf6b017d42585907 *man/labelSubset.Rd
 416bb447c28ce104a19f878ca4ebf8f4 *man/make_stars_note.Rd
 ccd123b62caefff8388b1f5a7ff36597 *man/modelplot.Rd
@@ -122,3 +123,4 @@ f17b29008b6c37ef06c795e790ad6d60 *man/sanity_tidy.Rd
 e674491fb89b11b6784eda643d25b426 *man/sanity_title.Rd
 07e531f25c50d846284ac21aad029f65 *man/tidy_custom.Rd
 ccf3c0dca6bb565a4675e08caa803562 *man/tidy_custom.default.Rd
+fc50c02dfd95d41bb9fb8c23887f3aee *man/tidy_felm_iv.Rd
