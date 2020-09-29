@@ -2,13 +2,13 @@
 # modelsummary <img src="https://user-images.githubusercontent.com/987057/82849698-05ba5700-9ec7-11ea-93a0-67dcd9151848.png" align="right" alt="" width="120" />
 
 <!-- badges: start -->
-
+[![CRAN status](https://cranchecks.info/badges/flavor/release/modelsummary)](https://cran.r-project.org/web/checks/check_results_modelsummary.html)
 [![Travis-CI Build
 Status](https://travis-ci.org/vincentarelbundock/modelsummary.svg?branch=master)](https://travis-ci.org/vincentarelbundock/modelsummary)
-[![AppVeyor build
-status](https://ci.appveyor.com/api/projects/status/github/vincentarelbundock/modelsummary?branch=master&svg=true)](https://ci.appveyor.com/project/vincentarelbundock/modelsummary)
+[![AppVeyor build status](https://ci.appveyor.com/api/projects/status/github/vincentarelbundock/modelsummary?branch=master&svg=true)](https://ci.appveyor.com/project/vincentarelbundock/modelsummary)
 [![R build status](https://github.com/vincentarelbundock/modelsummary/workflows/R-CMD-check/badge.svg)](https://github.com/vincentarelbundock/modelsummary/actions)
-[![codecov test coverage](https://codecov.io/gh/vincentarelbundock/modelsummary/branch/master/graph/badge.svg)](https://codecov.io/gh/vincentarelbundock/modelsummary)
+[![codecov](https://codecov.io/gh/vincentarelbundock/modelsummary/branch/master/graph/badge.svg)](https://codecov.io/gh/vincentarelbundock/modelsummary)
+
 <!-- badges: end -->
 
 `modelsummary` creates tables and plots to summarize statistical models and data in `R`. 
@@ -23,6 +23,7 @@ The tables produced by `modelsummary` are beautiful and highly customizable. The
     - `datasummary_balance`: Balance tables with subgroup statistics and difference in means (aka "Table 1").
     - `datasummary_correlation`: Correlation tables.
     - `datasummary_skim`: Quick overview of a dataset.
+    - `datasummary_df`: Turn dataframes into nice tables with titles, notes, etc.
     
 Click on the links at the top of this page to see how these functions are used: https://vincentarelbundock.github.io/modelsummary
 
@@ -33,6 +34,8 @@ These tables and plots were created using `modelsummary`, without any manual edi
 |<img width="2406" src="https://user-images.githubusercontent.com/987057/82853752-90558300-9ed4-11ea-88af-12cf20cb367f.png">|<img width="2406" src="https://user-images.githubusercontent.com/987057/86512021-50839480-bdcc-11ea-893c-8c1e7a277895.png">
 |<img width="2406" src="https://user-images.githubusercontent.com/987057/82855711-0a3c3b00-9eda-11ea-8a81-1eebfbb7cb73.png">|<img width="2406" src="https://user-images.githubusercontent.com/987057/85772292-b1cfa780-b6ea-11ea-8ae1-b95c6ddbf0a9.png">|
 |<img width="2406" src="https://user-images.githubusercontent.com/987057/86502482-9eb77a00-bd71-11ea-80da-dc935c1fbd90.jpeg">|<img width="2406" src="https://user-images.githubusercontent.com/987057/86511490-cb967c00-bdc7-11ea-9d9b-0ef188840faf.png">
+|<img width="2406" src="https://user-images.githubusercontent.com/987057/93255373-d4acad80-f767-11ea-84c9-c2fc8ab77aa1.png">|
+
 
 
 # Contents
@@ -61,20 +64,20 @@ Here are a few benefits of `modelsummary` over some [alternative packages](#alte
 library(modelsummary)
 
 mod <- lm(y ~ x, dat)
-msummary(mod)
+modelsummary(mod)
 ```
 
 The command above will automatically display a summary table in the `Rstudio` Viewer or in a web browser. All you need is one word to change the output format. For example, a text-only version of the table can be printed to the Console by typing:
 
 ``` r
-msummary(mod, "markdown")
+modelsummary(mod, "markdown")
 ```
 
 Tables in Microsoft Word and LaTeX formats can be saved to file by typing:
 
 ``` r
-msummary(mod, "table.docx")
-msummary(mod, "table.tex")
+modelsummary(mod, "table.docx")
+modelsummary(mod, "table.tex")
 ```
 
 #### Flexible
@@ -133,12 +136,12 @@ url <- 'https://vincentarelbundock.github.io/Rdatasets/csv/HistData/Guerry.csv'
 dat <- read.csv(url) 
 ```
 
-We estimate a linear model and call the `msummary` function to display
+We estimate a linear model and call the `modelsummary` function to display
 the results:
 
 ``` r
 mod <- lm(Donations ~ Crime_prop, data = dat)
-msummary(mod)
+modelsummary(mod)
 ```
 
 <center>
@@ -159,7 +162,7 @@ models[['OLS 2']] <- lm(Crime_pers ~ Literacy + Clergy, data = dat)
 models[['Poisson 2']] <- glm(Crime_pers ~ Literacy + Commerce, family = poisson, data = dat)
 models[['OLS 3']] <- lm(Crime_prop ~ Literacy + Clergy, data = dat)
 
-msummary(models)
+modelsummary(models)
 ```
 
 In `Rstudio`, the image below will be displayed automatically in the
@@ -175,7 +178,7 @@ In `Rstudio`, the image below will be displayed automatically in the
 The same table can be printed in text-only format to the `R` Console:
 
 ``` r
-msummary(models, 'markdown')
+modelsummary(models, 'markdown')
 
 
 |            |OLS 1      |Poisson 1   |OLS 2      |Poisson 2   |OLS 3      |
@@ -208,20 +211,20 @@ There are four ways to display and save `modelsummary` tables.
 To display, simply choose the output format. For example,
 
 ```{r}
-msummary(models, output = 'latex')
-msummary(models, output = 'markdown')
-msummary(models, output = 'gt')
-msummary(models, output = 'kableExtra')
-msummary(models, output = 'flextable')
+modelsummary(models, output = 'latex')
+modelsummary(models, output = 'markdown')
+modelsummary(models, output = 'gt')
+modelsummary(models, output = 'kableExtra')
+modelsummary(models, output = 'flextable')
 ```
 
 To save a table, choose the file path with the extension you want. For example,
 
 ```{r}
-msummary(models, output = 'table.tex')
-msummary(models, output = 'table.docx')
-msummary(models, output = 'table.html')
-msummary(models, output = 'table.md')
+modelsummary(models, output = 'table.tex')
+modelsummary(models, output = 'table.docx')
+modelsummary(models, output = 'table.html')
+modelsummary(models, output = 'table.md')
 ```
 
 To customize a table with the `gt`, `kableExtra`, `flextable`, or `huxtable` packages, choose the output format. Then, you can use functions from those packages to modify the resulting objects:
@@ -229,7 +232,7 @@ To customize a table with the `gt`, `kableExtra`, `flextable`, or `huxtable` pac
 ```{r}
 library(kableExtra)
 
-tab <- msummary(models, output = 'kableExtra')
+tab <- modelsummary(models, output = 'kableExtra')
 tab %>% row_spec(3, bold = TRUE, color = 'green')
 ```
 

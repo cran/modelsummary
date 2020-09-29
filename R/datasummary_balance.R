@@ -1,3 +1,43 @@
+#' Difference in means using `estimatr`
+#'
+#' @keywords internal
+DinM <- function(lhs, rhs, data, fmt, statistic) {
+
+  assert_dependency("estimatr")
+
+  if (!"clusters" %in% colnames(data))
+      clusters <- NULL
+  if (!"weights" %in% colnames(data))
+      weights <- NULL
+  if (!"blocks" %in% colnames(data))
+      blocks <- NULL
+
+  # needed for names with spaces
+  data[["condition_variable_placeholder"]] <- data[[rhs]]
+  data[["outcome_variable_placeholder"]] <- data[[lhs]]
+
+  out <- estimatr::difference_in_means(
+    outcome_variable_placeholder ~ condition_variable_placeholder,
+    data = data, blocks = blocks, clusters = clusters, weights = weights)
+
+  out <- estimatr::tidy(out)
+
+  out <- out[, c("estimate", statistic), drop=FALSE]
+  out[[1]] <- sprintf(fmt, out[[1]])
+  out[[2]] <- sprintf(fmt, out[[2]])
+  out$variable <- lhs
+
+  if (statistic == "std.error") {
+    colnames(out) <- c("Diff. in Means", "Std. Error", " ")
+  } else if (statistic == "p.value") {
+    colnames(out) <- c("Diff. in Means", "p", " ")
+  } else {
+    colnames(out) <- c("Diff. in Means", statistic, " ")
+  }
+  out
+
+}
+
 #' Balance table: Summary statistics for different subsets of the data (e.g.,
 #' control and treatment groups)
 #'
@@ -28,232 +68,192 @@ datasummary_balance <- function(formula,
                                 notes = NULL,
                                 align = NULL,
                                 add_columns = NULL,
+                                add_rows = NULL,
                                 dinm = TRUE,
                                 dinm_statistic = 'std.error',
                                 ...) {
-    
-    # tables does not play well with tibbles
-    data <- as.data.frame(data)
 
-    # functions with formatting: str_replace(fmt) doesn't get picked-up by tabular
-    MeanF <- function(x) sprintf(fmt, mean(x, na.rm = TRUE))
-    SDF <- function(x) sprintf(fmt, stats::sd(x, na.rm = TRUE))
-    DinMestimate <- function(x, data) {
-        out <- DinM(x, data = data, statistic = 'estimate')
-        sprintf(fmt, out)
-    }
-    DinMpval <- function(x, data) {
-        out <- DinM(x, data = data, statistic = 'p.value')
-        if (out < .001) {
-            '<.001'
-        } else {
-            sprintf("%.3f", out)
-        }
-    }
-    DinMstderror <- function(x, data) {
-        out <- DinM(x, data = data, statistic = 'std.error')
-        sprintf(fmt, out)
-    }
-    
-    # valid input
-    checkmate::assert_data_frame(data, min.rows = 1, min.cols = 1)
-    checkmate::assert(
-        checkmate::check_string(dinm_statistic),
-        checkmate::check_true(dinm_statistic %in% c('std.error', 'p.value')),
-        combine = 'and'
-    )
-    
-    # convert logical and character to factor
-    data <- data %>% 
-            dplyr::mutate(dplyr::across(where(is.logical) |
-                                        where(is.character),
-                                        factor))
-    
-    
-    # no left-hand support in this template
-    sanity_ds_right_handed_formula(formula)
-    
-    # output: factory, file, format
-    output_list <- parse_output_arg(output)
-    
-    # RHS variable
-    rhs <- labels(stats::terms(formula))
-    
-    # RHS must be in data
-    if (!rhs %in% colnames(data)) {
-        stop('Variable ', rhs, ' must be in data.')
-    }
-    
-    # condition_variable must be factor
-    data$condition_variable <- factor(data[[rhs]])
-    
-    # drop missing conditions
-    idx <- !is.na(data$condition_variable)
-    data <- data[idx, , drop = FALSE]
-    
-    # RHS must have fewer than 10 levels
-    if (length(unique(data$condition_variable)) > 10) {
-        stop('Each value of the ', rhs, ' variable will create two separate columns. This variable has too many different values to produce a readable table.')
-    }
-    
-    # data for All() must exclude these otherwise they appear as rows
-    idx <- setdiff(colnames(data), c(rhs, 'condition_variable', 'clusters', 'blocks', 'weights'))
-    data_no_condition <- data[, idx, drop = FALSE]
-    
-    # conditions with (N = ???)
-    data <- data %>% 
-            dplyr::mutate(tmp_grp = condition_variable) %>%
-            dplyr::group_by(tmp_grp) %>%
-            dplyr::mutate(condition_variable = paste0(condition_variable, ' (N=', dplyr::n(), ')')) %>%
-            dplyr::ungroup() %>%
-            dplyr::select(-tmp_grp)
-    
-    # variable types
-    any_factor <- any(sapply(data_no_condition, is.factor))
-    any_numeric <- any(sapply(data_no_condition, is.numeric))
-    
-    # stop if factor has too many levels
-    if (any_factor) {
-        tmp <- data_no_condition %>% dplyr::select(where(is.factor))
-        tmp <- sapply(tmp, function(x) length(unique(x)) > 30)
-        if (any(tmp)) {
-            stop('Some categorical variables have over 30 levels.' )
-        }
-    }
-    
-    # is dinm possible?
-    checkmate::assert_flag(dinm)
-    if (isTRUE(dinm)) {
-        # dinm is only possible when `estimatr` is installed 
-        if (!requireNamespace('estimatr', quietly = TRUE)) {
-            dinm <- FALSE
-            warning('Please install the `estimatr` package, or set `dinm=FALSE` to suppress this warning.')
-        } 
-        
-        # dinm is only possible when the number of conditions < 2
-        if (length(unique(data$condition_variable)) != 2) {
-            dinm <- FALSE
-            warning('Make sure the number of unique conditions equals 2, or set `dinm=FALSE` to suppress this warning.')
-        }
-        
-        # dinm is only possible for numeric variables
-        if (!any_numeric) {
-            dinm <- FALSE
-        }
-    }
-    
-    # function to insert an empty column
-    padding <- function(x) " "
+  # sanity checks
+  sanity_output(output)
+  sanity_ds_right_handed_formula(formula)
+  checkmate::assert_formula(formula)
+  checkmate::assert_data_frame(data, min.rows = 1, min.cols = 1)
+  checkmate::assert_flag(dinm)
+  checkmate::assert_string(dinm_statistic, pattern="^std.error$|^p.value$")
 
-    # factors
-    tab_fac <- NULL
-    
+  # tables::tabular does not play well with tibbles
+  data <- as.data.frame(data)
+
+  # categorical data must be factor
+  for (n in colnames(data)) {
+    if (is.character(data[[n]]) || is.logical(data[[n]])) {
+      data[[n]] <- as.factor(data[[n]])
+    }
+  }
+
+  # rhs condition variable
+  rhs <- labels(stats::terms(formula))
+
+  if (!rhs %in% colnames(data)) {
+    stop('Variable ', rhs, ' must be in data.')
+  }
+
+  data <- data[!is.na(data[[rhs]]), , drop = FALSE]
+
+  if (length(unique(data[[rhs]])) > 10) {
+    stop(sprintf('Each value of the `%s` variable will create two separate
+                 columns. This variable has too many unique values, so the
+                 table would be too wide to be readable.', rhs))
+  }
+
+  # nobs in column spans via factor levels
+  lev <- table(data[[rhs]])
+  lev <- paste0(names(lev), " (N=", lev, ")")
+  levels(data[[rhs]]) <- lev
+
+  # exclude otherwise All() makes them appear as rows 
+  idx <- setdiff(colnames(data), 
+                 c(rhs, 'clusters', 'blocks', 'weights'))
+  data_norhs <- data[, idx, drop = FALSE]
+
+  # 3-parts table: numeric + dinm / factor
+  any_numeric <- any(sapply(data_norhs, is.numeric))
+  any_factor <- any(sapply(data_norhs, is.factor))
+
+  if (any_numeric) {
+    f_num <- sprintf(
+      'All(data_norhs) ~ 
+      Factor(%s) * (Mean + Heading("Std. Dev.") * SD) * Arguments(fmt=fmt)',
+      rhs)
+    f_num <- formula(f_num)
+    tab_num <- datasummary(f_num, data=data, output="data.frame")
+    colnames(tab_num) <- pad(attr(tab_num, "header_bottom"))
+  }
+
+  if (any_factor) {
+
+    # hack: `tables::tabular` produces different # of cols with a single or
+    # multiple factors. Make sure there are multiple.
+    data$badfactordropthis <- factor(c("badfactordropthis1", rep("badfactordropthis2", nrow(data)-1)))
+    data_norhs$badfactordropthis <- factor(c("badfactordropthis1", rep("badfactordropthis2", nrow(data_norhs)-1)))
+
+    pctformat = function(x) sprintf("%.1f", x)
+    f_fac <- sprintf(
+      'All(data_norhs, factor=TRUE, numeric=FALSE) ~ 
+       Factor(%s) * (Heading("N")*1 * Format(digits=0) + 
+       Heading("%%") * Percent() * Format(pctformat()))',
+       rhs)
     if (any_numeric) {
-        f_fac <- 'All(data_no_condition, numeric=FALSE, factor=TRUE) ~
-                  Factor(condition_variable) * (Heading("Mean") * 1 * Format(digits=1) + 
-                  Heading("Std. Dev.") * Percent(denom="col") * Format(digits=1))'
-    } else {
-        f_fac <- 'All(data_no_condition, numeric=FALSE, factor=TRUE) ~
-                  Factor(condition_variable) * (Heading("N") * 1 * Format(digits=1) + 
-                  Heading("%") * Percent(denom="col") * Format(digits=1))'
+      f_fac <- gsub('\\"\\%\\"', '\\"Std. Dev.\\"', f_fac)
+      f_fac <- gsub('\\"N\\"', '\\"Mean\\"', f_fac)
     }
+    tab_fac <- datasummary(
+      formula(f_fac), data=data, output="data.frame")
 
-    
-    if (isTRUE(dinm)) {
-        if (dinm_statistic == 'std.error') {
-            tmp <- '+ Heading("Diff. in Means") * padding + Heading("Std. Error") * padding'
-        } else {
-            tmp <- '+ Heading("Diff. in Means") * padding + Heading("p") * padding'
-        }
-        f_fac <- paste(f_fac, tmp)
-    }
-    
-    if (any_factor) {
-        tab_fac <- tables::tabular(f_fac, data)
-    }
-    
-    # numerics
-    tab_num <- NULL
-    
-    f_num <- '~ Factor(condition_variable) * (Heading("Mean") * MeanF +  Heading("Std. Dev.") *  SDF)'
+    colnames(tab_fac) <- pad(attr(tab_fac, "header_bottom"))
 
-    # empty column if there are factor labels
-    stub_fac <- attr(tab_fac, 'rowLabels')
-    
-    if (!is.null(stub_fac) && (ncol(stub_fac) == 2)) {
-        f_num <- paste('All(data_no_condition) * Heading(" ") * 1', f_num)
-    } else {
-        f_num <- paste('All(data_no_condition)', f_num)
-    }
-    
-    if (isTRUE(dinm)) {
-        if (dinm_statistic == 'std.error') {
-            f_num <- paste(f_num, '+ Heading("Diff. in Means") * DinMestimate * Arguments(data = data) + 
-                                     Heading("Std. Error") * DinMstderror * Arguments(data = data)')
-        } else {
-            f_num <- paste(f_num, '+ Heading("Diff. in Means") * DinMestimate * Arguments(data = data) + 
-                                     Heading("p") * DinMpval * Arguments(data = data)')
-        }
-    }
+    idx <- !grepl("^badfactordropthis\\d$", tab_fac[[2]])
+    tab_fac <- tab_fac[idx, , drop=FALSE]
 
-    if (any_numeric) {
-        tab_num <- tables::tabular(formula(f_num), data)
+    # hack
+    data_norhs$badfactordropthis <- data$badfactordropthis <- NULL
+
+  }
+
+  if (any_numeric && any_factor) {
+
+    # header compatibility + new header
+    header <- tab_fac[1, , drop=FALSE]
+    cols <- trimws(colnames(header)) # we padded colnames above
+    for (i in seq_along(header)) {
+      header[1, i] <- ifelse(!cols[i] %in% c("Mean", "Std. Dev."), "", header[1, i])
+      header[1, i] <- ifelse(cols[i] == "Mean", "N", header[1, i])
+      header[1, i] <- ifelse(cols[i] == "Std. Dev.", "%", header[1, i])
     }
-    
-    tab <- rbind(tab_num, tab_fac)
-    tab <- datasummary_extract(tab)
-    
-    # num/fac separator
-    if (any_numeric && any_factor) {
-        factor_header <- tab[1, , drop = FALSE]
-        for (i in seq_along(factor_header)) {
-            if (trimws(colnames(tab)[i]) == 'Mean') {
-                factor_header[[i]] <- 'N'
-            } else if (trimws(colnames(tab)[i]) == 'Std. Dev.') {
-                factor_header[[i]] <- '%'
-            } else {
-                factor_header[[i]] <- ''
-            }
-        }
-        attr(factor_header, 'position') <- nrow(tab_num) + 1
-        
-        hrule <- nrow(tab_num) + 1
-    } else {
-        factor_header <- NULL
-        hrule <- NULL
+    tab_fac <- rbind(header, tab_fac)
+
+    # bind tables and reorder columns (factor is always widest)
+    tab <- dplyr::bind_rows(tab_num, tab_fac)
+    tab <- tab[, colnames(tab_fac)]
+
+    attr(tab, "stub_width") <- attr(tab_fac, "stub_width")
+    attr(tab, "span_gt") <- attr(tab_fac, "span_gt")
+    attr(tab, "span_kableExtra") <- attr(tab_fac, "span_kableExtra")
+    attr(tab, "header_sparse_flat") <- attr(tab_fac, "header_sparse_flat")
+    colnames(tab) <- gsub(".*\\) ", "", colnames(tab))
+
+  } else if (any_numeric) {
+    tab <- tab_num
+
+  } else if (any_factor) {
+    tab <- tab_fac
+
+  }
+
+  # difference in means
+  if (!any_numeric) {
+    dinm <- FALSE
+  }
+
+  if (dinm && isFALSE(check_dependency("estimatr"))) {
+    dinm <- FALSE
+    warning("Please install the `estimatr` package or set `dinm=FALSE` to
+             suppress this warning.")
+  }
+
+  if (dinm && (length(unique(data[[rhs]])) > 2)) {
+    dinm <- FALSE
+    warning("The difference in means can only be calculate with two groups in
+            the right-hand side variable. Set `dinm=FALSE` to suppress this
+            warning.")
+  }
+
+  if (dinm) {
+    numeric_variables <- colnames(data_norhs)[sapply(data_norhs, is.numeric)]
+    tmp <- lapply(numeric_variables,
+                  function(lhs) DinM(lhs=lhs, 
+                                     rhs=rhs, 
+                                     data=data, 
+                                     fmt=fmt, 
+                                     statistic=dinm_statistic))
+    tmp <- do.call("rbind", tmp)
+    tab <- dplyr::left_join(tab, tmp, by=" ")
+
+    # post-DinM, pad the span if the table has new columns
+    skE <- attr(tab, "span_kableExtra")
+    for (i in seq_along(skE)) {
+      skE[[i]] <- c(skE[[i]], rep("    ", ncol(tab) - sum(skE[[i]])))
     }
-    if (inherits(add_columns, 'data.frame')) {
-        tmp <- add_columns[1, 1, drop = FALSE]
-        for (i in seq_along(add_columns)) {
-            tmp[[colnames(add_columns)[i]]] <- ''
-        }   
-        factor_header <- dplyr::bind_cols(factor_header, tmp)
+    attr(tab, "span_kableExtra") <- skE
+
+    header_sparse_flat <- attr(tab, "header_sparse_flat")
+    if (ncol(tab) > length(header_sparse_flat)) {
+      attr(tab, "header_sparse_flat") <- c(header_sparse_flat, colnames(tab)[-c(1:length(header_sparse_flat))])
     }
-    
-    # column align
-    if (is.null(align)) {
-        idx <- attr(tab, 'stub_width')
-        if (inherits(add_columns, 'data.frame')) {
-            tab_width <- ncol(tab) + ncol(add_columns) - idx
-        } else {
-            tab_width <- ncol(tab) - idx
-        }
-        align <- paste0(strrep('l', idx), strrep('r', tab_width))
-    }
-    
-    factory(tab,
-            align = align,
-            hrule = hrule,
-            notes = notes, 
-            fmt = fmt,
-            output = output,
-            add_rows = factor_header,
-            add_columns = add_columns,
-            title = title,
-            ...)
-    
+    attr(tab, "header_sparse_flat") <- gsub(" \\(N=\\d+\\)", "", attr(tab, "header_sparse_flat"))
+    attr(tab, "header_sparse_flat") <- pad(attr(tab, "header_sparse_flat"))
+
+  }
+
+  tab[is.na(tab)] <- ""
+
+  if (any_numeric && any_factor) {
+    hrule <- nrow(tab_num) + 1
+  } else {
+    hrule <- NULL
+  }
+
+  # make table
+  factory(
+    tab,
+    align = align,
+    hrule = hrule,
+    notes = notes,
+    fmt = fmt,
+    output = output,
+    add_rows = add_rows,
+    add_columns = add_columns,
+    title = title,
+    ...)
+
 }
-
-
-
-

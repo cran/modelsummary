@@ -9,7 +9,7 @@ datasummary_skim(
   type = "numeric",
   output = "default",
   fmt = "\%.1f",
-  histogram = FALSE,
+  histogram = TRUE,
   title = NULL,
   notes = NULL,
   align = NULL,
@@ -23,9 +23,9 @@ datasummary_skim(
 
 \item{output}{filename or object type (string)
 \itemize{
-  \item Supported filename extensions: .html, .tex, .md, .txt, .png, .jpg. 
+  \item Supported filename extensions: .html, .tex, .md, .txt, .png, .jpg.
   \item Supported object types: "default", "html", "markdown", "latex", "data.frame", "gt", "kableExtra", "huxtable", "flextable".
-  \item When a file name is supplied to the `output` argument, the table is written immediately to file. If you want to customize your table by post-processing it with functions provided by the `gt` or `kableExtra` packages, you need to choose a different output format (e.g., "gt", "latex", "html", "markdown"), and you need to save the table after post-processing using the `gt::gtsave`, `kable::save_kable`, or `cat` functions.
+  \item When a file name is supplied to the `output` argument, the table is written immediately to file. If you want to customize your table by post-processing it with functions provided by the `gt` or `kableExtra` packages, you need to choose a different output format (e.g., "gt", "latex", "html", "markdown"), and you need to save the table after post-processing using the `gt::gtsave`, `kableExtra::save_kable`, or `cat` functions.
 }}
 
 \item{fmt}{string which specifies how numeric values will be rounded. This
@@ -33,7 +33,14 @@ string is passed to the `sprintf` function. '\%.3f' will keep 3 digits after
 the decimal point with trailing zero. '\%.5f' will keep 5 digits. '\%.3e' will
 use exponential notation. See `?sprintf` for more options.}
 
-\item{histogram}{TRUE to include a unicode character histogram (boolean)}
+\item{histogram}{include a histogram (TRUE/FALSE). Supported for:
+\itemize{
+\item type = "numeric"
+\item output is "html", "default", "jpg", "png", or "kableExtra"
+\item PDF and HTML documents compiled via Rmarkdown or knitr
+\item See the examples section below for an example of how to use
+`datasummary` to include histograms in other formats such as markdown.
+}}
 
 \item{title}{string}
 
@@ -43,10 +50,31 @@ use exponential notation. See `?sprintf` for more options.}
 the table.  "lcr" means that the first column will be left-aligned, the 2nd
 column center-aligned, and the 3rd column right-aligned.}
 
-\item{...}{all other arguments are passed to the `tidy` method used to
-extract estimates from the model. For example, this allows users to set
-`exponentiate=TRUE` to exponentiate logistic regression coefficients.}
+\item{...}{all other arguments are passed to the `tidy` and `glance` methods
+used to extract estimates from the model. For example, this allows users to
+set `exponentiate=TRUE` to exponentiate logistic regression coefficients.}
 }
 \description{
-Quick overview of numeric or categorical variables
+This function was inspired by the excellent `skimr` package for R.
+}
+\examples{
+
+\dontrun{
+dat <- mtcars
+dat$vs <- as.logical(dat$vs)
+dat$cyl <- as.factor(dat$vs)
+datasummary_skim(dat)
+datasummary_skim(dat, "categorical")
+
+# You can use `datasummary` to produce a similar table in different formats.
+# Note that the `Histogram` function relies on unicode characters. These
+# characters will only display correctly in some operating systems, under some
+# locales, using some fonts. Displaying such histograms on Windows computers
+# is notoriously tricky. The `modelsummary` authors cannot provide support to
+# display these unicode histograms.
+
+f <- All(mtcars) ~ Mean + SD + Min + Median + Max + Histogram
+datasummary(f, mtcars, output="markdown")
+
+}
 }

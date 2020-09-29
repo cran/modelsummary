@@ -10,9 +10,9 @@ globalVariables(c('.', 'term', 'group', 'estimate', 'conf.high', 'conf.low', 'va
 #' to summarize
 #' @param output filename or object type (string)
 #' \itemize{
-#'   \item Supported filename extensions: .html, .tex, .md, .txt, .png, .jpg. 
+#'   \item Supported filename extensions: .html, .tex, .md, .txt, .png, .jpg.
 #'   \item Supported object types: "default", "html", "markdown", "latex", "data.frame", "gt", "kableExtra", "huxtable", "flextable".
-#'   \item When a file name is supplied to the `output` argument, the table is written immediately to file. If you want to customize your table by post-processing it with functions provided by the `gt` or `kableExtra` packages, you need to choose a different output format (e.g., "gt", "latex", "html", "markdown"), and you need to save the table after post-processing using the `gt::gtsave`, `kable::save_kable`, or `cat` functions.
+#'   \item When a file name is supplied to the `output` argument, the table is written immediately to file. If you want to customize your table by post-processing it with functions provided by the `gt` or `kableExtra` packages, you need to choose a different output format (e.g., "gt", "latex", "html", "markdown"), and you need to save the table after post-processing using the `gt::gtsave`, `kableExtra::save_kable`, or `cat` functions.
 #' }
 #' @param fmt string which specifies how numeric values will be rounded. This
 #' string is passed to the `sprintf` function. '\%.3f' will keep 3 digits after
@@ -20,7 +20,7 @@ globalVariables(c('.', 'term', 'group', 'estimate', 'conf.high', 'conf.low', 'va
 #' use exponential notation. See `?sprintf` for more options.
 #' @param stars to indicate statistical significance
 #' \itemize{
-#'   \item FALSE (default): no significance stars. 
+#'   \item FALSE (default): no significance stars.
 #'   \item TRUE: *=.1, **=.05, ***=.01
 #'   \item Named numeric vector for custom stars such as `c('*' = .1, '+' = .05)`
 #' }
@@ -39,13 +39,16 @@ globalVariables(c('.', 'term', 'group', 'estimate', 'conf.high', 'conf.low', 'va
 #' @param statistic_vertical TRUE if statistics should be printed below
 #' estimates. FALSE if statistics should be printed beside estimates.
 #' @param conf_level confidence level to use for confidence intervals
-#' @param coef_map named character vector.  Values refer to the variable names
+#' @param coef_map named character vector. Values refer to the variable names
 #' that will appear in the table. Names refer to the original term names stored
-#' in the model object (e.g., "hp:mpg" for an interaction term). Coefficients
-#' that are omitted from this vector will be omitted from the table. The table
-#' will be ordered in the same order as this vector.
+#' in the model object, e.g. c("hp:mpg"="hp X mpg") for an interaction term.
+#' Coefficients that are omitted from this vector will be omitted from the
+#' table. The table will be ordered in the same order as this vector.
 #' @param coef_omit string regular expression. Omits all matching coefficients
 #' from the table (using `grepl`).
+#' @param coef_rename named character vector. Values refer to the variable names
+#' that will appear in the table. Names refer to the original term names stored
+#' in the model object, e.g. c("hp:mpg"="hp X mpg") for an interaction term.
 #' @param gof_map data.frame with four columns: `raw`, `clean`, `fmt`, and
 #' `omit`. If `gof_map` is NULL, then `modelsummary` will use this data frame
 #' by default: `modelsummary::gof_map`
@@ -60,13 +63,13 @@ globalVariables(c('.', 'term', 'group', 'estimate', 'conf.high', 'conf.low', 'va
 #' @param estimate character name of the estimate to display. Must be a column
 #' name in the data.frame produced by `tidy(model)`. In the vast majority of
 #' cases, the default value of this argument should not be changed.
-#' @param ... all other arguments are passed to the `tidy` method used to
-#' extract estimates from the model. For example, this allows users to set
-#' `exponentiate=TRUE` to exponentiate logistic regression coefficients.
-#' @return a 'gt' table object.
+#' @param ... all other arguments are passed to the `tidy` and `glance` methods
+#' used to extract estimates from the model. For example, this allows users to
+#' set `exponentiate=TRUE` to exponentiate logistic regression coefficients.
+#' @return a regression table in a format determined by the `output` argument.
 #' @examples
 #' \dontrun{
-#' 
+#'
 #' library(modelsummary)
 #'
 #' # load data and estimate models
@@ -76,44 +79,46 @@ globalVariables(c('.', 'term', 'group', 'estimate', 'conf.high', 'conf.low', 'va
 #' models[['Multivariate']] <- lm(Girth ~ Height + Volume, data = trees)
 #'
 #' # simple table
-#' msummary(models)
+#' modelsummary(models)
 #'
 #' # confidence intervals, p values, or t-stats instead of standard errors
-#' msummary(models, statistic = 'conf.int', conf_level = 0.99)
-#' msummary(models, statistic = 'p.value', conf_level = 0.99)
-#' msummary(models, statistic = 'statistic', conf_level = 0.99)
+#' modelsummary(models, statistic = 'conf.int', conf_level = 0.99)
+#' modelsummary(models, statistic = 'p.value', conf_level = 0.99)
+#' modelsummary(models, statistic = 'statistic', conf_level = 0.99)
 #'
-#' # rename and re-order coefficients
-#' msummary(models, coef_map = c('Volume' = 'Large', 'Height' = 'Tall'))
+#' # coef_rename: rename coefficients
+#' modelsummary(models, coef_map = c('Volume' = 'Large', 'Height' = 'Tall'))
 #'
-#' # titles 
-#' msummary(models, title = 'This is the title')
+#' # coef_map: rename, re-order, and omit coefficients
+#' modelsummary(models, coef_map = c('Volume' = 'Large', 'Height' = 'Tall'))
+#'
+#' # titles
+#' modelsummary(models, title = 'This is the title')
 #'
 #' # title with italicized text
-#' msummary(models, title = gt::md('This is *the* title'))
-#' 
+#' modelsummary(models, title = gt::md('This is *the* title'))
+#'
 #' # add_rows: we use `tribble` from the `tibble` package to build a data.frame
 #' # more easily. Then, we assign an attribute to determine each row's position.
 #' rows <- tibble::tribble(~term, ~Bivariate, ~Multivariate,
-#'                         'Empty row', '-', '-',
-#'                         'Another empty row', '?', '?')
+#'   'Empty row', '-', '-',
+#'   'Another empty row', '?', '?')
 #' attr(rows, 'position') <- c(1, 3)
-#' msummary(models, add_rows = rows)
+#' modelsummary(models, add_rows = rows)
 #'
 #' # notes at the bottom of the table (here, the second note includes markdown bold characters)
-#' msummary(models, notes = list('A first note', gt::md('A **bold** note')))
+#' modelsummary(models, notes = list('A first note', gt::md('A **bold** note')))
 #'
 #' # modify list of GOF statistics and their format using the built-in
 #' # 'gof_map' data frame as a starting point
-#' gof_custom <- modelsummary::gof_map 
-#' gof_custom$omit[gof_custom$raw == 'deviance'] <- FALSE 
-#' gof_custom$fmt[gof_custom$raw == 'r.squared'] <- "%.5f" 
-#' msummary(models, gof_map = gof_custom)
-#'
+#' gof_custom <- modelsummary::gof_map
+#' gof_custom$omit[gof_custom$raw == 'deviance'] <- FALSE
+#' gof_custom$fmt[gof_custom$raw == 'r.squared'] <- "%.5f"
+#' modelsummary(models, gof_map = gof_custom)
 #' }
 #'
-# see the README on github for a lot more examples: https://github.com/vincentarelbundock/modelsummary
-#'
+#' # see the README on github for a lot more examples:
+#' # https://github.com/vincentarelbundock/modelsummary
 #' @export
 modelsummary <- function(models,
                          output = "default",
@@ -125,6 +130,7 @@ modelsummary <- function(models,
                          stars = FALSE,
                          coef_map = NULL,
                          coef_omit = NULL,
+                         coef_rename = NULL,
                          gof_map = NULL,
                          gof_omit = NULL,
                          add_rows = NULL,
@@ -133,79 +139,88 @@ modelsummary <- function(models,
                          estimate = 'estimate',
                          ...) {
 
+  ellipsis <- list(...)
 
-    # extract estimates and gof
-    dat <- extract_models(
-      models,
-      statistic = statistic,
-      statistic_override = statistic_override,
-      statistic_vertical = statistic_vertical,
-      conf_level = conf_level,
-      coef_map = coef_map,
-      coef_omit = coef_omit,
-      gof_map = gof_map,
-      gof_omit = gof_omit,
-      stars = stars,
-      fmt = fmt,
-      estimate = estimate,
-      ...)
+  # sanity checks for arguments not present in extract_models
+  sanity_output(output)
 
-    # remove duplicate term labels
-    idx <- grepl('statistic\\d*$', dat$statistic)
-    tab <- dat %>%
-           dplyr::mutate(term = ifelse(idx, '', term))
+  # extract estimates and gof
+  dat <- extract_models(
+    models,
+    statistic = statistic,
+    statistic_override = statistic_override,
+    statistic_vertical = statistic_vertical,
+    conf_level = conf_level,
+    coef_map = coef_map,
+    coef_omit = coef_omit,
+    coef_rename = coef_rename,
+    gof_map = gof_map,
+    gof_omit = gof_omit,
+    stars = stars,
+    fmt = fmt,
+    estimate = estimate,
+    ...)
 
-    # interaction : becomes ×
-    if (is.null(coef_map)) {
-        if (parse_output_arg(output)$output_format != 'rtf') {
-            idx <- tab$group != 'gof'
-            tab$term <- ifelse(idx, gsub(':', ' \u00d7 ', tab$term), tab$term)
-        }
+  # remove duplicate term labels
+  idx <- grepl('statistic\\d*$', dat$statistic)
+  tab <- dat %>%
+    dplyr::mutate(term = ifelse(idx, '', term))
+
+  # interaction : becomes ×
+  if (is.null(coef_map)) {
+    if (parse_output_arg(output)$output_format != 'rtf') {
+      idx <- tab$group != 'gof'
+      tab$term <- ifelse(idx, gsub(':', ' \u00d7 ', tab$term), tab$term)
     }
+  }
 
-    # measure table
-    hrule <- match('gof', tab$group)
-    if (!is.na(hrule) &&
-        !is.null(add_rows) && 
-        !is.null(attr(add_rows, 'position'))) {
-        hrule <- hrule + sum(attr(add_rows, 'position') < hrule)
+  # measure table
+  hrule <- match('gof', tab$group)
+  if (!is.na(hrule) &&
+    !is.null(add_rows) &&
+    !is.null(attr(add_rows, 'position'))) {
+    hrule <- hrule + sum(attr(add_rows, 'position') < hrule)
+  }
+  if (is.na(hrule)) {
+    hrule <- NULL
+  }
+
+  # clean table but keep metadata for data.frame output
+  if (parse_output_arg(output)$output_format != "dataframe") {
+    tab <- tab %>%
+      dplyr::select(-statistic, -group) %>%
+      # HACK: arbitrary 7 spaces to avoid name conflict
+      dplyr::rename(`       ` = term)
+  }
+
+  # stars
+  if (!isFALSE(stars)) {
+    stars_note <- make_stars_note(stars)
+    if (is.null(notes)) {
+      notes <- stars_note
+    } else {
+      notes <- c(stars_note, notes)
     }
-    if (is.na(hrule)) { 
-        hrule <- NULL
-    }
+  }
 
-    # clean table but keep metadata for data.frame output
-    if (parse_output_arg(output)$output_format != "dataframe") {
-      tab <- tab %>%
-             dplyr::select(-statistic, -group) %>%
-             # HACK: arbitrary 7 spaces to avoid name conflict
-             dplyr::rename(`       ` = term)
-    }
+  # column alignment
+  if ("align" %in% names(ellipsis)) {
+    align <- ellipsis[["align"]]
+  } else {
+    align <- strrep("l", ncol(tab))
+  }
 
-    # stars
-    if (!isFALSE(stars)) {
-        stars_note <- make_stars_note(stars)
-        if (is.null(notes)) {
-            notes <- stars_note
-        } else {
-            notes <- c(stars_note, notes)
-        }
-    }
+  # build table
+  factory(tab,
+    align = align,
+    fmt = fmt,
+    hrule = hrule,
+    notes = notes,
+    output = output,
+    title = title,
+    add_rows = add_rows,
+    ...)
 
-    # column alignment left
-    align <- strrep('l', ncol(tab))
-
-    # build table
-    factory(tab, 
-            align = align,
-            fmt = fmt,
-            hrule = hrule,
-            notes = notes,
-            output = output,
-            title = title,
-            add_rows = add_rows,
-            ...)
-      
 }
 
 #' Beautiful, customizable summaries of statistical models
@@ -214,4 +229,3 @@ modelsummary <- function(models,
 #' @inherit modelsummary
 #' @export
 msummary <- modelsummary
-

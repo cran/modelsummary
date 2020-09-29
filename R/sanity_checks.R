@@ -1,10 +1,20 @@
+#' assert if dependency is installed
+#'
+#' @keywords internal
+assert_dependency <- function(library_name, msg=NULL) {
+  if (is.null(msg)) {
+    msg <- "Please install the %s package."
+  }
+  if (!requireNamespace(library_name, quietly = TRUE)) {
+    stop(sprintf(msg, library_name))
+  }
+}
+
 #' check if dependency is installed
 #'
 #' @keywords internal
 check_dependency <- function(library_name) {
-  if (!requireNamespace(library_name, quietly = TRUE)) {
-    stop(sprintf("Please install the %s package.", library_name))
-  }
+  requireNamespace(library_name, quietly = TRUE)
 }
 
 #' sanity check
@@ -44,7 +54,7 @@ sanity_title <- function(title) checkmate::assert_character(title, len = 1, null
 sanity_coef_map <- function(coef_map) {
   checkmate::assert_character(coef_map, null.ok = TRUE)
   checkmate::assert_character(names(coef_map), null.ok = TRUE,
-                              unique = TRUE)
+    unique = TRUE)
 }
 
 #' sanity check
@@ -71,7 +81,7 @@ sanity_fmt <- function(fmt) checkmate::assert_string(fmt, null.ok = FALSE)
 #'
 #' @keywords internal
 sanity_conf_level <- function(conf_level) {
-  checkmate::assert_number(conf_level, lower = 0, upper = .999999999999)
+  checkmate::assert_number(conf_level, lower = 0, upper = .999999999999, null.ok=TRUE)
 }
 
 #' sanity check
@@ -81,16 +91,16 @@ sanity_factory <- function(factory_dict) {
   check_option <- function(output_type, valid) {
     if (!factory_dict[[output_type]] %in% valid) {
       msg <- paste0("`modelsummary` cannot write a table of type '",
-                    output_type,
-                    "' using the ",
-                    factory_dict[[output_type]],
-                    " package. You must use one of the following packages: ",
-                    paste(valid, collapse = ', '),
-                    ". Consider setting a global option such as: option(modelsummary_", 
-                    output_type,
-                    "='",
-                    valid[1],
-                    "')"
+        output_type,
+        "' using the ",
+        factory_dict[[output_type]],
+        " package. You must use one of the following packages: ",
+        paste(valid, collapse = ', '),
+        ". Consider setting a global option such as: option(modelsummary_",
+        output_type,
+        "='",
+        valid[1],
+        "')"
       )
       stop(msg)
     }
@@ -111,8 +121,8 @@ sanity_factory <- function(factory_dict) {
 #' @keywords internal
 sanity_stars <- function(stars) {
   checkmate::assert(
-                    checkmate::check_flag(stars),
-                    checkmate::check_numeric(stars, lower = 0, upper = 1, names = 'unique')
+    checkmate::check_flag(stars),
+    checkmate::check_numeric(stars, lower = 0, upper = 1, names = 'unique')
   )
 }
 
@@ -121,14 +131,14 @@ sanity_stars <- function(stars) {
 #' @keywords internal
 sanity_notes <- function(notes) {
   checkmate::assert(
-                    checkmate::check_list(notes, null.ok = TRUE),
-                    checkmate::check_character(notes)
+    checkmate::check_list(notes, null.ok = TRUE),
+    checkmate::check_character(notes)
   )
   if ('list' %in% class(notes)) {
     for (note in notes) {
       checkmate::assert(
-                        checkmate::check_character(note),
-                        checkmate::check_class(note, 'from_markdown')
+        checkmate::check_character(note),
+        checkmate::check_class(note, 'from_markdown')
       )
     }
   }
@@ -149,12 +159,12 @@ sanity_output <- function(output) {
     extension <- tools::file_ext(output)
     cond2 <- extension %in% extension_types
     if (isTRUE(cond2)) {
-      checkmate::assert_path_for_output(output, overwrite=TRUE)
+      checkmate::assert_path_for_output(output, overwrite = TRUE)
     } else {
-      msg <- paste0('The `output` argument must be ', 
-                    paste(object_types, collapse = ', '),
-                    ', or a valid file path with one of these extensions: ',
-                    paste(extension_types, collapse = ', '))
+      msg <- paste0('The `output` argument must be ',
+        paste(object_types, collapse = ', '),
+        ', or a valid file path with one of these extensions: ',
+        paste(extension_types, collapse = ', '))
       stop(msg)
     }
   }
@@ -171,7 +181,7 @@ sanity_add_rows <- function(add_rows, models) {
     }
   } else if (inherits(add_rows, 'data.frame')) {
     checkmate::assert_true(all(c('section', 'position') %in% colnames(add_rows)))
-    checkmate::assert_true(all(colnames(add_rows) %in% c('term', 'section', 'position', names(models)))) 
+    checkmate::assert_true(all(colnames(add_rows) %in% c('term', 'section', 'position', names(models))))
   }
 }
 
@@ -187,13 +197,13 @@ sanity_statistic <- function(statistic,
   checkmate::assert_character(statistic)
 
   checkmate::assert(checkmate::check_list(statistic_override, null.ok = TRUE),
-                    checkmate::check_function(statistic_override, null.ok = TRUE))
+    checkmate::check_function(statistic_override, null.ok = TRUE))
 
   if (is.list(statistic_override)) {
     checkmate::assert_true(length(statistic_override) == length(models))
     checkmate::assert(checkmate::check_true(all(sapply(statistic_override, is.function))),
-                      checkmate::check_true(all(sapply(statistic_override, is.vector))),
-                      checkmate::check_true(all(sapply(statistic_override, is.matrix))))
+      checkmate::check_true(all(sapply(statistic_override, is.vector))),
+      checkmate::check_true(all(sapply(statistic_override, is.matrix))))
   } else if (is.function(statistic_override)) {
     statistic_override <- lapply(models, function(x) statistic_override)
   }
@@ -227,7 +237,7 @@ sanity_tidy <- function(tidy_output, tidy_custom, estimate, statistic, modelclas
 
   # tidy_custom(model)
   checkmate::assert_data_frame(tidy_custom, nrows = nrow(tidy_output),
-                               min.cols = 2, null.ok = TRUE)
+    min.cols = 2, null.ok = TRUE)
 
   if (!is.null(tidy_custom)) {
     checkmate::assert_true('term' %in% colnames(tidy_custom))
@@ -239,9 +249,9 @@ sanity_tidy <- function(tidy_output, tidy_custom, estimate, statistic, modelclas
 
   if (!estimate %in% available) {
     msg <- paste0('For models of class ',
-                  modelclass,
-                  ' the `estimate` argument of the `modelsummary()` function must be one of: ',
-                  paste(available, collapse = ', '))
+      modelclass,
+      ' the `estimate` argument of the `modelsummary()` function must be one of: ',
+      paste(available, collapse = ', '))
     stop(msg)
   }
 
@@ -252,16 +262,16 @@ sanity_tidy <- function(tidy_output, tidy_custom, estimate, statistic, modelclas
       available <- c('conf.int', available)
     }
     msg <- paste0('For models of class ',
-                  modelclass,
-                  ' the `statistic` argument of the `modelsummary()` function must be one of: ',
-                  paste(available, collapse = ', '),
-                  ' (or possibly conf.int)')
+      modelclass,
+      ' the `statistic` argument of the `modelsummary()` function must be one of: ',
+      paste(available, collapse = ', '),
+      ' (or possibly conf.int)')
     stop(msg)
   }
 }
 
 #' sanity check: datasummary
-#' 
+#'
 # warn if a character or logical variable is nested (common mistake)
 #' @keywords internal
 sanity_ds_nesting_factor <- function(formula, data) {
@@ -272,18 +282,17 @@ sanity_ds_nesting_factor <- function(formula, data) {
   warn <- any(sapply(idx, function(x) any(grepl(x, termlabs))))
   if (warn) {
     warning(
-            'You are trying to create a nested table by applying the * operator to a character or a logical variable. It is usually a good idea to convert such variables to a factor before calling datasummary: dat$y<-as.factor(dat$y). Alternatively, you could wrap your categorical variable inside Factor() in the datasummary call itself: datasummary(x ~ Factor(y) * z, data)\n')
+      'You are trying to create a nested table by applying the * operator to a character or a logical variable. It is usually a good idea to convert such variables to a factor before calling datasummary: dat$y<-as.factor(dat$y). Alternatively, you could wrap your categorical variable inside Factor() in the datasummary call itself: datasummary(x ~ Factor(y) * z, data)\n')
   }
 }
 
-#' sanity check: datasummary_table1
-#' 
+#' sanity check: datasummary_balance
+#'
 #' @param formula
 #' right-handed formulae only
 sanity_ds_right_handed_formula <- function(formula) {
   termlabels <- labels(stats::terms(formula))
   if (length(termlabels) > 1) {
-    stop("The 'table1' template for `datasummary` only accepts a single right-hand side variable of type factor, character, or logical. If you do not want to transform your variable in the original data, you can wrap it in a Factor() call: datasummary_table1(~Factor(x), data). the name of your variablePlease visit the `modelsummary` website to learn how to build your own, more complex, Table 1. It's easy, I promise! https://vincentarelbundock.github.io/modelsummary/datasummary.html")
+    stop("The 'datasummary_table' function only accepts a single right-hand side variable of type factor, character, or logical. If you do not want to transform your variable in the original data, you can wrap it in a Factor() call: datasummary_balance(~Factor(x), data). the name of your variablePlease visit the `modelsummary` website to learn how to build your own, more complex, Table 1. It's easy, I promise! https://vincentarelbundock.github.io/modelsummary/datasummary.html")
   }
 }
-

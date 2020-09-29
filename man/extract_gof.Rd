@@ -18,12 +18,12 @@ use exponential notation. See `?sprintf` for more options.}
 `omit`. If `gof_map` is NULL, then `modelsummary` will use this data frame
 by default: `modelsummary::gof_map`}
 
-\item{...}{all other arguments are passed to the `tidy` method used to
-extract estimates from the model. For example, this allows users to set
-`exponentiate=TRUE` to exponentiate logistic regression coefficients.}
+\item{...}{all other arguments are passed to the `tidy` and `glance` methods
+used to extract estimates from the model. For example, this allows users to
+set `exponentiate=TRUE` to exponentiate logistic regression coefficients.}
 }
 \value{
-tibble with goodness-of-fit  statistics
+data.frame with goodness-of-fit  statistics
 }
 \description{
 Extract goodness-of-fit statistics from a single model

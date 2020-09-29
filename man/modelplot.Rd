@@ -9,6 +9,8 @@ modelplot(
   conf_level = 0.95,
   coef_map = NULL,
   coef_omit = NULL,
+  coef_rename = NULL,
+  statistic_override = NULL,
   facet = FALSE,
   draw = TRUE,
   background = NULL,
@@ -21,14 +23,26 @@ to summarize}
 
 \item{conf_level}{confidence level to use for confidence intervals}
 
-\item{coef_map}{named character vector.  Values refer to the variable names
+\item{coef_map}{named character vector. Values refer to the variable names
 that will appear in the table. Names refer to the original term names stored
-in the model object (e.g., "hp:mpg" for an interaction term). Coefficients
-that are omitted from this vector will be omitted from the table. The table
-will be ordered in the same order as this vector.}
+in the model object, e.g. c("hp:mpg"="hp X mpg") for an interaction term.
+Coefficients that are omitted from this vector will be omitted from the
+table. The table will be ordered in the same order as this vector.}
 
 \item{coef_omit}{string regular expression. Omits all matching coefficients
 from the table (using `grepl`).}
+
+\item{coef_rename}{named character vector. Values refer to the variable names
+that will appear in the table. Names refer to the original term names stored
+in the model object, e.g. c("hp:mpg"="hp X mpg") for an interaction term.}
+
+\item{statistic_override}{manually override the uncertainy estimates. This
+argument accepts three types of input:
+\itemize{
+  \item a function or list of functions of length(models) which produce variance-covariance matrices with row and column names equal to the names of your coefficient estimates. For example, `R` supplies the `vcov` function, and the `sandwich` package supplies `vcovHC`, `vcovHAC`, etc.
+  \item a list of length(models) variance-covariance matrices with row and column names equal to the names of your coefficient estimates.
+  \item a list of length(models) vectors with names equal to the names of your coefficient estimates. Numeric vectors are formatted according to `fmt` and placed in brackets, character vectors printed as given.
+}}
 
 \item{facet}{TRUE or FALSE. When the 'models' argument includes several
 model objects, TRUE draws terms in separate facets, and FALSE draws terms
@@ -41,9 +55,9 @@ used to draw the plot.}
 plot.  This is especially useful to display annotations "behind" the
 'geom_pointrange' that 'modelplot' draws.}
 
-\item{...}{all other arguments are passed to the `tidy` method used to
-extract estimates from the model. For example, this allows users to set
-`exponentiate=TRUE` to exponentiate logistic regression coefficients.}
+\item{...}{all other arguments are passed to the `tidy` and `glance` methods
+used to extract estimates from the model. For example, this allows users to
+set `exponentiate=TRUE` to exponentiate logistic regression coefficients.}
 }
 \description{
 Plot model coefficients using points or point-ranges
@@ -62,13 +76,13 @@ modelplot(mod, coef_omit = 'Interc')
 
 # rename, reorder and subset with 'coef_map'
 cm <- c('vs' = 'V-shape engine',
-        'drat' = 'Rear axle ratio')
+  'drat' = 'Rear axle ratio')
 modelplot(mod, coef_map = cm)
 
 # several models
-models <- list() 
+models <- list()
 models[['Small model']] <- lm(hp ~ vs, mtcars)
-models[['Medium model']] <- lm(hp ~ vs + factor(cyl) , mtcars)
+models[['Medium model']] <- lm(hp ~ vs + factor(cyl), mtcars)
 models[['Large model']] <- lm(hp ~ vs + drat + factor(cyl), mtcars)
 modelplot(models)
 
@@ -76,21 +90,20 @@ modelplot(models)
 library(ggplot2)
 
 modelplot(models) +
-    scale_color_brewer(type = 'qual') +
-    theme_classic()
+  scale_color_brewer(type = 'qual') +
+  theme_classic()
 
 # pass arguments to 'geom_pointrange' through the ... ellipsis
 modelplot(mod, color = 'red', size = 1, fatten = .5)
 
 # add geoms to the background, behind geom_pointrange
 b <- list(geom_vline(xintercept = 0, color = 'orange'),
-          annotate("rect", alpha = .1,
-                   xmin = -.5, xmax = .5,
-                   ymin = -Inf, ymax = Inf),
-          geom_point(aes(y = term, x = estimate), alpha = .3,
-                     size = 10, color = 'red', shape = 'square'))
+  annotate("rect", alpha = .1,
+    xmin = -.5, xmax = .5,
+    ymin = -Inf, ymax = Inf),
+  geom_point(aes(y = term, x = estimate), alpha = .3,
+    size = 10, color = 'red', shape = 'square'))
 modelplot(mod, background = b)
-
 }
 
 }
