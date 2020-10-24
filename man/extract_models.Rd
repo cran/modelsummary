@@ -52,7 +52,7 @@ Coefficients that are omitted from this vector will be omitted from the
 table. The table will be ordered in the same order as this vector.}
 
 \item{coef_omit}{string regular expression. Omits all matching coefficients
-from the table (using `grepl`).}
+from the table (using `grepl(perl=TRUE)`).}
 
 \item{coef_rename}{named character vector. Values refer to the variable names
 that will appear in the table. Names refer to the original term names stored
@@ -63,7 +63,7 @@ in the model object, e.g. c("hp:mpg"="hp X mpg") for an interaction term.}
 by default: `modelsummary::gof_map`}
 
 \item{gof_omit}{string regular expression. Omits all matching gof statistics from
-the table (using `grepl`).}
+the table (using `grepl(perl=TRUE)`).}
 
 \item{stars}{to indicate statistical significance
 \itemize{
@@ -72,10 +72,12 @@ the table (using `grepl`).}
   \item Named numeric vector for custom stars such as `c('*' = .1, '+' = .05)`
 }}
 
-\item{fmt}{string which specifies how numeric values will be rounded. This
-string is passed to the `sprintf` function. '\%.3f' will keep 3 digits after
-the decimal point with trailing zero. '\%.5f' will keep 5 digits. '\%.3e' will
-use exponential notation. See `?sprintf` for more options.}
+\item{fmt}{an integer, string, or function which determines how to format numeric values:
+\itemize{
+  \item integer: the number of digits to keep after the period (`format(round(x, fmt), nsmall=fmt)`)
+  \item character: string is passed to the `sprintf` function. '\%.3f' will keep 3 digits after the decimal point with trailing zero. '\%.5f' will keep 5 digits. '\%.3e' will use exponential notation. See `?sprintf` for more options.
+  \item function: a function which returns a formatted character string
+}}
 
 \item{estimate}{character name of the estimate to display. Must be a column
 name in the data.frame produced by `tidy(model)`. In the vast majority of

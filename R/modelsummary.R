@@ -14,10 +14,12 @@ globalVariables(c('.', 'term', 'group', 'estimate', 'conf.high', 'conf.low', 'va
 #'   \item Supported object types: "default", "html", "markdown", "latex", "data.frame", "gt", "kableExtra", "huxtable", "flextable".
 #'   \item When a file name is supplied to the `output` argument, the table is written immediately to file. If you want to customize your table by post-processing it with functions provided by the `gt` or `kableExtra` packages, you need to choose a different output format (e.g., "gt", "latex", "html", "markdown"), and you need to save the table after post-processing using the `gt::gtsave`, `kableExtra::save_kable`, or `cat` functions.
 #' }
-#' @param fmt string which specifies how numeric values will be rounded. This
-#' string is passed to the `sprintf` function. '\%.3f' will keep 3 digits after
-#' the decimal point with trailing zero. '\%.5f' will keep 5 digits. '\%.3e' will
-#' use exponential notation. See `?sprintf` for more options.
+#' @param fmt an integer, string, or function which determines how to format numeric values:
+#' \itemize{
+#'   \item integer: the number of digits to keep after the period (`format(round(x, fmt), nsmall=fmt)`)
+#'   \item character: string is passed to the `sprintf` function. '\%.3f' will keep 3 digits after the decimal point with trailing zero. '\%.5f' will keep 5 digits. '\%.3e' will use exponential notation. See `?sprintf` for more options.
+#'   \item function: a function which returns a formatted character string
+#' }
 #' @param stars to indicate statistical significance
 #' \itemize{
 #'   \item FALSE (default): no significance stars.
@@ -45,7 +47,7 @@ globalVariables(c('.', 'term', 'group', 'estimate', 'conf.high', 'conf.low', 'va
 #' Coefficients that are omitted from this vector will be omitted from the
 #' table. The table will be ordered in the same order as this vector.
 #' @param coef_omit string regular expression. Omits all matching coefficients
-#' from the table (using `grepl`).
+#' from the table (using `grepl(perl=TRUE)`).
 #' @param coef_rename named character vector. Values refer to the variable names
 #' that will appear in the table. Names refer to the original term names stored
 #' in the model object, e.g. c("hp:mpg"="hp X mpg") for an interaction term.
@@ -53,7 +55,7 @@ globalVariables(c('.', 'term', 'group', 'estimate', 'conf.high', 'conf.low', 'va
 #' `omit`. If `gof_map` is NULL, then `modelsummary` will use this data frame
 #' by default: `modelsummary::gof_map`
 #' @param gof_omit string regular expression. Omits all matching gof statistics from
-#' the table (using `grepl`).
+#' the table (using `grepl(perl=TRUE)`).
 #' @param add_rows a data.frame (or tibble) with the same number of columns as
 #' your main table. By default, rows are appended to the bottom of the table.
 #' You can define a "position" attribute of integers to set the row positions.
@@ -63,6 +65,9 @@ globalVariables(c('.', 'term', 'group', 'estimate', 'conf.high', 'conf.low', 'va
 #' @param estimate character name of the estimate to display. Must be a column
 #' name in the data.frame produced by `tidy(model)`. In the vast majority of
 #' cases, the default value of this argument should not be changed.
+#' @param align A character string of length equal to the number of columns in
+#' the table.  "lcr" means that the first column will be left-aligned, the 2nd
+#' column center-aligned, and the 3rd column right-aligned.
 #' @param ... all other arguments are passed to the `tidy` and `glance` methods
 #' used to extract estimates from the model. For example, this allows users to
 #' set `exponentiate=TRUE` to exponentiate logistic regression coefficients.
@@ -122,7 +127,7 @@ globalVariables(c('.', 'term', 'group', 'estimate', 'conf.high', 'conf.low', 'va
 #' @export
 modelsummary <- function(models,
                          output = "default",
-                         fmt = '%.3f',
+                         fmt = 3,
                          statistic = 'std.error',
                          statistic_override = NULL,
                          statistic_vertical = TRUE,
@@ -136,6 +141,7 @@ modelsummary <- function(models,
                          add_rows = NULL,
                          title = NULL,
                          notes = NULL,
+                         align = NULL,
                          estimate = 'estimate',
                          ...) {
 
@@ -204,10 +210,8 @@ modelsummary <- function(models,
   }
 
   # column alignment
-  if ("align" %in% names(ellipsis)) {
-    align <- ellipsis[["align"]]
-  } else {
-    align <- strrep("l", ncol(tab))
+  if (is.null(align)) {
+    align <- paste0("l", strrep("c", ncol(tab) - 1))
   }
 
   # build table

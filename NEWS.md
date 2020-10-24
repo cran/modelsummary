@@ -1,3 +1,13 @@
+# modelsummary 0.6.3
+
+* new function: modelsummary_wide
+* coef_omit and gof_omit use grepl(perl=TRUE)
+* fmt accepts integer, string or function and respects options(OutDec=",")
+* align argument for modelsummary
+* align is more liberal to accept dcolumn alignment
+* glance_custom methods for lfe and fixest 
+* bug fixes
+
 # modelsummary 0.6.2
 
 * new argument: coef_rename

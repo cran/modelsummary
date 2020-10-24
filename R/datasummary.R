@@ -1,15 +1,18 @@
 #' Create summary tables using 2-sided formulae: crosstabs, frequencies, table
 #' 1s and more.
 #'
+#' `datasummary` can use any summary function which produces one numeric or
+#' character value per variable. The examples section of this documentation
+#' shows how to define custom summary functions. The package also ships with
+#' several shortcut summary functions: Min, Max, Mean, Median, Var, SD,
+#' NPercent, NUnique, Ncol, P0, P25, P50, P75, P100.
+#'
 #' @inheritParams modelsummary
 #' @import tables
 #' @param formula A two-sided formula to describe the table: rows ~ columns.
 #' See the Examples section for a mini-tutorial and the Details section for
 #' more resources.
 #' @param data A data.frame (or tibble)
-#' @param align A character string of length equal to the number of columns in
-#' the table.  "lcr" means that the first column will be left-aligned, the 2nd
-#' column center-aligned, and the 3rd column right-aligned.
 #' @param add_columns a data.frame (or tibble) with the same number of rows as
 #' your main table.
 #' @param sparse_header TRUE or FALSE. TRUE eliminates column headers which
@@ -125,7 +128,7 @@
 datasummary <- function(formula,
                         data,
                         output = 'default',
-                        fmt = "%.2f",
+                        fmt = 2,
                         title = NULL,
                         notes = NULL,
                         align = NULL,

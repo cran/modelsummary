@@ -15,6 +15,8 @@ Status](https://travis-ci.org/vincentarelbundock/modelsummary.svg?branch=master)
 
 The tables produced by `modelsummary` are beautiful and highly customizable. They can be echoed to the `R` console or displayed in the `RStudio` Viewer. They can be saved to a wide variety of formats, including HTML, PDF, Text/Markdown, LaTeX, MS Word, RTF, JPG, and PNG. Tables can easily be embedded in dynamic documents with `Rmarkdown`, `knitr`, or `Sweave`. `modelsummary` supports dozens of model types out-of-the-box. 
 
+Extensive documentation and examples can be found on the `modelsummary` website: https://vincentarelbundock.github.io/modelsummary
+
 `modelsummary` includes three families of functions:
 
 1. `modelsummary`: Display results from several statistical models side-by-side. 
@@ -34,8 +36,7 @@ These tables and plots were created using `modelsummary`, without any manual edi
 |<img width="2406" src="https://user-images.githubusercontent.com/987057/82853752-90558300-9ed4-11ea-88af-12cf20cb367f.png">|<img width="2406" src="https://user-images.githubusercontent.com/987057/86512021-50839480-bdcc-11ea-893c-8c1e7a277895.png">
 |<img width="2406" src="https://user-images.githubusercontent.com/987057/82855711-0a3c3b00-9eda-11ea-8a81-1eebfbb7cb73.png">|<img width="2406" src="https://user-images.githubusercontent.com/987057/85772292-b1cfa780-b6ea-11ea-8ae1-b95c6ddbf0a9.png">|
 |<img width="2406" src="https://user-images.githubusercontent.com/987057/86502482-9eb77a00-bd71-11ea-80da-dc935c1fbd90.jpeg">|<img width="2406" src="https://user-images.githubusercontent.com/987057/86511490-cb967c00-bdc7-11ea-9d9b-0ef188840faf.png">
-|<img width="2406" src="https://user-images.githubusercontent.com/987057/93255373-d4acad80-f767-11ea-84c9-c2fc8ab77aa1.png">|
-
+|<img width="2406" src="https://user-images.githubusercontent.com/987057/95397127-6d9a9880-08d0-11eb-8ee4-3cd181d55b32.png">|
 
 
 # Contents
@@ -154,13 +155,14 @@ To summarize multiple models side-by-side, we store them in a list. If
 the items in that list are named, the names will be used as column
 labels:
 
-``` r
-models <- list()
-models[['OLS 1']] <- lm(Donations ~ Literacy + Clergy, data = dat)
-models[['Poisson 1']] <- glm(Donations ~ Literacy + Commerce, family = poisson, data = dat)
-models[['OLS 2']] <- lm(Crime_pers ~ Literacy + Clergy, data = dat)
-models[['Poisson 2']] <- glm(Crime_pers ~ Literacy + Commerce, family = poisson, data = dat)
-models[['OLS 3']] <- lm(Crime_prop ~ Literacy + Clergy, data = dat)
+```r
+models <- list(
+  "OLS 1"     = lm(Donations ~ Literacy + Clergy, data = dat),
+  "Poisson 1" = glm(Donations ~ Literacy + Commerce, family = poisson, data = dat),
+  "OLS 2"     = lm(Crime_pers ~ Literacy + Clergy, data = dat),
+  "Poisson 2" = glm(Crime_pers ~ Literacy + Commerce, family = poisson, data = dat),
+  "OLS 3"     = lm(Crime_prop ~ Literacy + Clergy, data = dat)
+)
 
 modelsummary(models)
 ```
@@ -177,7 +179,7 @@ In `Rstudio`, the image below will be displayed automatically in the
 
 The same table can be printed in text-only format to the `R` Console:
 
-``` r
+```r
 modelsummary(models, 'markdown')
 
 

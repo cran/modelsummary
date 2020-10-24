@@ -7,7 +7,7 @@
 msummary(
   models,
   output = "default",
-  fmt = "\%.3f",
+  fmt = 3,
   statistic = "std.error",
   statistic_override = NULL,
   statistic_vertical = TRUE,
@@ -21,6 +21,7 @@ msummary(
   add_rows = NULL,
   title = NULL,
   notes = NULL,
+  align = NULL,
   estimate = "estimate",
   ...
 )
@@ -36,10 +37,12 @@ to summarize}
   \item When a file name is supplied to the `output` argument, the table is written immediately to file. If you want to customize your table by post-processing it with functions provided by the `gt` or `kableExtra` packages, you need to choose a different output format (e.g., "gt", "latex", "html", "markdown"), and you need to save the table after post-processing using the `gt::gtsave`, `kableExtra::save_kable`, or `cat` functions.
 }}
 
-\item{fmt}{string which specifies how numeric values will be rounded. This
-string is passed to the `sprintf` function. '\%.3f' will keep 3 digits after
-the decimal point with trailing zero. '\%.5f' will keep 5 digits. '\%.3e' will
-use exponential notation. See `?sprintf` for more options.}
+\item{fmt}{an integer, string, or function which determines how to format numeric values:
+\itemize{
+  \item integer: the number of digits to keep after the period (`format(round(x, fmt), nsmall=fmt)`)
+  \item character: string is passed to the `sprintf` function. '\%.3f' will keep 3 digits after the decimal point with trailing zero. '\%.5f' will keep 5 digits. '\%.3e' will use exponential notation. See `?sprintf` for more options.
+  \item function: a function which returns a formatted character string
+}}
 
 \item{statistic}{string name of the statistic to include in parentheses
 \itemize{
@@ -74,7 +77,7 @@ Coefficients that are omitted from this vector will be omitted from the
 table. The table will be ordered in the same order as this vector.}
 
 \item{coef_omit}{string regular expression. Omits all matching coefficients
-from the table (using `grepl`).}
+from the table (using `grepl(perl=TRUE)`).}
 
 \item{coef_rename}{named character vector. Values refer to the variable names
 that will appear in the table. Names refer to the original term names stored
@@ -85,7 +88,7 @@ in the model object, e.g. c("hp:mpg"="hp X mpg") for an interaction term.}
 by default: `modelsummary::gof_map`}
 
 \item{gof_omit}{string regular expression. Omits all matching gof statistics from
-the table (using `grepl`).}
+the table (using `grepl(perl=TRUE)`).}
 
 \item{add_rows}{a data.frame (or tibble) with the same number of columns as
 your main table. By default, rows are appended to the bottom of the table.
@@ -95,6 +98,10 @@ See examples.}
 \item{title}{string}
 
 \item{notes}{list or vector of notes to append to the bottom of the table.}
+
+\item{align}{A character string of length equal to the number of columns in
+the table.  "lcr" means that the first column will be left-aligned, the 2nd
+column center-aligned, and the 3rd column right-aligned.}
 
 \item{estimate}{character name of the estimate to display. Must be a column
 name in the data.frame produced by `tidy(model)`. In the vast majority of

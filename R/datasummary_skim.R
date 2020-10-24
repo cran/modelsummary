@@ -87,7 +87,11 @@ datasummary_skim <- function(data,
 
       # if flag was flipped
       if (!histogram) {
-        warning('The histogram argument is only supported for (a) output types "default", "html", or "kableExtra"; (b) writing to file paths with extensions ".html", ".jpg", or ".png"; and (c) Rmarkdown or knitr documents compiled to PDF or HTML. Use `histogram=FALSE` to silence this warning.')
+        warning('The histogram argument is only supported for (a) output types
+                "default", "html", or "kableExtra"; (b) writing to file paths
+                with extensions ".html", ".jpg", or ".png"; and (c) Rmarkdown
+                or knitr documents compiled to PDF or HTML. Use
+                `histogram=FALSE` to silence this warning.')
       }
 
     }
@@ -101,7 +105,7 @@ datasummary_skim <- function(data,
     }
 
     # pad colnames in case one is named Min, Max, Mean, or other function name
-    colnames(dat_new) <- paste0(colnames(dat_new), " ")
+    # colnames(dat_new) <- paste0(colnames(dat_new), " ")
 
     # with histogram
     if (histogram) {
@@ -120,13 +124,8 @@ datasummary_skim <- function(data,
       # order, to print the right histograms.
 
       idx <- datasummary(f, data=dat_new, output="data.frame")[[1]]
-      histogram_list <- as.list(data[, idx, drop=FALSE])
-      for (n in names(histogram_list)) {
-        histogram_list[[n]] <- as.numeric(scale(stats::na.omit(histogram_list[[n]])))
-        if (all(is.nan(histogram_list[[n]]))) {
-          histogram_list[[n]] <- 0
-        }
-      }
+      histogram_list <- as.list(dat_new[, idx, drop=FALSE])
+      histogram_list <- lapply(histogram_list, stats::na.omit)
 
       # too large
       if (ncol(dat_new) > 50) {
@@ -148,7 +147,8 @@ datasummary_skim <- function(data,
         kableExtra::column_spec(
           column=9, 
           image=kableExtra::spec_hist(histogram_list, 
-                                      col="black")
+                                      col="black",
+                                      same_lim=FALSE)
         )
 
       # don't use output=filepath.html when post-processing
@@ -179,7 +179,7 @@ datasummary_skim <- function(data,
     dat_new <- data
 
     # pad colnames in case one is named Min, Max, Mean, or other function name
-    colnames(dat_new) <- paste0(colnames(dat_new), " ")
+    # colnames(dat_new) <- paste0(colnames(dat_new), " ")
 
     for (n in colnames(dat_new)) {
 
@@ -226,7 +226,7 @@ datasummary_skim <- function(data,
       stop("Cannot summarize more than 50 variables at a time.")
     }
 
-    pctformat = function(x) sprintf(fmt, x)
+    pctformat = function(x) rounding(x, fmt)
     f <- All(dat_new, numeric=FALSE, factor=TRUE, logical=TRUE, character=TRUE) ~
          (N = 1) * Format(digits=0) + (`%` = Percent()) * Format(pctformat())
 

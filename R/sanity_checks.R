@@ -30,12 +30,11 @@ sanity_model_names <- function(modelnames) {
 #'
 #' @keywords internal
 sanity_align <- function(align, tab) {
-  checkmate::assert_string(align, null.ok = TRUE)
-  if (!is.null(align)) {
-    checkmate::assert_true(nchar(align) == ncol(tab))
-    align <- strsplit(align, '')[[1]]
-    checkmate::assert_true(all(align %in% c('l', 'c', 'r')))
-  }
+  checkmate::assert(
+    checkmate::check_character(align, len=1, null.ok = TRUE),
+    checkmate::check_character(align, len=ncol(tab), null.ok = TRUE),
+    combine="or"
+  )
 }
 
 #' sanity check
@@ -75,7 +74,13 @@ sanity_gof_map <- function(gof_map) checkmate::check_data_frame(gof_map, null.ok
 #' sanity check
 #'
 #' @keywords internal
-sanity_fmt <- function(fmt) checkmate::assert_string(fmt, null.ok = FALSE)
+sanity_fmt <- function(fmt) {
+  checkmate::assert(
+    checkmate::check_character(fmt, len=1),
+    checkmate::check_numeric(fmt, len=1, lower=0),
+    checkmate::check_function(fmt)
+  )
+}
 
 #' sanity check
 #'
@@ -222,7 +227,7 @@ sanity_statistic <- function(statistic,
 #'
 #' @keywords internal
 sanity_gof <- function(gof_output, gof_custom) {
-  checkmate::assert_data_frame(gof_output, nrows = 1, min.cols = 1, null.ok = FALSE)
+  checkmate::assert_data_frame(gof_output, nrows = 1, null.ok = FALSE)
   checkmate::assert_data_frame(gof_custom, nrows = 1, null.ok = TRUE)
 }
 
