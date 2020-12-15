@@ -1,14 +1,35 @@
 library(modelsummary)
-library(estimatr)
+
 
 random_string <- function() {
   paste(sample(letters, 30, replace=TRUE), collapse="")
 }
 
-
 context('datasummary_balance')
 
+
+test_that("column percentages sum to 100 within factors", {
+  testthat::skip_if_not_installed("estimatr")
+  dat <- mtcars[, c("vs", "cyl", "gear")]
+  dat$cyl <- factor(dat$cyl)
+  dat$gear <- factor(dat$gear)
+  tab <- datasummary_balance(~vs, dat, output="dataframe")
+  idx <- c(rep("cyl", 3), rep("gear", 3))
+  f <- function(x) round(sum(x)) == 100
+  expect_true(all(tapply(as.numeric(tab[[4]]), idx, f)))
+  expect_true(all(tapply(as.numeric(tab[[6]]), idx, f)))
+})
+
+test_that("palmer penguins was once broken with kableExtra", {
+  testthat::skip_if_not_installed("estimatr")
+  penguins <- "https://vincentarelbundock.github.io/Rdatasets/csv/palmerpenguins/penguins.csv"
+  penguins <- read.csv(penguins)
+  raw <- datasummary_balance(~sex, penguins, output="html")
+  expect_known_output(cat(raw), "known_output/datasummary_balance_penguins.html", update=FALSE)
+})
+
 test_that('variable name with spaces', {
+  testthat::skip_if_not_installed("estimatr")
   tmp <- mtcars
   colnames(tmp)[1] <- "testing spaces"
   tab <- expect_error(datasummary_balance(~vs, data=tmp, output="dataframe"), NA)
@@ -16,6 +37,7 @@ test_that('variable name with spaces', {
 })
 
 test_that('add column', {
+  testthat::skip_if_not_installed("estimatr")
   tmp <- mtcars
   tmp$gear <- as.factor(tmp$gear)
   tmp$vs <- as.logical(tmp$vs)
@@ -28,6 +50,7 @@ test_that('add column', {
 })
 
 test_that('only numeric', {
+  testthat::skip_if_not_installed("estimatr")
   tab <- datasummary_balance(~vs, mtcars, output = 'dataframe')
   truth <- c(" ", "0 Mean", "0 Std. Dev.", "1 Mean",
     "1 Std. Dev.", "Diff. in Means", "Std. Error")
@@ -50,6 +73,7 @@ test_that('only factors', {
 })
 
 test_that('both factors and numerics', {
+  testthat::skip_if_not_installed("estimatr")
   tmp <- mtcars
   tmp$cyl <- factor(tmp$cyl)
   tmp$gear <- factor(tmp$gear)
@@ -63,6 +87,7 @@ test_that('both factors and numerics', {
 })
 
 test_that('more than two conditions', {
+  testthat::skip_if_not_installed("estimatr")
   tmp <- mtcars
   tmp$cyl <- factor(tmp$cyl)
   tmp$vs <- as.logical(tmp$vs)
@@ -75,6 +100,7 @@ test_that('more than two conditions', {
 })
 
 test_that('single numeric', {
+  testthat::skip_if_not_installed("estimatr")
   tmp <- mtcars[, c('am', 'mpg')]
   tab <- datasummary_balance(~am, data = tmp, output = 'dataframe')
   expect_s3_class(tab, 'data.frame')
@@ -83,6 +109,7 @@ test_that('single numeric', {
 })
 
 test_that('single factor', {
+  testthat::skip_if_not_installed("estimatr")
   tmp <- mtcars[, c('am', 'gear')]
   tmp$gear <- factor(tmp$gear)
   tab <- datasummary_balance(~am, data = tmp, output = 'dataframe')
@@ -99,6 +126,7 @@ test_that('dinm=FALSE', {
 })
 
 test_that('dinm_statistic = "p.value"', {
+  testthat::skip_if_not_installed("estimatr")
   tab <- datasummary_balance(~vs, mtcars, dinm_statistic = 'p.value',
     output = 'dataframe')
   expect_s3_class(tab, 'data.frame')
@@ -108,6 +136,7 @@ test_that('dinm_statistic = "p.value"', {
 })
 
 test_that('fmt', {
+  testthat::skip_if_not_installed("estimatr")
   tmp <- mtcars[, c('am', 'mpg', 'gear')]
   tmp$gear <- factor(tmp$gear)
   truth <- c("17.15", "N", "15", "4", "0")
@@ -116,6 +145,7 @@ test_that('fmt', {
 })
 
 test_that('too many factor levels', {
+  testthat::skip_if_not_installed("estimatr")
   set.seed(10)
   dat <- data.frame(ID = as.character(1:100),
     Y = rnorm(100),
@@ -124,6 +154,7 @@ test_that('too many factor levels', {
 })
 
 test_that('estimatr: clusters, blocks, weights', {
+  testthat::skip_if_not_installed("estimatr")
 
   set.seed(286342)
   # clusters
@@ -135,7 +166,7 @@ test_that('estimatr: clusters, blocks, weights', {
   dat$Z_clust <- as.numeric(dat$clusters %in% idx)
   dat$ID <- NULL
 
-  truth <- difference_in_means(Y ~ Z_clust, clusters = clusters, data = dat)
+  truth <- estimatr::difference_in_means(Y ~ Z_clust, clusters = clusters, data = dat)
   truth <- estimatr::tidy(truth)
 
   tab <- datasummary_balance(~Z_clust, dat, fmt = "%.6f", output = 'dataframe')
@@ -143,27 +174,18 @@ test_that('estimatr: clusters, blocks, weights', {
 
   # blocks
   dat$block <- rep(1:5, each = 20) # hardcoded name in estimatr
-  dat <- dat %>%
-    dplyr::group_by(block) %>%
-    dplyr::mutate(Z_block = rbinom(dplyr::n(), 1, .5))
+
+  dat$Z_block <- unlist(tapply(dat$block, dat$block, function(z) rbinom(length(z), 1, .5)))
+
   dat$blocks <- dat$block # hardcoded name in datasummary_balance
   dat$clusters <- NULL
 
-  truth <- difference_in_means(Y ~ Z_block, blocks = block, data = dat)
+  truth <- estimatr::difference_in_means(Y ~ Z_block, blocks = block, data = dat)
   truth <- sprintf("%.6f", tidy(truth)$std.error)
 
   tab <- datasummary_balance(~Z_block, dat, fmt = "%.6f", output = 'dataframe')
   expect_equal(tab[1, ncol(tab)], truth)
 
-})
-
-
-test_that('works with tibbles', {
-  res <- dplyr::starwars %>%
-    dplyr::filter(species == 'Human') %>%
-    dplyr::select(height:gender) %>%
-    datasummary_balance(~gender, data = ., output = "data.frame")
-  expect_equal(dim(res), c(28, 8))
 })
 
 

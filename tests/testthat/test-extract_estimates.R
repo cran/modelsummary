@@ -9,16 +9,13 @@ test_that("bad estimate name throws error", {
 
 test_that("bad statistic name throws error", {
   mod <- lm(am ~ drat, data = mtcars)
-  expect_error(modelsummary:::extract_estimates(
-    mod,
-    statistic = "junk"))
-  expect_error(modelsummary:::extract_estimates(models, statistic = "junk", statistic_override = vcov))
-})
-
-test_that("horizontal statistics", {
-  mod <- lm(am ~ drat, data = mtcars)
-  raw <- modelsummary:::extract_estimates(
-    mod,
-    statistic_vertical = FALSE)
-  expect_equal(dim(raw), c(2, 3))
+  expect_error(
+    modelsummary(mod, output="dataframe", statistic = "junk")
+  )
+  expect_error(
+    modelsummary(models, 
+                 statistic="junk",
+                 output="dataframe",
+                 statistic_override = vcov)
+  )
 })

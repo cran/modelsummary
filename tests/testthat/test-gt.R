@@ -1,7 +1,6 @@
 context("gt")
 
 library(gt)
-library(dplyr)
 library(modelsummary)
 
 models <- list()
@@ -11,10 +10,11 @@ models[['OLS 2']] <- lm(vs ~ hp + wt, mtcars)
 models[['Logit 1']] <- glm(vs ~ hp + drat, mtcars, family = binomial())
 models[['Logit 2']] <- glm(am ~ hp + disp, mtcars, family = binomial())
 
+
 test_that("gof_omit='.*' used to produce an error", {
 
   mod <- lm(mpg ~ wt, mtcars)
-  expect_error(msummary(mod, output = "gt", gof_omit = ".*"), NA)
+  expect_error(modelsummary(mod, output = "gt", gof_omit = ".*"), NA)
 
 })
 
@@ -29,7 +29,7 @@ test_that("complex html table", {
     '(Intercept)' = 'Constant')
 
   raw <-
-    msummary(
+    modelsummary(
       models,
       output = "gt",
       coef_map = cm,
@@ -45,21 +45,21 @@ test_that("complex html table", {
       subtitle = 'Models estimated using the mtcars dataset.') %>%
     gt::as_raw_html()
 
-  expect_known_output(cat(raw), "known_output/complex_table.html")
+  expect_known_output(cat(raw), "known_output/complex_table.html", update=FALSE)
 
 })
 
 test_that("title", {
 
-  raw <- msummary(models, output = "gt", title = 'This is a title for my table.') %>%
+  raw <- modelsummary(models, output = "gt", title = 'This is a title for my table.') %>%
     gt::as_raw_html()
-  expect_known_output(cat(raw), "known_output/title.html")
+  expect_known_output(cat(raw), "known_output/title.html", update=FALSE)
 
 })
 
 test_that("background color", {
 
-  raw <- msummary(models, output = "gt", title = 'colors') %>%
+  raw <- modelsummary(models, output = "gt", title = 'colors') %>%
     tab_style(style = cell_text(weight = "bold"),
       locations = cells_body(columns = vars(`OLS 1`))) %>%
     tab_style(style = cell_text(style = "italic"),
@@ -70,6 +70,6 @@ test_that("background color", {
       locations = cells_body(columns = vars(`Logit 2`), rows = 2:6)) %>%
     as_raw_html()
 
-  expect_known_output(cat(raw), "known_output/background_color.html")
+  expect_known_output(cat(raw), "known_output/background_color.html", update=FALSE)
 
 })

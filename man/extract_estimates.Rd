@@ -6,35 +6,36 @@
 \usage{
 extract_estimates(
   model,
+  estimate = "estimate",
   statistic = "std.error",
   statistic_override = NULL,
-  statistic_vertical = TRUE,
   conf_level = 0.95,
   fmt = "\%.3f",
   stars = FALSE,
-  estimate = "estimate",
   ...
 )
 }
 \arguments{
 \item{model}{object type with an available `tidy` method.}
 
-\item{statistic}{string name of the statistic to include in parentheses
+\item{estimate}{character name of the estimate to display. Must be a column
+name in the data.frame produced by `tidy(model)`. In the vast majority of
+cases, the default value of this argument should not be changed.}
+
+\item{statistic}{character vector of raw strings or glue strings (see examples) which represent the uncertainty statistics to report vertically. Parentheses are added automatically unless the value includes `glue` curly braces {}. Acceptable values:
 \itemize{
-  \item Typical values: "conf.int", "std.error", "statistic", "p.value"
+  \item Typical values: "conf.int", "std.error", "statistic", "p.value", "conf.low", "conf.high".
   \item Alternative values: any column name produced by `broom::tidy(model)`
+  \item `glue` package strings with braces such as: 
+  \item "\{estimate\} [\{conf.low\}, \{conf.high\}]"
 }}
 
-\item{statistic_override}{manually override the uncertainy estimates. This
-argument accepts three types of input:
+\item{statistic_override}{manually override statistics. Accepts three types of input:
 \itemize{
-  \item a function or list of functions of length(models) which produce variance-covariance matrices with row and column names equal to the names of your coefficient estimates. For example, `R` supplies the `vcov` function, and the `sandwich` package supplies `vcovHC`, `vcovHAC`, etc.
+  \item a function or list of functions of length(models) which produce variance-covariance matrices with row and column names equal to the names of your coefficient estimates. For example, `R` supplies the `vcov` function, and the `sandwich` package supplies `vcovHC`, `vcovHAC`, etc. If the `lmtest` package is installed, `modelsummary` will try to use it to override: "std.error", "statistic", "p.value", "conf.int". If the `lmtest` package is not installed, `modelsummary` will override "std.error" by using the square root of the vcov matrix diagonal.
   \item a list of length(models) variance-covariance matrices with row and column names equal to the names of your coefficient estimates.
   \item a list of length(models) vectors with names equal to the names of your coefficient estimates. Numeric vectors are formatted according to `fmt` and placed in brackets, character vectors printed as given.
 }}
-
-\item{statistic_vertical}{TRUE if statistics should be printed below
-estimates. FALSE if statistics should be printed beside estimates.}
 
 \item{conf_level}{confidence level to use for confidence intervals}
 
@@ -51,10 +52,6 @@ estimates. FALSE if statistics should be printed beside estimates.}
   \item TRUE: *=.1, **=.05, ***=.01
   \item Named numeric vector for custom stars such as `c('*' = .1, '+' = .05)`
 }}
-
-\item{estimate}{character name of the estimate to display. Must be a column
-name in the data.frame produced by `tidy(model)`. In the vast majority of
-cases, the default value of this argument should not be changed.}
 
 \item{...}{all other arguments are passed to the `tidy` and `glance` methods
 used to extract estimates from the model. For example, this allows users to

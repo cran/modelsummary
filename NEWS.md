@@ -1,3 +1,18 @@
+# modelsummary 0.6.4
+
+* glue format for `estimate` and `statistic`
+* easystats support for model info extraction
+* deprecate statistic_vertical
+* deprecate extract_models. Use modelsummary(output="dataframe") instead.
+* modelplot pushes ... through to modelsummary(output="dataframe")
+* datasummary_skim(type="dataset")
+* gof_map omits by default
+* datasummary_balance uses row percentages
+* statistic_override does not require a list
+* statistic_override accepts a single model
+* N function for well formatted N in datasummary
+* Bug fixes
+
 # modelsummary 0.6.3
 
 * new function: modelsummary_wide

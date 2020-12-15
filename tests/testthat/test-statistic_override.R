@@ -12,29 +12,48 @@ models[['OLS 2']] <- lm(Desertion ~ Crime_prop + Infants, dat)
 models[['Poisson 2']] <- glm(Desertion ~ Crime_prop + Donations, dat, family = poisson())
 models[['Logit 1']] <- glm(Clergy ~ Crime_prop + Infants, dat, family = binomial())
 
+test_that("single model", {
+  mod <- lm(hp ~ mpg + drat, mtcars)
+  x <- modelsummary(mod, statistic_override=vcov, output="data.frame")
+  y <- modelsummary(mod, statistic_override=vcov(mod), output="data.frame")
+  z <- modelsummary(mod, statistic_override=sqrt(diag(vcov(mod))), output="data.frame")
+  expect_equal(x, y)
+  expect_equal(y, z)
+})
+
+test_that("sublist (sandwich vignette)", {
+  models <- lm(hp ~ mpg + drat, mtcars)
+  tab <- modelsummary(
+    models,
+    output="data.frame",
+    statistic_override = list(vcov))
+  expect_s3_class(tab, "data.frame")
+  expect_equal(dim(tab), c(13, 4))
+})
+
 # reference tables
 results <- list()
 
-results[['one sandwich']] <- msummary(
+results[['one sandwich']] <- modelsummary(
   models,
   output = "data.frame",
   statistic_override = vcov,
-  statistic = 'p.value',
+  statistic = "p.value",
   fmt = "%.7f")
 
-results[['many sandwiches']] <- msummary(
+results[['many sandwiches']] <- modelsummary(
   models,
   output = "data.frame",
   statistic_override = list(vcov, vcov, vcov, vcov, vcov),
   fmt = "%.7f")
 
-results[['list of matrices']] <- msummary(
+results[['list of matrices']] <- modelsummary(
   models,
   output = "data.frame",
   statistic_override = lapply(models, vcov),
   fmt = "%.7f")
 
-results[['hardcoded numerical']] <- msummary(
+results[['hardcoded numerical']] <- modelsummary(
   models,
   output = "data.frame",
   fmt = "%.7f",
@@ -45,7 +64,7 @@ results[['hardcoded numerical']] <- msummary(
     `NBin 2` = c('(Intercept)' = 4, Crime_prop = -7, Donations = -9),
     `Logit 1` = c('(Intercept)' = 1, Crime_prop = -5, Infants = -2)))
 
-results[['hardcoded arbitrary']] <- msummary(
+results[['hardcoded arbitrary']] <- modelsummary(
   models,
   output = "data.frame",
   fmt = "%.7f",
@@ -58,12 +77,11 @@ results[['hardcoded arbitrary']] <- msummary(
 
 # we are not interested in GOFs in this test
 for (i in seq_along(results)) {
-  results[[i]] <- results[[i]] %>%
-    dplyr::filter(group == "estimates") %>%
-    dplyr::select(-group, -statistic)
+  results[[i]] <- results[[i]][results[[i]]$part == "estimates",, drop=FALSE]
+  results[[i]]$part <- results[[i]]$statistic <- NULL
 }
 
-# save known values (comment out until new manual check)
+# # save known values (comment out until new manual check)
 # saveRDS(results, file="known_output/statistic-override.rds")
 
 # load reference values (comment out when updating)
@@ -71,17 +89,12 @@ reference <- readRDS(file = "known_output/statistic-override.rds")
 
 
 test_that("bad function", {
-  expect_error(msummary(models, statistic_override = na.omit))
-})
-
-test_that("bad matrix", {
-  mat <- matrix(1, ncol = 2, nrow = 2)
-  expect_error(msummary(models, statistic_override = mat))
+  expect_error(modelsummary(models, statistic_override = na.omit))
 })
 
 test_that("vector must be named", {
   vec <- as.numeric(1:3)
-  expect_error(msummary(models[[1]], statistic = "std.error", statistic_override = vec))
+  expect_error(modelsummary(models[[1]], estimate = c("estimate", "std.error"), statistic_override = vec))
 })
 
 test_that("statistic_override content", {
@@ -95,3 +108,4 @@ test_that("statistic_override content", {
 test_that("useless: function but no ci needed", {
   expect_error(modelsummary(models, statistic_override=vcov, conf_level=NULL), NA)
 })
+

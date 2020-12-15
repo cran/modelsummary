@@ -2,11 +2,11 @@
 % Please edit documentation in R/sanity_checks.R
 \name{sanity_statistic}
 \alias{sanity_statistic}
-\title{sanity check}
+\title{sanity_check}
 \usage{
-sanity_statistic(statistic, statistic_override, statistic_vertical, models)
+sanity_statistic(statistic)
 }
 \description{
-sanity check
+sanity_check
 }
 \keyword{internal}

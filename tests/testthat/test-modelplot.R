@@ -1,19 +1,24 @@
-library(vdiffr)
 library(ggplot2)
-library(sandwich)
 
 context("modelplot")
 
+# CRAN requires vdiffr to be conditional
+# Function recommended by Lionel Henry on 2020-12-08
+expect_doppelganger <- function(title, fig, path = NULL, ...) {
+  testthat::skip_if(getRversion() > '4.0.3') # new graphics device
+  testthat::skip_if_not_installed("vdiffr")
+  vdiffr::expect_doppelganger(title, fig, path = path, ...)
+}
 
 test_that("single model", {
 
   mod <- lm(hp ~ mpg + drat, data = mtcars)
   p <- modelplot(mod)
-  vdiffr::expect_doppelganger("vanilla", p)
+  expect_doppelganger("vanilla", p)
 
   mod <- lm(hp ~ mpg + drat, data = mtcars)
   p <- modelplot(mod, coef_omit = 'Interc')
-  vdiffr::expect_doppelganger("coef_omit", p)
+  expect_doppelganger("coef_omit", p)
 
   params <- list(
     geom_vline(xintercept = 0, color = 'orange'),
@@ -24,7 +29,7 @@ test_that("single model", {
   p <- modelplot(mod,
     coef_map = c("drat" = "Rear axle ratio", "mpg" = "Miles / gallon"),
     color = "green", shape = "square", background = params)
-  vdiffr::expect_doppelganger("coef_map + color + shape + background", p)
+  expect_doppelganger("coef_map + color + shape + background", p)
 
 })
 
@@ -33,12 +38,12 @@ test_that("multiple models", {
   mod <- list(lm(hp ~ mpg + drat, data = mtcars),
     lm(hp ~ mpg, data = mtcars))
   p <- modelplot(mod)
-  vdiffr::expect_doppelganger("multiple plots vanilla", p)
+  expect_doppelganger("multiple plots vanilla", p)
 
   mod <- list(lm(hp ~ mpg + drat, data = mtcars),
     lm(hp ~ mpg, data = mtcars))
   p <- modelplot(mod, facet = TRUE)
-  vdiffr::expect_doppelganger("multiple plots facet", p)
+  expect_doppelganger("multiple plots facet", p)
 
 })
 
@@ -51,17 +56,13 @@ test_that("conf_level=NULL", {
 
 
 test_that("statistic_override", {
-
+  testthat::skip_if_not_installed("sandwich")
   mod <- list(lm(hp ~ mpg + drat, data = mtcars),
               lm(hp ~ mpg + drat, data = mtcars))
   so <- list(vcov, sandwich::vcovHC)
-
   p <- modelplot(mod, statistic_override=so, draw=FALSE)
-
-  known <- c(165.179327669237, 182.406373565931, -13.6502180401172,
-             -15.0390897152001, -22.1832974370102, -28.1858724755655)
+  known <- c(-22.1832974370101, -28.1858724755655, -13.6502180401172, -15.0390897152002, 165.179327669237, 182.406373565932)         
   expect_equal(p$conf.low, known)
-
 })
 
 

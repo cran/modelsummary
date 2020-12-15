@@ -1,7 +1,5 @@
 context("kableExtra")
 
-library(dplyr)
-library(modelsummary)
 library(kableExtra)
 
 models <- list()
@@ -12,7 +10,7 @@ models[['Logit 1']] <- glm(vs ~ hp + drat, mtcars, family = binomial())
 models[['Logit 2']] <- glm(am ~ hp + disp, mtcars, family = binomial())
 
 test_that("knitr::kable_latex ignores bad arguments passed through ...", {
-  expect_error(msummary(models, output="latex", badarg=TRUE), NA)
+  expect_error(modelsummary(models, output="latex", badarg=TRUE), NA)
 })
 
 
@@ -27,7 +25,7 @@ test_that("kable markdown: complex table", {
     '(Intercept)' = 'Constant')
 
   expect_known_output(
-    msummary(
+    modelsummary(
       models,
       coef_map = cm,
       stars = TRUE,
@@ -45,7 +43,7 @@ test_that("kable markdown: complex table", {
 test_that("kable markdown: rouding + custom stars", {
 
   expect_known_output(
-    msummary(
+    modelsummary(
       models,
       stars = c('+' = .1, '*' = .01),
       fmt = '%.8f',

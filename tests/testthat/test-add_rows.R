@@ -18,21 +18,15 @@ test_that("tibble", {
     'NEW GOF 3', 'Y',  'Y')
   attr(rows, 'position') <- c(3, 8, 9, 12)
 
-  expect_known_output(modelsummary(mod, add_rows=rows,
-                                   output="markdown"),
-                      file="known_output/msummary_add_rows_1.md",
-                      print=TRUE,
-                      update=FALSE)
+  expect_known_output(
+    modelsummary(
+      mod, 
+      add_rows=rows,
+      output="markdown"),
+    file="known_output/msummary_add_rows_1.md",
+    print=TRUE,
+    update=FALSE)
 
-})
-
-test_that("error: bad number of cols", {
-  rows <- tibble::tribble(~term,       ~OLS, ~Logit, ~blah,
-    'cyl4',      '-',  '-',    1,
-    'NEW GOF 1', '?',  '?',    2,
-    'NEW GOF 2', 'X',  'X',    3,
-    'NEW GOF 3', 'Y',  'Y',    4)
-  expect_error(modelsummary(mod, add_rows = rows, output = 'dataframe'))
 })
 
 test_that('add_rows numeric are formatted by fmt', {

@@ -68,42 +68,52 @@ modelplot <- function(models,
 
 
   if (is.null(conf_level)) {
-    out <- extract_models(
-             models=models,
-             fmt="%.50f",
-             conf_level=conf_level,
-             coef_map=coef_map,
-             coef_omit=coef_omit,
-             coef_rename=coef_rename,
-             statistic_override=statistic_override) %>%
-      dplyr::filter(group == "estimates", statistic=="estimate") %>%
-      tidyr::pivot_longer(cols=4:ncol(.), values_to="estimate", names_to="model") %>%
-      dplyr::filter(estimate != "") %>%
-      dplyr::mutate(estimate = as.numeric(estimate))
+    estimate <- "estimate"
   } else {
-    out <- extract_models(
-             models=models,
-             fmt="%.50f",
-             conf_level=conf_level,
-             coef_map=coef_map,
-             coef_omit=coef_omit,
-             coef_rename=coef_rename,
-             statistic="conf.int",
-             statistic_override=statistic_override)  %>%
-      dplyr::filter(group == "estimates") %>%
-      tidyr::pivot_longer(cols=4:ncol(.), names_to="model") %>%
-      tidyr::pivot_wider(names_from="statistic") %>%
-      dplyr::mutate(statistic1 = gsub('\\[|\\]', '', statistic1)) %>%
-      dplyr::filter(estimate != "") %>%
-      tidyr::separate(statistic1, into=c("conf.low", "conf.high"), sep=", ") %>%
-      dplyr::mutate(dplyr::across(c(estimate, conf.low, conf.high), as.numeric))
+    estimate="{estimate}|{conf.low}|{conf.high}"
   }
 
-  dat <- out %>%
-    dplyr::mutate(
-      term = factor(term, rev(unique(term))),
-      model = factor(model, unique(model))
-    )
+  out <- modelsummary(
+    output="dataframe",
+    models=models,
+    fmt="%.50f",
+    estimate=estimate,
+    statistic=NULL,
+    conf_level=conf_level,
+    coef_map=coef_map,
+    coef_omit=coef_omit,
+    coef_rename=coef_rename,
+    gof_omit=".*",
+    statistic_override=statistic_override,
+    ...
+  )
+  out$part <- out$statistic <- NULL
+
+  # save for sorting later
+  term_order <- unique(out$term)
+
+  out <- stats::reshape(
+    out, 
+    varying = colnames(out)[2:ncol(out)],
+    times = colnames(out)[2:ncol(out)],
+    v.names = "value",
+    timevar = "model",
+    direction = "long")
+
+  if (is.null(conf_level)) {
+    out$estimate <- as.numeric(out$value)
+  } else {
+    regex <- "(.*)\\|(.*)\\|(.*)"
+    out$estimate <- as.numeric(gsub(regex, "\\1", out$value))
+    out$conf.low <- as.numeric(gsub(regex, "\\2", out$value))
+    out$conf.high <- as.numeric(gsub(regex, "\\3", out$value))
+  }
+
+  # clean and sort
+  dat <- stats::na.omit(out)
+  row.names(dat) <- dat$value <- dat$id <- NULL
+  dat$term <- factor(dat$term, rev(term_order))
+  dat <- dat[order(dat$term, dat$model),]
 
   if (!draw) {
     return(dat)
@@ -114,6 +124,7 @@ modelplot <- function(models,
   p <- ggplot2::ggplot(dat) +
     ggplot2::theme_minimal() +
     ggplot2::theme(legend.title = ggplot2::element_blank())
+
 
   # background geoms
   if (is.list(background)) {
@@ -128,12 +139,11 @@ modelplot <- function(models,
   if (!is.null(conf_level)) {
     if (length(unique(dat$model)) == 1) {
       p <- p + 
-        ggplot2::geom_pointrange(
-          ggplot2::aes(y=term, x=estimate, xmin=conf.low, xmax=conf.high), ...)
+        ggplot2::geom_pointrange(ggplot2::aes(y=term, x=estimate, xmin=conf.low, xmax=conf.high), ...)
     } else {
       if (facet) {
         p <- p + 
-          ggplot2::geom_pointrange(ggplot2::aes(y=model, x=estimate, xmin=conf.low, xmax=conf.high), ...) +
+          ggplot2::geom_pointrange(ggplot2::aes(y=model, x=estimate, xmin=conf.low, xmax=conf.high), ...) + 
           ggplot2::facet_grid(term ~ ., scales='free_y')
       } else {
         p <- p + 
@@ -160,5 +170,7 @@ modelplot <- function(models,
     }
     p <- p + ggplot2::labs(x='Coefficient estimates', y='')
   }
-  p
+
+  return(p)
+
 }

@@ -17,9 +17,8 @@
 modelsummary_wide <- function(models,
   output = "default",
   fmt = '%.3f',
-  statistic = 'std.error',
+  statistic = "std.error",
   statistic_override = NULL,
-  statistic_vertical = TRUE,
   conf_level = 0.95,
   stars = FALSE,
   coef_group = NULL,
@@ -31,7 +30,8 @@ modelsummary_wide <- function(models,
   add_rows = NULL,
   title = NULL,
   notes = NULL,
-  estimate = 'estimate',
+  estimate = "estimate",
+  statistic_vertical = NULL,
   ...) {
 
   # models must be a list of models
@@ -50,14 +50,14 @@ modelsummary_wide <- function(models,
   # tidy
   if (statistic == "conf.int") {
     ti <- lapply(models, function(x) 
-                 generics::tidy(x, conf.int=TRUE, conf.level=conf_level, ...))
+                 get_estimates(x, conf.level=conf_level, ...))
   } else {
     ti <- lapply(models, function(x) 
-                 generics::tidy(x, ...))
+                 get_estimates(x, ...))
   }
 
   # glance
-  gl <- lapply(models, generics::glance)
+  gl <- lapply(models, get_gof)
 
   # combine
   if (length(models) > 1) {
@@ -67,13 +67,15 @@ modelsummary_wide <- function(models,
     }
   }
 
-  gl <- dplyr::bind_cols(gl)
-  ti <- dplyr::bind_rows(ti)
+  gl <- bind_cols(gl)
+  ti <- bind_rows(ti)
 
   # guess coef_group
   if (is.null(coef_group)) {
     if ("y.level" %in% colnames(ti)) {
       coef_group <- "y.level"
+    } else if ("response" %in% colnames(ti)) {
+      coef_group <- "response"
     } else if ("group" %in% colnames(ti)) {
       coef_group <- "group"
     } else {
@@ -94,9 +96,6 @@ modelsummary_wide <- function(models,
   modelsummary(results,
     output = output,
     fmt = fmt,
-    statistic = statistic,
-    statistic_override = statistic_override,
-    statistic_vertical = statistic_vertical,
     conf_level = conf_level,
     stars = stars,
     coef_map = coef_map,
@@ -104,10 +103,13 @@ modelsummary_wide <- function(models,
     coef_rename = coef_rename,
     gof_map = gof_map,
     gof_omit = gof_omit,
+    statistic = statistic,
+    statistic_override = statistic_override,
     add_rows = add_rows,
     title = title,
     notes = notes,
     estimate = estimate,
+    statistic_vertical = statistic_vertical,
     ...) 
 
 }

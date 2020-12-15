@@ -12,6 +12,7 @@ factory_kableExtra <- function(tab,
                                title = NULL,
                                ...) {
 
+
   if (is.null(output_format) || !output_format %in% c("latex", "markdown")) {
     output_format <- "html"
   }
@@ -23,10 +24,12 @@ factory_kableExtra <- function(tab,
              "midrule", "caption.short", "table.envir") 
   arguments <- c(
     list(...),
-    "caption"  = title,
-    "format"   = output_format,
-    "booktabs" = TRUE,
-    "linesep"  = "")
+    "caption"   = title,
+    "format"    = output_format,
+    "booktabs"  = TRUE,
+    "linesep"   = "",
+    "row.names" = NULL
+  )
 
   # align
   if (!is.null(align)) {
@@ -41,6 +44,10 @@ factory_kableExtra <- function(tab,
     }
   }
 
+  # don't print row.names
+  row.names(tab) <- NULL
+
+  # combine arguments
   arguments <- arguments[base::intersect(names(arguments), valid)]
   arguments <- c(list(tab), arguments)
 
@@ -51,9 +58,7 @@ factory_kableExtra <- function(tab,
   if (!is.null(hrule)) {
     if (output_format %in% 'latex') {
       for (pos in hrule) {
-        out <- out %>%
-          kableExtra::row_spec(row = pos - 1,
-            extra_latex_after = '\\midrule')
+        out <- kableExtra::row_spec(out, row=pos-1, extra_latex_after='\\midrule')
       }
     }
   }
@@ -63,8 +68,7 @@ factory_kableExtra <- function(tab,
     # threeparttable only works with 1 note. But it creates a weird bug
     # when using coef_map and stars in Rmarkdown PDF output
     for (n in notes) {
-      out <- out %>%
-        kableExtra::add_footnote(label = n, notation = 'none')
+      out <- kableExtra::add_footnote(out, label=n, notation='none')
     }
   }
 
@@ -74,14 +78,14 @@ factory_kableExtra <- function(tab,
     if (output_format %in% c('latex', 'html')) {
       span <- rev(span) # correct vertical order
       for (s in span) {
-        out <- out %>% kableExtra::add_header_above(s)
+        out <- kableExtra::add_header_above(out, s)
       }
     }
   }
 
   # styling (can be overriden manually by calling again)
   if (output_format %in% c("latex", "html")) {
-    out <- out %>% kableExtra::kable_styling(full_width = FALSE)
+    out <- kableExtra::kable_styling(out, full_width = FALSE)
   }
 
   # output
