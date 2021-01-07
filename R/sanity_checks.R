@@ -1,6 +1,6 @@
 #' assert if dependency is installed
 #'
-#' @keywords internal
+#' @noRd
 assert_dependency <- function(library_name, msg=NULL) {
   if (is.null(msg)) {
     msg <- "Please install the %s package."
@@ -12,23 +12,25 @@ assert_dependency <- function(library_name, msg=NULL) {
 
 #' check if dependency is installed
 #'
-#' @keywords internal
+#' @noRd
 check_dependency <- function(library_name) {
   requireNamespace(library_name, quietly = TRUE)
 }
 
+
 #' sanity check
 #'
-#' @keywords internal
+#' @noRd
 sanity_model_names <- function(modelnames) {
   if (any(modelnames == '')) {
     stop('Model names cannot include empty strings. Please make sure that every object in the `models` list has a unique, non-empty name. If the `models` list has no names at all (NULL), `modelsummary` will create some automatically.')
   }
 }
 
+
 #' sanity check
 #'
-#' @keywords internal
+#' @noRd
 sanity_align <- function(align, tab) {
   checkmate::assert(
     checkmate::check_character(align, len=1, null.ok = TRUE),
@@ -37,26 +39,34 @@ sanity_align <- function(align, tab) {
   )
 }
 
+
 #' sanity check
 #'
-#' @keywords internal
-sanity_estimate <- function(estimate) checkmate::assert_character(estimate, len=1)
+#' @noRd
+sanity_estimate <- function(models, estimate) {
+  checkmate::assert(
+    checkmate::check_character(estimate, len=1),
+    checkmate::check_character(estimate, len=length(models)))
+}
+
 
 #' sanity_check
 #'
-#' @keywords internal
+#' @noRd
 sanity_statistic <- function(statistic) {
   checkmate::assert_character(statistic, null.ok=TRUE)
 }
 
-#' sanity check
-#'
-#' @keywords internal
-sanity_title <- function(title) checkmate::assert_character(title, len = 1, null.ok = TRUE)
 
 #' sanity check
 #'
-#' @keywords internal
+#' @noRd
+sanity_title <- function(title) checkmate::assert_character(title, len = 1, null.ok = TRUE)
+
+
+#' sanity check
+#'
+#' @noRd
 sanity_coef <- function(coef_map, coef_rename, coef_omit) {
   checkmate::assert_character(coef_map, null.ok=TRUE)
   checkmate::assert_character(names(coef_map), null.ok=TRUE, unique=TRUE)
@@ -71,16 +81,25 @@ sanity_coef <- function(coef_map, coef_rename, coef_omit) {
 
 #' sanity check
 #'
-#' @keywords internal
-sanity_gof <- function(gof_map, gof_omit) {
+#' @noRd
+sanity_gof_map <- function(gof_map, gof_omit) {
   checkmate::assert_string(gof_omit, null.ok = TRUE)
-  checkmate::assert_data_frame(gof_map, null.ok = TRUE)
+  checkmate::assert(
+    checkmate::check_data_frame(gof_map, null.ok = TRUE, min.cols = 3),
+    checkmate::check_list(gof_map, null.ok = TRUE),
+    combine = "or")
+  if (class(gof_map)[1] == "list") {
+    for (gm in gof_map) {
+      checkmate::assert_list(gm, len = 3, names = "named")
+      checkmate::assert_true(all(c("raw", "clean", "fmt") %in% names(gm)))
+    }
+  }
 }
 
 
 #' sanity check
 #'
-#' @keywords internal
+#' @noRd
 sanity_fmt <- function(fmt) {
   checkmate::assert(
     checkmate::check_character(fmt, len=1),
@@ -91,33 +110,27 @@ sanity_fmt <- function(fmt) {
 
 #' sanity check
 #'
-#' @keywords internal
+#' @noRd
 sanity_conf_level <- function(conf_level) {
   checkmate::assert_number(conf_level, lower = 0, upper = .999999999999, null.ok=TRUE)
 }
 
 #' sanity check
 #'
-#' @keywords internal
+#' @noRd
 sanity_factory <- function(factory_dict) {
   check_option <- function(output_type, valid) {
-    if (!factory_dict[[output_type]] %in% valid) {
-      msg <- paste0("`modelsummary` cannot write a table of type '",
+    if (!factory_dict[output_type] %in% valid) {
+      msg <- sprintf(
+        "`modelsummary` cannot write a table of type '%s' using the '%s' package. You must use one of the following options: %s. Consider setting a global option such as: option(modelsummary_%s=%s)",
         output_type,
-        "' using the ",
-        factory_dict[[output_type]],
-        " package. You must use one of the following packages: ",
+        factory_dict[output_type],
         paste(valid, collapse = ', '),
-        ". Consider setting a global option such as: option(modelsummary_",
-        output_type,
-        "='",
         valid[1],
-        "')"
-      )
+        output_type)
       stop(msg)
     }
   }
-  check_option('default', c('gt', 'kableExtra', 'flextable', 'huxtable'))
   check_option('html', c('gt', 'kableExtra', 'flextable', 'huxtable'))
   check_option('rtf', c('gt', 'huxtable'))
   check_option('latex', c('gt', 'kableExtra', 'huxtable'))
@@ -126,11 +139,19 @@ sanity_factory <- function(factory_dict) {
   check_option('powerpoint', c('flextable', 'huxtable'))
   check_option('png', c('gt', 'flextable', 'kableExtra'))
   check_option('jpg', c('flextable', 'kableExtra'))
+
+  # check default
+  modelsummary_default <- getOption("modelsummary_default", default = "kableExtra")
+  checkmate::assert_true(modelsummary_default %in% c('gt', 'kableExtra',
+                                                     'flextable', 'huxtable',
+                                                     'markdown', 'html',
+                                                     'data.frame', 'dataframe',
+                                                     'latex'))
 }
 
 #' sanity check
 #'
-#' @keywords internal
+#' @noRd
 sanity_stars <- function(stars) {
   checkmate::assert(
     checkmate::check_flag(stars),
@@ -140,7 +161,7 @@ sanity_stars <- function(stars) {
 
 #' sanity check
 #'
-#' @keywords internal
+#' @noRd
 sanity_notes <- function(notes) {
   checkmate::assert(
     checkmate::check_list(notes, null.ok = TRUE),
@@ -158,11 +179,13 @@ sanity_notes <- function(notes) {
 
 #' sanity check
 #'
-#' @keywords internal
+#' @noRd
 sanity_output <- function(output) {
 
-  object_types <- c('default', 'gt', 'kableExtra', 'flextable', 'huxtable', 'html', 'latex', 'markdown', 'dataframe', 'data.frame')
-  extension_types <- c('html', 'tex', 'md', 'txt', 'docx', 'pptx', 'rtf', 'jpg', 'png')
+  object_types <- c('default', 'gt', 'kableExtra', 'flextable', 'huxtable',
+                    'html', 'latex', 'markdown', 'dataframe', 'data.frame')
+  extension_types <- c('html', 'tex', 'md', 'txt', 'docx', 'pptx', 'rtf',
+                       'jpg', 'png')
 
   checkmate::assert_string(output)
 
@@ -185,7 +208,7 @@ sanity_output <- function(output) {
 
 #' sanity check
 #'
-#' @keywords internal
+#' @noRd
 sanity_add_rows <- function(add_rows, models) {
   if (inherits(add_rows, 'list')) {
     for (i in seq_along(add_rows)) {
@@ -200,34 +223,64 @@ sanity_add_rows <- function(add_rows, models) {
 
 #' sanity check
 #'
-#' @keywords internal
-sanity_statistic_override <- function(models, statistic_override) {
+#' @noRd
+sanitize_vcov <- function(models, vcov) {
 
-  checkmate::assert(
-    checkmate::check_list(statistic_override, null.ok = TRUE),
-    checkmate::check_function(statistic_override, null.ok = TRUE),
-    checkmate::check_matrix(statistic_override, null.ok = TRUE),
-    checkmate::check_atomic_vector(statistic_override),
-    combine="or"
-  )
+  # default output
+  out <- NULL
 
-  if (class(statistic_override)[1] == "list" &
-      class(models)[1] == "list") { # must be simple lists
-    checkmate::assert_true(length(statistic_override) == length(models))
-    for (s in statistic_override) {
+
+  # list of formulas, functions, matrices, or vectors
+  # first class because some models inherit from "list"
+  if (class(vcov)[1] == "list" & class(models)[1] == "list") {
+    checkmate::assert_true(length(vcov) == length(models))
+    for (s in vcov) {
       checkmate::assert(
+        checkmate::check_formula(s),
         checkmate::check_function(s),
         checkmate::check_matrix(s),
         checkmate::check_vector(s),
         combine="or"
       )
     }
-  } 
+    out <- vcov
+  }
+
+
+  # single formulas/matrices/functions: apply to every model
+  if (isTRUE(checkmate::check_formula(vcov)) ||
+      isTRUE(checkmate::check_matrix(vcov))  ||
+      isTRUE(checkmate::check_function(vcov))) {
+    out <- rep(list(vcov), length(models))
+  }
+
+
+  if (is.character(vcov)) {
+    checkmate::assert(
+      checkmate::check_character(vcov, len=1),
+      checkmate::check_character(vcov, len=length(models)))
+    checkmate::assert_true(all(
+      vcov %in% c("robust", "HC", "HC0", "HC1", "HC2", "HC3", "HC4", "HC4m",
+                  "HC5", "stata", "classical", "constant", "iid")))
+    if (length(vcov) == 1) {
+      out <- as.list(rep(vcov, length(models)))
+    } else {
+      out <- as.list(vcov)
+    }
+  }
+
+
+  if (is.null(out)) {
+    stop("Please supply a valid input for the `vcov` argument. Read `?modelsummary`.") 
+  }
+
+  return(out)
 }
+
 
 #' sanity check
 #'
-#' @keywords internal
+#' @noRd
 sanity_gof <- function(gof_output, gof_custom) {
   checkmate::assert_data_frame(gof_output, nrows = 1, null.ok = FALSE)
   checkmate::assert_data_frame(gof_custom, nrows = 1, null.ok = TRUE)
@@ -235,7 +288,7 @@ sanity_gof <- function(gof_output, gof_custom) {
 
 #' sanity check
 #'
-#' @keywords internal
+#' @noRd
 sanity_tidy <- function(tidy_output, tidy_custom, estimate, statistic, modelclass) {
 
   # tidy(model)
@@ -254,8 +307,7 @@ sanity_tidy <- function(tidy_output, tidy_custom, estimate, statistic, modelclas
 
 #' sanity check: datasummary
 #'
-# warn if a character or logical variable is nested (common mistake)
-#' @keywords internal
+#' @noRd
 sanity_ds_nesting_factor <- function(formula, data) {
   idx <- sapply(data, function(x) is.character(x) | is.logical(x))
   idx <- names(idx)[idx]
@@ -270,8 +322,8 @@ sanity_ds_nesting_factor <- function(formula, data) {
 
 #' sanity check: datasummary_balance
 #'
-#' @param formula
 #' right-handed formulae only
+#' @noRd
 sanity_ds_right_handed_formula <- function(formula) {
   termlabels <- labels(stats::terms(formula))
   if (length(termlabels) > 1) {

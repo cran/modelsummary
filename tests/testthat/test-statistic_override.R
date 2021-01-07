@@ -1,6 +1,5 @@
-context("statistic_override")
-
-library(modelsummary)
+# these tests were all copied over to test-vcov.R, but we keep them here
+# to confirm backward compatibility through ellipsis.
 
 url <- 'https://vincentarelbundock.github.io/Rdatasets/csv/HistData/Guerry.csv'
 dat <- read.csv(url)
@@ -12,14 +11,55 @@ models[['OLS 2']] <- lm(Desertion ~ Crime_prop + Infants, dat)
 models[['Poisson 2']] <- glm(Desertion ~ Crime_prop + Donations, dat, family = poisson())
 models[['Logit 1']] <- glm(Clergy ~ Crime_prop + Infants, dat, family = binomial())
 
+
+test_that("clustered standard errors", {
+  # checked manually against fixest clusters
+  # testthat::skip_if_not_installed("fixest") 
+  # se = fixest::feols(f, mtcars) %>% 
+  #      fixest::se(cluster=~cyl)
+  f = hp ~ mpg + drat + vs
+  mod = lm(f, mtcars)
+  tmp = modelsummary(mod, 
+    gof_omit=".*",, 
+    statistic_override=~cyl,
+    output="dataframe")
+  truth = c("247.053", "(73.564)", "-7.138", "(3.162)", "18.064", "(40.237)", "-50.124", "(13.268)")
+  expect_equal(truth, tmp[[4]])
+})
+
+
+test_that("robust character shortcuts", {
+  testthat::skip_if_not_installed("estimatr") 
+
+  mod = lm(hp ~ mpg, mtcars)
+  mod_estimatr = estimatr::lm_robust(hp ~ mpg, mtcars)
+  x = modelsummary(mod, statistic_override="HC1", output="dataframe", gof_omit=".*")
+  y = modelsummary(mod, statistic_override="stata", output="dataframe", gof_omit=".*")
+  expect_equal(x[[4]], y[[4]])
+
+  x = modelsummary(mod, statistic_override="HC3", output="dataframe", gof_omit=".*")
+  y = modelsummary(mod, statistic_override="robust", output="dataframe", gof_omit=".*")
+  expect_equal(x[[4]], y[[4]])
+
+  x = modelsummary(mod, statistic_override="classical", output="dataframe", gof_omit=".*")
+  y = modelsummary(mod, output="dataframe", gof_omit=".*")
+  expect_equal(x[[4]], y[[4]])
+
+  x = modelsummary(mod, statistic_override="HC2", output="dataframe", gof_omit=".*")
+  y = modelsummary(mod_estimatr, output="dataframe", gof_omit=".*")
+  expect_equal(x[[4]], y[[4]])
+})
+
+
 test_that("single model", {
   mod <- lm(hp ~ mpg + drat, mtcars)
   x <- modelsummary(mod, statistic_override=vcov, output="data.frame")
   y <- modelsummary(mod, statistic_override=vcov(mod), output="data.frame")
-  z <- modelsummary(mod, statistic_override=sqrt(diag(vcov(mod))), output="data.frame")
+  z <- modelsummary(mod, statistic_override=list(sqrt(diag(vcov(mod)))), output="data.frame")
   expect_equal(x, y)
   expect_equal(y, z)
 })
+
 
 test_that("sublist (sandwich vignette)", {
   models <- lm(hp ~ mpg + drat, mtcars)
@@ -89,7 +129,7 @@ reference <- readRDS(file = "known_output/statistic-override.rds")
 
 
 test_that("bad function", {
-  expect_error(modelsummary(models, statistic_override = na.omit))
+  expect_warning(modelsummary(models, statistic_override = na.omit))
 })
 
 test_that("vector must be named", {

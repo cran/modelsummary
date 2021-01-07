@@ -1,10 +1,44 @@
-context('stars')
-
-library(modelsummary)
-
 mod <- list()
 mod$OLS <- lm(am ~ drat, data = mtcars)
 mod$Logit <- glm(am ~ qsec, data = mtcars, family = binomial())
+
+test_that("clean_stars unknown (we should never reach this)", {
+  expect_null(modelsummary:::clean_stars(FALSE))
+})
+
+
+test_that("glue stars", {
+  tab <- modelsummary(
+    mod, 
+    stars = FALSE,
+    output = "data.frame",
+    gof_omit = ".*",
+    estimate = c("{estimate} ({std.error}){stars}",
+                 "{estimate} [{conf.low}, {conf.high}]"),
+    statistic = c("({std.error}){stars}", 
+                  "[{conf.low}, {conf.high}]"))
+  truth <- c("-1.986 (0.434)***", "(0.434)***", "[-2.873, -1.099]", 
+             "0.665 (0.120)***", "(0.120)***", "[0.421, 0.909]", 
+             "", "", "")
+  expect_equal(truth, tab$OLS)
+  truth <- c("4.739 [-2.760, 13.501]", "(4.045)", "[-2.760, 13.501]", "", "",
+             "", "-0.288 [-0.784, 0.131]", "(0.228)", "[-0.784, 0.131]")
+  expect_equal(truth, tab$Logit)
+})
+
+
+test_that("bug: make stars before rounding", {
+  m <- lm(vs ~ hp + mpg + factor(cyl), data = mtcars)
+  st <- c("*"=.49)
+  tab1 <- modelsummary(m, stars=st, output="data.frame",
+          statistic=NULL, fmt=1, gof_omit=".*")
+  tab2 <- modelsummary(m, stars=st, output="data.frame",
+          statistic=NULL, fmt=3, gof_omit=".*")
+  tab1 <- grepl("\\*", tab1[[4]])
+  tab2 <- grepl("\\*", tab2[[4]])
+  expect_equal(tab1, tab2)
+})
+
 
 test_that("same stars with different statistics", {
   m <- lm(dist ~ speed, data = cars)

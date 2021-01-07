@@ -1,13 +1,10 @@
 #' Internal function to prepare stars
 #'
-#' @keywords internal
+#' @noRd
 clean_stars <- function(stars) {
-  if (is.logical(stars)) {
-    if (stars) {
-      stars <- c('*' = .1, '**' = .05, '***' = .01)
-    }
-  }
-  if (is.numeric(stars)) {
+  if (is.logical(stars) && isTRUE(stars)) {
+    out <- c('*' = .1, '**' = .05, '***' = .01)
+  } else if (is.numeric(stars)) {
     out <- sort(stars, decreasing = TRUE)
   } else {
     out <- NULL
@@ -18,7 +15,7 @@ clean_stars <- function(stars) {
 
 #' Internal function to prepare stars
 #'
-#' @keywords internal
+#' @noRd
 make_stars <- function(pvalues, stars) {
   stars <- clean_stars(stars)
   tmp <- ""
@@ -31,7 +28,7 @@ make_stars <- function(pvalues, stars) {
 
 #' Internal function to prepare stars footnote
 #'
-#' @keywords internal
+#' @noRd
 make_stars_note <- function(stars) {
   out <- clean_stars(stars)
   if (!is.null(out)) {

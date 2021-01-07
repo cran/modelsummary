@@ -1,7 +1,7 @@
-context("gt")
+# CRAN issues warning because `gt` uses `group_by` with a deprecated argument
+skip_on_cran()
 
 library(gt)
-library(modelsummary)
 
 models <- list()
 models[['OLS 1']] <- lm(hp ~ mpg + wt, mtcars)

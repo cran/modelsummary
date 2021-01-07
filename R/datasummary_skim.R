@@ -75,7 +75,7 @@ datasummary_skim <- function(data,
 
 #' Internal function to skim whole datasets
 #'
-#' @keywords internal
+#' @noRd
 datasummary_skim_dataset <- function(
   data,
   output,
@@ -118,7 +118,7 @@ datasummary_skim_dataset <- function(
 
 #' Internal function to skim numeric variables
 #'
-#' @keywords internal
+#' @noRd
 datasummary_skim_numeric <- function(
   data,
   output,
@@ -171,13 +171,15 @@ datasummary_skim_numeric <- function(
 
   }
 
-  # subset of numeric variables with non NA values
-  dat_new <- data[, sapply(data, is.numeric), drop=FALSE] 
-  dat_new <- dat_new[, sapply(dat_new, function(x) !all(is.na(x))), drop=FALSE]
+  # subset of numeric variables 
+  idx <- sapply(data, is.numeric)
+  if (!any(idx)) stop('data contains no numeric variable.')
+  dat_new <- data[, idx, drop=FALSE] 
 
-  if (ncol(dat_new) == 0) {
-    stop('data contains no numeric variable.')
-  }
+  # subset of non-NA variables
+  idx <- sapply(dat_new, function(x) !all(is.na(x)))
+  if (!any(idx)) stop('all numeric variables are completely missing.')
+  dat_new <- dat_new[, idx, drop=FALSE]
 
   # pad colnames in case one is named Min, Max, Mean, or other function name
   # colnames(dat_new) <- paste0(colnames(dat_new), " ")
@@ -256,7 +258,7 @@ datasummary_skim_numeric <- function(
 
 #' Internal function to skim categorical variables
 #'
-#' @keywords internal
+#' @noRd
 datasummary_skim_categorical <- function(
   data,
   output,
@@ -295,7 +297,7 @@ datasummary_skim_categorical <- function(
       } else {
         # factors with too many levels
         if (is.factor(dat_new[[n]])) {
-          if (length(levels(dat_new[[n]])) > 20) {
+          if (length(levels(dat_new[[n]])) > 50) {
             dat_new[[n]] <- NULL
             drop_too_many_levels <- c(drop_too_many_levels, n)
           }
@@ -321,7 +323,7 @@ datasummary_skim_categorical <- function(
   }
 
   if (!is.null(drop_too_many_levels)) {
-    warning(sprintf("These variables were omitted because they include more than 20 levels: %s.", paste(drop_too_many_levels, collapse=", ")))
+    warning(sprintf("These variables were omitted because they include more than 50 levels: %s.", paste(drop_too_many_levels, collapse=", ")))
   }
 
   if (!is.null(drop_entirely_na)) {

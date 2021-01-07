@@ -9,7 +9,7 @@ Description: Create beautiful and customizable tables to summarize several
     and it can produce tables in HTML, LaTeX, Word, Markdown, PDF, PowerPoint,
     Excel, RTF, JPG, or PNG. Tables can easily be embedded in 'Rmarkdown' or 
     'knitr' dynamic documents.
-Version: 0.6.4
+Version: 0.6.5
 Authors@R: person("Vincent", "Arel-Bundock", 
                   email = "vincent.arel-bundock@umontreal.ca", 
                   role = c("aut", "cre"),
@@ -20,16 +20,16 @@ Depends: R (>= 3.5.0)
 Imports: broom, checkmate, generics, glue, insight, kableExtra (>=
         1.2.1), parameters, performance, tables
 Suggests: broom.mixed, estimatr, flextable, fixest, ggplot2, gt,
-        huxtable, knitr, lme4, lmtest, mice, nnet, officer, rmarkdown,
+        huxtable, knitr, lme4, lmtest, nnet, officer, rmarkdown,
         sandwich, testthat, tibble, vdiffr
 License: GPL-3
 Encoding: UTF-8
 LazyData: false
 RoxygenNote: 7.1.1
 NeedsCompilation: no
-Packaged: 2020-12-14 14:25:26 UTC; vincent
+Packaged: 2021-01-06 13:58:31 UTC; vincent
 Author: Vincent Arel-Bundock [aut, cre]
     (<https://orcid.org/0000-0003-2042-7063>)
 Maintainer: Vincent Arel-Bundock <vincent.arel-bundock@umontreal.ca>
 Repository: CRAN
-Date/Publication: 2020-12-15 10:00:02 UTC
+Date/Publication: 2021-01-07 07:00:18 UTC

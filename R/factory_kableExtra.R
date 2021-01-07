@@ -1,7 +1,7 @@
 #' Internal function to build table with `kableExtra`
 #'
 #' @inheritParams factory_gt
-#' @keywords internal
+#' @noRd
 #' @return kableExtra object
 factory_kableExtra <- function(tab,
                                align = NULL,
@@ -11,6 +11,7 @@ factory_kableExtra <- function(tab,
                                output_format = 'kableExtra',
                                title = NULL,
                                ...) {
+
 
 
   if (is.null(output_format) || !output_format %in% c("latex", "markdown")) {
@@ -58,7 +59,15 @@ factory_kableExtra <- function(tab,
   if (!is.null(hrule)) {
     if (output_format %in% 'latex') {
       for (pos in hrule) {
-        out <- kableExtra::row_spec(out, row=pos-1, extra_latex_after='\\midrule')
+        out <- kableExtra::row_spec(out,
+          row = pos - 1, 
+          extra_latex_after = "\\midrule")
+      }
+    } else if (output_format %in% "html") {
+      for (pos in hrule) {
+        out <- kableExtra::row_spec(out,
+          row = pos - 1,
+          extra_css = "box-shadow: 0px 1px")
       }
     }
   }
@@ -68,7 +77,15 @@ factory_kableExtra <- function(tab,
     # threeparttable only works with 1 note. But it creates a weird bug
     # when using coef_map and stars in Rmarkdown PDF output
     for (n in notes) {
-      out <- kableExtra::add_footnote(out, label=n, notation='none')
+      # otherwise stars_note breaks in PDF output under pdflatex
+      if (output_format == "latex" && isTRUE(grepl(" < ", n))) {
+        n <- gsub(" < ", " $<$ ", n)
+        out <- kableExtra::add_footnote(out, label=n, notation='none',
+                                        escape=FALSE)
+      } else {
+        out <- kableExtra::add_footnote(out, label=n, notation='none',
+                                        escape=TRUE)
+      }
     }
   }
 

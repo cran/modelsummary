@@ -6,12 +6,16 @@
 #' `sprintf` function. See ?sprintf for details.
 #'
 #' @return a rounded number as character
-#' @keywords internal
+#' @noRd
 rounding <- function(x, fmt = '%.3f') {
+
+  # do not round character, factor, logical
+  if (is.factor(x) || is.logical(x)) {
+    x <- as.character(x)
+  } 
+
   if (is.character(x)) {
     out <- x
-  } else if (is.factor(x)) {
-    out <- as.character(x) 
   } else {
     if (is.character(fmt)) {
       out <- sprintf(fmt, x)
@@ -23,6 +27,7 @@ rounding <- function(x, fmt = '%.3f') {
       out <- x
     }
   }
+
   out <- gsub('^NA$|^NaN$|^-Inf$|^Inf$', '', out)
   return(out)
 }

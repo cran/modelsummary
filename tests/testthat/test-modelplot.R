@@ -1,9 +1,5 @@
-library(ggplot2)
+skip_on_cran()
 
-context("modelplot")
-
-# CRAN requires vdiffr to be conditional
-# Function recommended by Lionel Henry on 2020-12-08
 expect_doppelganger <- function(title, fig, path = NULL, ...) {
   testthat::skip_if(getRversion() > '4.0.3') # new graphics device
   testthat::skip_if_not_installed("vdiffr")
@@ -21,9 +17,9 @@ test_that("single model", {
   expect_doppelganger("coef_omit", p)
 
   params <- list(
-    geom_vline(xintercept = 0, color = 'orange'),
-    annotate("rect", alpha = .1, xmin = -.5, xmax = .5, ymin = -Inf, ymax = Inf),
-    geom_point(aes(y = term, x = estimate), alpha = .3,
+    ggplot2::geom_vline(xintercept = 0, color = 'orange'),
+    ggplot2::annotate("rect", alpha = .1, xmin = -.5, xmax = .5, ymin = -Inf, ymax = Inf),
+    ggplot2::geom_point(ggplot2::aes(y = term, x = estimate), alpha = .3,
       size = 10, color = 'red', shape = 'square')
   )
   p <- modelplot(mod,
@@ -55,12 +51,12 @@ test_that("conf_level=NULL", {
 })
 
 
-test_that("statistic_override", {
+test_that("vcov", {
   testthat::skip_if_not_installed("sandwich")
   mod <- list(lm(hp ~ mpg + drat, data = mtcars),
               lm(hp ~ mpg + drat, data = mtcars))
   so <- list(vcov, sandwich::vcovHC)
-  p <- modelplot(mod, statistic_override=so, draw=FALSE)
+  p <- modelplot(mod, vcov=so, draw=FALSE)
   known <- c(-22.1832974370101, -28.1858724755655, -13.6502180401172, -15.0390897152002, 165.179327669237, 182.406373565932)         
   expect_equal(p$conf.low, known)
 })

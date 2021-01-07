@@ -1,6 +1,6 @@
 #' Extract data from a `tables::tabular` object
 #'
-#' @keywords internal
+#' @noRd
 datasummary_extract <- function(tab,
                                 fmt = NULL,
                                 sparse_header = TRUE) {
@@ -77,11 +77,6 @@ datasummary_extract <- function(tab,
     unique_na <- function(x) length(unique(base::setdiff(x, ''))) > 1
     idx <- apply(h, 1, unique_na)
     out <- h[idx, , drop = FALSE]
-    return(out)
-  }
-
-  flatten <- function(h) {
-    out <- apply(h, 2, paste, collapse = ' ')
     return(out)
   }
 

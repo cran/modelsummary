@@ -1,10 +1,9 @@
-context("huxtable")
+# flextable is not installed on CRAN's M1 machine
+skip_if_not_installed("flextable")
 
 random_string <- function() {
   paste(sample(letters, 30, replace=TRUE), collapse="")
 }
-
-library(modelsummary)
 
 models <- list()
 models[['OLS 1']] <- lm(hp ~ mpg + wt, mtcars)
@@ -14,11 +13,15 @@ models[['Logit 1']] <- glm(vs ~ hp + drat, mtcars, family = binomial())
 models[['Logit 2']] <- glm(am ~ hp + disp, mtcars, family = binomial())
 
 test_that("markdown caption and notes", {
+  # minor UTF8 encoding issue on CRAN and Windows
+  skip_on_os("windows")
+  skip_on_cran()
   unknown <- expect_warning(
     modelsummary(models, "huxtable", title = "test title", notes = "test note",
       stars = TRUE) %>%
       huxtable::to_md())
-  expect_known_output(cat(unknown), "known_output/huxtable-title-notes.md")
+  expect_known_output(cat(unknown),
+                      "known_output/huxtable-title-notes.md", update = FALSE)
 })
 
 
