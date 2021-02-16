@@ -79,12 +79,18 @@ extract_estimates <- function(
     } 
   }
 
+
   # tidy_custom
   est_custom <- tidy_custom(model)
   sanity_tidy(est, est_custom, estimate, statistic, class(model)[1])
   if (!is.null(est_custom)) {
+    if (!any(est_custom$term %in% est$term)) {
+      stop("The `term` names produced by `tidy_custom` must be the same as the term names produced by `get_estimates`")
+    }
+    est_custom <- est_custom[est_custom$term %in% est$term, , drop = FALSE]
+    idx <- match(est_custom$term, est$term)
     for (n in colnames(est_custom)) {
-      est[[n]] <- est_custom[[n]]
+      est[[n]][idx] <- est_custom[[n]]
     }
   }
 
@@ -132,10 +138,23 @@ extract_estimates <- function(
   }
 
 
-  # round everything
+  # are statistics available? if not, display an informative error message
+  # check this after all custom statistics and stars are added
+  estimate_glue_strip <- regmatches(estimate_glue, gregexpr("\\{[^\\}]*\\}", estimate_glue))
+  estimate_glue_strip <- sort(unique(unlist(estimate_glue_strip)))
+  estimate_glue_strip <- gsub("\\{|\\}", "", estimate_glue_strip)
+  estimate_glue_strip <- setdiff(estimate_glue_strip, colnames(est))
+  if (length(estimate_glue_strip) > 0) {
+    stop(sprintf("These estimates or statistics do not seem to be available: %s. You can use the `get_estimates` function to see which statistics are available.", 
+                 paste(estimate_glue_strip, collapse = ", ")))
+  }
+
+
+  # round everything: ensures that the reshape doesn't produce incompatible types
   for (n in colnames(est)) {
     est[[n]] <- rounding(est[[n]], fmt)
   }
+
 
   # extract estimates (there can be several)
   for (i in seq_along(estimate_glue)) {
@@ -186,9 +205,9 @@ extract_estimates <- function(
 get_estimates <- function(model, conf_level=.95, ...) {
 
   if (is.null(conf_level)) {
-    conf_int=FALSE
+    conf_int = FALSE
   } else {
-    conf_int=TRUE
+    conf_int = TRUE
   }
 
   flag <- function(x) {
@@ -205,8 +224,16 @@ get_estimates <- function(model, conf_level=.95, ...) {
   # broom second 
   # can't use generics::tidy here otherwise broom only gets loaded the second
   # time modelsummary is called, and the first attempt fails.
-  est <- suppressWarnings(try(
-    broom::tidy(model, conf.int=conf_int, conf.level=conf_level, ...), silent=TRUE))
+  if (isTRUE(conf_int)) {
+    est <- suppressWarnings(try(
+      broom::tidy(model, conf.int = conf_int, conf.level = conf_level, ...), 
+      silent=TRUE))
+  # conf_level=NULL breaks broom::tidy.margins
+  } else {
+    est <- suppressWarnings(try(
+      broom::tidy(model, conf.int = conf_int, ...), 
+      silent=TRUE))
+  }
   if (flag(est)) return(est)
 
   # parameters third
@@ -221,8 +248,15 @@ get_estimates <- function(model, conf_level=.95, ...) {
 
   # broom.mixed fourth
   if (check_dependency("broom.mixed")) {
-    est <- suppressWarnings(try(
-      broom.mixed::tidy(model, conf.int=TRUE, conf.level=conf_level, ...), silent=TRUE))
+    if (isTRUE(conf_int)) {
+      est <- suppressWarnings(try(
+        broom.mixed::tidy(model, conf.int=TRUE, conf.level=conf_level, ...), 
+        silent=TRUE))
+    } else {
+      est <- suppressWarnings(try(
+          broom.mixed::tidy(model, conf.int = FALSE, ...), 
+          silent=TRUE))
+    }
   }
   if (flag(est)) return(est)
 

@@ -68,13 +68,21 @@ sanity_title <- function(title) checkmate::assert_character(title, len = 1, null
 #'
 #' @noRd
 sanity_coef <- function(coef_map, coef_rename, coef_omit) {
-  checkmate::assert_character(coef_map, null.ok=TRUE)
-  checkmate::assert_character(names(coef_map), null.ok=TRUE, unique=TRUE)
-  checkmate::assert_character(coef_rename, null.ok=TRUE)
-  checkmate::assert_character(names(coef_rename), null.ok=TRUE, unique=TRUE)
+
   checkmate::assert_string(coef_omit, null.ok = TRUE)
+
   if (!is.null(coef_rename) & !is.null(coef_map)) {
     stop("coef_map and coef_rename cannot be used together.")
+  }
+
+  checkmate::assert_character(coef_map, null.ok=TRUE)
+  checkmate::assert_character(names(coef_map), null.ok=TRUE, unique=TRUE)
+
+  if (is.character(coef_rename)) {
+    checkmate::assert_character(coef_rename, null.ok=TRUE)
+    checkmate::assert_character(names(coef_rename), null.ok=TRUE, unique=TRUE)
+  } else {
+    checkmate::assert_function(coef_rename, null.ok = TRUE)
   }
 }
 
@@ -146,7 +154,7 @@ sanity_factory <- function(factory_dict) {
                                                      'flextable', 'huxtable',
                                                      'markdown', 'html',
                                                      'data.frame', 'dataframe',
-                                                     'latex'))
+                                                     'latex', 'latex_tabular'))
 }
 
 #' sanity check
@@ -183,7 +191,8 @@ sanity_notes <- function(notes) {
 sanity_output <- function(output) {
 
   object_types <- c('default', 'gt', 'kableExtra', 'flextable', 'huxtable',
-                    'html', 'latex', 'markdown', 'dataframe', 'data.frame')
+                    'html', 'latex', 'latex_tabular', 'markdown', 'dataframe',
+                    'data.frame')
   extension_types <- c('html', 'tex', 'md', 'txt', 'docx', 'pptx', 'rtf',
                        'jpg', 'png')
 
@@ -296,12 +305,10 @@ sanity_tidy <- function(tidy_output, tidy_custom, estimate, statistic, modelclas
   checkmate::assert_true('term' %in% colnames(tidy_output))
 
   # tidy_custom(model)
-  checkmate::assert_data_frame(tidy_custom, nrows = nrow(tidy_output),
-    min.cols = 2, null.ok = TRUE)
-
   if (!is.null(tidy_custom)) {
+    checkmate::assert_data_frame(tidy_custom, 
+      min.rows = 1, min.cols = 2)
     checkmate::assert_true('term' %in% colnames(tidy_custom))
-    checkmate::assert_true(all(tidy_output$term == tidy_custom$term))
   }
 }
 

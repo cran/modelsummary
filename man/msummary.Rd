@@ -31,7 +31,7 @@ msummary(
 \item{output}{filename or object type (character string)
 \itemize{
   \item Supported filename extensions: .html, .tex, .md, .txt, .png, .jpg.
-  \item Supported object types: "default", "html", "markdown", "latex", "data.frame", "gt", "kableExtra", "huxtable", "flextable".
+  \item Supported object types: "default", "html", "markdown", "latex", "latex_tabular", "data.frame", "gt", "kableExtra", "huxtable", "flextable".
   \item Warning: the `output` argument \emph{cannot} be used when customizing tables with external packages. See the 'Details' section below.
 }}
 
@@ -47,7 +47,7 @@ vector with one string per model). Valid entries include any column name of
 the data.frame produced by `get_estimates(model)`. Examples:
 \itemize{
   \item "estimate"
-  \item "\{estimate\} (\{std.error\}){stars}"
+  \item "\{estimate\} (\{std.error\})\{stars\}"
   \item "\{estimate\} [\{conf.low\}, \{conf.high\}]"
 }}
 
@@ -116,9 +116,11 @@ column center-aligned, and the 3rd column right-aligned.}
 
 \item{title}{string}
 
-\item{...}{all other arguments are passed to the `tidy` and `glance` methods
-used to extract estimates from the model. For example, this allows users to
-set `exponentiate=TRUE` to exponentiate logistic regression coefficients.}
+\item{...}{all other arguments are passed through to the extractor and
+table-making functions. This allows users to specify additional options such
+as set `broom::tidy(exponentiate=TRUE)` to exponentiate logistic regression
+coefficients or `kableExtra::kbl(escape=FALSE)` to avoid escaping math
+characters in `kableExtra` tables.}
 }
 \value{
 a regression table in a format determined by the `output` argument.

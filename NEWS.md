@@ -1,3 +1,13 @@
+# modelsummary 0.6.5.9000
+
+* new output format: latex_tabular
+* `tidy_custom` allows partial term matches
+* `modelsummary(coef_rename)` accepts functions
+* new function `coef_rename` for use in `modelsummary(coef_rename=coef_rename)`
+* `modelplot` accepts `add_rows` to add reference categories
+* informative error message when estimate or statistic is not available
+* bug fixes
+
 # modelsummary 0.6.5
 
 * `statistic_override` becomes `vcov`
@@ -127,7 +137,7 @@
 * Better clean_latex function
 * Can display R2 and confidence intervals for mice-imputed lm-models
 * Internal functions have @keywords internal to avoid inclusion in docs
-* Statistic override accepts pre-formated character vectors
+* Statistic override accepts pre-formatted character vectors
 
 # modelsummary 0.1.0
 
