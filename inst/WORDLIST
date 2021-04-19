@@ -1,3 +1,4 @@
+1s
 AppVeyor
 Crosstabs
 Customizable
@@ -6,7 +7,25 @@ GOF
 Github
 Gorman
 HC
+HC0
+HC1
+HC2
+HC3
+HC4
+HC4m
+HC5
+P0
+P25
+P50
+p75
+P100
+R2
+gamlss
+ggplot2
+orgmode
+u00d7
 Horst
+HPxM
 JPG
 Lalonde
 NA’
@@ -24,6 +43,7 @@ Rmd
 SEs
 Wes
 apsrtable
+bayesian
 clusterid
 codebase
 codecov
@@ -62,6 +82,7 @@ jpg
 kable
 kableExtra
 kbl
+kendall
 knitr
 lcr
 lfe
@@ -77,6 +98,8 @@ nnet
 nsmall
 officedown
 ont
+pearson
+pearspear
 perl
 png
 pointrange
@@ -89,6 +112,7 @@ rstudio
 rtf
 skimr
 socio
+spearman
 sprintf
 stata
 survreg

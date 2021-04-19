@@ -1,4 +1,49 @@
-# modelsummary 0.6.5.9000
+# modelsummary 0.6.6.9000
+
+`modelsummary`:
+
+* new arguments for `modelsummary`: `group` and `group_map` for grouped
+  parameters (e.g., outcome levels in multinomial logit or components of gamlss
+  model).
+* `dvnames()` makes it easy to get dependent variable column titles (thanks to @NickCH-K)
+* `output="modelsummary_list"` to save a lightweight list-based representation
+  of the table which can be saved and fed to `modelsummary` once more to get a
+  full table.
+* `vcov` adds a row to note the type of standard errors.
+* `modelsummary` accepts a single model with multiple `vcov`s. 
+* `get_gof` forwards ... to `model_performance`
+* `coef_map` accepts unnamed vectors for easy subsetting
+* `fixest::fixest_multi` support
+* `options(modelsummary_get)` to set the order of extraction functions
+  to use under the hood (broom vs. easystats vs. all)
+* `metrics` argument of `performance::model_performance` is available
+  via `modelsummary`'s ... ellipsis to limit the GOF statistics in
+  Bayesian models.
+* users can omit the stars legend note by using glue strings:
+  `estimate="{estimate}{stars}"`
+* output="html" can use `gt` by setting `options(modelsummary_html="gt")` 
+* org-mode integration by specifying the export format as:
+  options(modelsummary_orgmode = "latex")
+
+`datasummary_correlation`:
+
+* passes `...` forward
+* new function: `datasummary_correlation_format`
+* `datasummary_correlation`'s `method` argument accepts functions and
+  "pearspear" (thanks to @joachim-gassen)
+  
+`datasummary`:
+
+* `datasummary` functions and `rounding` accept ..., big.mark, etc.
+
+`datasummary_skim`:
+
+* now works with haven_labeled numeric
+* faster tables with bayesian models. 
+  
+Bug fixes and lints
+
+# modelsummary 0.6.6
 
 * new output format: latex_tabular
 * `tidy_custom` allows partial term matches

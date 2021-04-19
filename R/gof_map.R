@@ -26,7 +26,14 @@ gof_map_build <- function() {
   logLik,                    Log.Lik.,           3, FALSE,
   std.error.type,            Std.Error Type,     3, FALSE,
   F,                         F,                  3, FALSE,
+  elpd,                      ELPD,               1, FALSE,
+  elpd.se,                   ELPD s.e.,          1, FALSE,
+  looic,                     LOOIC,              1, FALSE
+  looic.se,                  LOOIC s.e.,         1, FALSE
+  waic,                      WAIC,               1, FALSE
+  rmse,                      RMSE,               2, FALSE,
   deviance,                  Deviance,           2, TRUE,
+  vcov.type,                 Std. Errors,        0, FALSE,
   df.residual,               DF Resid,           0, TRUE,
   df.null,                   DF Null,            0, TRUE,
   sigma,                     Sigma,              3, TRUE,
@@ -41,14 +48,15 @@ gof_map_build <- function() {
   p.value,                   p,                  3, TRUE,
   df,                        DF,                 0, TRUE,
   null.deviance,             Deviance Null,      2, TRUE,
-  rmse,                      RMSE,               2, TRUE,
   statistic.Weak.instrument, Weak IV F-stat,     1, FALSE,
   statistic.Wu.Hausman,      Wu-Hausman Chi-Sq., 1, FALSE,
   statistic.Sargan,          Sargan J-stat,      1, FALSE,
   p.value.Weak.instrument,   Weak IV p,          3, TRUE,
   p.value.Wu.Hausman,        Wu-Hausman p,       3, TRUE,
   p.value.Sargan,            Sargan p,           3, TRUE'
-  out <- utils::read.csv(text=text, colClasses=c("character", "character", "numeric", "logical", "NULL"))
+  out <- utils::read.csv(
+    text = text,
+    colClasses = c("character", "character", "numeric", "logical", "NULL"))
   for (i in 1:2) {
     out[[i]] <- trimws(out[[i]])
   }
@@ -77,4 +85,4 @@ gof_map_build <- function() {
 #' }
 #'
 #' @export
-gof_map <- gof_map_build() 
+gof_map <- gof_map_build()

@@ -12,31 +12,30 @@ factory_kableExtra <- function(tab,
                                title = NULL,
                                ...) {
 
-  if (output_format == "latex_tabular") {
-    latex_tabular_only <- TRUE
-  } else {
-    latex_tabular_only <- FALSE
+  # new variable "kable_format" because "kableExtra" and "html" both produce
+  # html, but we need to distinguish the two.
+  kable_format <- "html"
+  if (!is.null(output_format)) {
+    if (output_format %in% c("latex", "latex_tabular")) {
+      kable_format <- "latex"
+    } else if (output_format == "markdown") {
+      kable_format <- "markdown"
+    }
   }
 
-  if (is.null(output_format)) {
-    output_format <- "html"
-  } else if (output_format == "latex_tabular") {
-    output_format <- "latex"
-  } else if (output_format %in% c("markdown", "latex")) {
-    output_format <- output_format
-  } else {
-    output_format <- "html"
-  }
+  # don't print row.names
+  row.names(tab) <- NULL
 
   # kbl arguments
   valid <- c("x", "align", "caption", "format", "booktabs", "linesep",
              "format.args", "escape", "table.attr", "longtable", "valign",
              "position", "centering", "vline", "toprule", "bottomrule",
-             "midrule", "caption.short", "table.envir") 
+             "midrule", "caption.short", "table.envir")
+
   arguments <- c(
     list(...),
     "caption"   = title,
-    "format"    = output_format,
+    "format"    = kable_format,
     "booktabs"  = TRUE,
     "linesep"   = "",
     "row.names" = NULL
@@ -47,7 +46,7 @@ factory_kableExtra <- function(tab,
     arguments[["align"]] <- align
 
     # if dcolumn, wrap model names in multicolumn to avoid math mode
-    if (output_format == "latex" && 
+    if (kable_format %in% c("latex_tabular", "latex") &&
         any(grepl("D\\{", align)) &&
         !"escape" %in% names(arguments)) {
       colnames(tab) <- paste0("\\multicolumn{1}{c}{", colnames(tab), "}")
@@ -55,25 +54,21 @@ factory_kableExtra <- function(tab,
     }
   }
 
-  # don't print row.names
-  row.names(tab) <- NULL
-
   # combine arguments
   arguments <- arguments[base::intersect(names(arguments), valid)]
   arguments <- c(list(tab), arguments)
-
   out <- do.call(kableExtra::kbl, arguments)
 
   # horizontal rule to separate coef/gof not supported in markdown
   # TODO: support HTML
-  if (!is.null(hrule)) {
-    if (output_format %in% 'latex') {
+  if (!is.null(hrule) && output_format %in% c("kableExtra", "html", "latex", "latex_tabular")) {
+    if (kable_format == "latex") {
       for (pos in hrule) {
         out <- kableExtra::row_spec(out,
-          row = pos - 1, 
+          row = pos - 1,
           extra_latex_after = "\\midrule")
       }
-    } else if (output_format %in% "html") {
+    } else if (kable_format == "html") {
       for (pos in hrule) {
         out <- kableExtra::row_spec(out,
           row = pos - 1,
@@ -83,38 +78,35 @@ factory_kableExtra <- function(tab,
   }
 
   # user-supplied notes at the bottom of table
-  if (!is.null(notes)) {
+  if (!is.null(notes) && output_format %in% c("kableExtra", "html", "latex", "markdown")) {
     # threeparttable only works with 1 note. But it creates a weird bug
     # when using coef_map and stars in Rmarkdown PDF output
     for (n in notes) {
       # otherwise stars_note breaks in PDF output under pdflatex
-      if (output_format == "latex" && isTRUE(grepl(" < ", n))) {
+      if (kable_format == "latex" && isTRUE(grepl(" < ", n))) {
         n <- gsub(" < ", " $<$ ", n)
-        out <- kableExtra::add_footnote(out, label=n, notation='none',
-                                        escape=FALSE)
-      } else {
-        out <- kableExtra::add_footnote(out, label=n, notation='none',
-                                        escape=TRUE)
       }
+      out <- kableExtra::add_footnote(out, label = n, notation = "none", escape = FALSE)
     }
   }
 
-  span <- attr(tab, 'span_kableExtra')
-  if (!is.null(span)) {
+  span <- attr(tab, "span_kableExtra")
+  if (!is.null(span) && output_format %in% c("kableExtra", "latex", "html")) {
     # add_header_above not supported in markdown
-    if (output_format %in% c('latex', 'html')) {
-      span <- rev(span) # correct vertical order
-      for (s in span) {
-        out <- kableExtra::add_header_above(out, s)
-      }
+    span <- rev(span) # correct vertical order
+    for (s in span) {
+      out <- kableExtra::add_header_above(out, s)
     }
   }
 
-  # styling (can be overriden manually by calling again)
-  if (isFALSE(latex_tabular_only)) {
-    if (output_format %in% c("latex", "html")) {
-      out <- kableExtra::kable_styling(out, full_width = FALSE)
-    }
+  # styling can be overriden by user by calling again
+  if (!output_format %in% c("markdown", "latex_tabular")) {
+    out <- kableExtra::kable_styling(out, full_width = FALSE)
+  }
+
+  # html & latex get a new class to use print.modelsummary_string
+  if (output_format %in% c("latex", "latex_tabular", "html")) {
+    class(out) <- c("modelsummary_string", class(out))
   }
 
   # output
@@ -122,10 +114,9 @@ factory_kableExtra <- function(tab,
     return(out)
   } else {
     if (output_format == "markdown") {
-      writeLines(paste(out, collapse="\n"), con=output_file)
+      writeLines(paste(out, collapse = "\n"), con = output_file)
     } else {
       kableExtra::save_kable(out, file = output_file)
     }
   }
-
 }

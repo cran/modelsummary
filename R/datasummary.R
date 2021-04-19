@@ -138,9 +138,6 @@ datasummary <- function(formula,
 
   sanity_output(output)
 
-  # output: factory, file, format
-  output_list <- parse_output_arg(output)
-
   # convenience: transform logical and character to factor
   # are there use-cases for character variables?
   for (i in seq_along(data)) {

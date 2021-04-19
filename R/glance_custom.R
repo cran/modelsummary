@@ -26,11 +26,11 @@ glance_custom.default <- function(x) NULL
 #' @export
 glance_custom.fixest <- function(x) {
   assert_dependency("fixest")
-  out <- data.frame(row.names="firstrow")
+  out <- data.frame(row.names = "firstrow")
   for (n in x$fixef_vars) {
     out[[paste('FE:', n)]] <- 'X'
   }
-  out[['Std. errors']] <- attr(fixest::coeftable(x), "type")
+  out[['vcov.type']] <- attr(fixest::coeftable(x), "type")
   row.names(out) <- NULL
   return(out)
 }

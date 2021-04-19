@@ -24,7 +24,7 @@ factory_gt <- function(tab,
   if (!is.null(hrule)) { # check if there are >0 GOF
     for (pos in hrule) {
       out <- gt::tab_style(
-        out, 
+        out,
         style = gt::cell_borders(sides = 'bottom', color = '#000000'),
         locations = gt::cells_body(columns = 1:idx_col, rows = (pos - 1))
       )
@@ -58,23 +58,36 @@ factory_gt <- function(tab,
     left <- grep('l', align)
     center <- grep('c', align)
     right <- grep('r', align)
-    out <- 
-    out <- gt::cols_align(out, align='center', columns=center)
-    out <- gt::cols_align(out, align='left', columns=left) 
-    out <- gt::cols_align(out, align='right', column=right)
+    out <-
+    out <- gt::cols_align(out, align = 'center', columns = center)
+    out <- gt::cols_align(out, align = 'left', columns = left)
+    out <- gt::cols_align(out, align = 'right', column = right)
   }
 
   # output
   if (is.null(output_file)) {
-    if (output_format == 'html') {
-      return(as.character(gt::as_raw_html(out)))
-    } else if (output_format == 'latex') {
-      return(as.character(gt::as_latex(out)))
-    } else if (output_format %in% c('default', 'gt')) {
+
+    if (output_format == "html") {
+      out <- gt::as_raw_html(out)
+    }
+
+    if (output_format == "latex") {
+      out <- gt::as_latex(out)
+    }
+
+    if (!is.null(getOption("modelsummary_orgmode")) &&
+      output_format %in% c("html", "latex")) {
+      out <- sprintf(
+        "#+BEGIN_EXPORT %s\n%s\n#+END_EXPORT",
+        output_format, out)
       return(out)
     }
+
+    if (output_format %in% c('default', 'gt')) {
+      return(out)
+    }
+
   } else {
     gt::gtsave(out, output_file)
   }
-
 }

@@ -1,17 +1,17 @@
-#' Simple, Beautiful, and Customizable Model Summaries
+#' Summary Tables for Models with Grouped Coefficients
 #'
-#' `modelsummary_wide` is a specialized function to display groups of
-#' parameters from a single model in separate columns. This can be useful, for
-#' example, to display the different levels of coefficients in a multinomial
-#' regression model (e.g., `nnet::multinom`). The `coef_group` argument
-#' specifies the name of the group identifier.
+#' `modelsummary_wide` summarizes models with grouped coefficients. For
+#' example, these groups could correspond to levels of a multinomial logit
+#' outcome variable, or to parameters of a GAMLSS model. This function's
+#' arguments are the same as in `modelsummary`, except for the `coef_group` and
+#' the `stacking` arguments.
 #'
 #' @param coef_group the name of the coefficient groups to use as columns (NULL
 #' or character). If `coef_group` is NULL, `modelsummary` tries to guess the
-#' correct coefficient group identifier. To be valid, this identifier must be a
-#' column in the data.frame produced by `tidy(model)`. Note: you may have to
-#' load the `broom` or `broom.mixed` package before executing `tidy(model)`.
-#' @param stacking direction in which models are stacked: "horizontal" or "vertical"
+#' correct coefficient group identifier. To be valid, this identifier must
+#' be a column in the data.frame produced by `get_estimates(model)`.
+#' @param stacking direction in which models are stacked: "horizontal" or
+#' "vertical"
 #' @inheritParams modelsummary
 #' @return a regression table in a format determined by the `output` argument.
 #' @export
@@ -37,7 +37,7 @@ modelsummary_wide <- function(
   stacking    = "horizontal",
   ...) {
 
-  checkmate::assert_character(stacking, pattern="^horizontal$|^vertical$")
+  checkmate::assert_character(stacking, pattern = "^horizontal$|^vertical$")
 
   # models must be a list of models
   if (!'list' %in% class(models)) {
@@ -54,10 +54,10 @@ modelsummary_wide <- function(
 
   # tidy
   if (statistic == "conf.int") {
-    ti <- lapply(models, function(x) 
-                 get_estimates(x, conf_level=conf_level, ...))
+    ti <- lapply(models, function(x)
+                 get_estimates(x, conf_level = conf_level, ...))
   } else {
-    ti <- lapply(models, function(x) 
+    ti <- lapply(models, function(x)
                  get_estimates(x, ...))
   }
 
@@ -81,27 +81,29 @@ modelsummary_wide <- function(
   if (is.null(coef_group)) {
     coef_group <- intersect(c("y.level", "response", "group"), colnames(ti))[1]
     if (is.na(coef_group)) {
-      stop("You must specify a valid character value for the `coef_group` argument. To find this value for your type of model, load the `broom` and/or `broom.mixed` libraries, then call `tidy(model)` on your model object. The `coef_group` value must be a column in the resulting data.frame. This column includes identifiers which determine which coefficients appear in which columns of your table.") 
+      stop("You must specify a valid character value for the `coef_group` argument. To find this value for your type of model, load the `broom` and/or `broom.mixed` libraries, then call `tidy(model)` on your model object. The `coef_group` value must be a column in the resulting data.frame. This column includes identifiers which determine which coefficients appear in which columns of your table.")
     }
   }
 
   # unique group names
   group_names <- unique(ti[[coef_group]])
+  group_names <- as.character(group_names) # weird bug otherwise when groups are integers
 
   # vertical stacking: model_names are groups
   if (stacking == "vertical") {
     results <- list()
     for (g in group_names) {
-      results[[g]]$tidy <- ti[ti[[coef_group]] == g, , drop=FALSE]
+      results[[g]] <- list()
+      results[[g]]$tidy <- ti[ti[[coef_group]] == g, , drop = FALSE]
       results[[g]]$tidy$term <- paste(results[[g]]$tidy$model,
                                       results[[g]]$tidy$term)
       if (g == group_names[1]) {
-        results[[g]]$glance = gl_wide
+        results[[g]]$glance <- gl_wide
       }
       class(results[[g]]) <- c("modelsummary_list", "list")
     }
   }
-      
+
   # horizontal stacking: model_names are model/group combinations
   if (stacking == "horizontal") {
     results <- list()
@@ -117,12 +119,12 @@ modelsummary_wide <- function(
           idx <- g
         }
 
-        tmp_ti <- ti[ti[[coef_group]] == g & ti$model == m, , drop=FALSE]
-        tmp_gl <- gl[gl$model == m,]
+        tmp_ti <- ti[ti[[coef_group]] == g & ti$model == m, , drop = FALSE]
+        tmp_gl <- gl[gl$model == m, , drop = FALSE]
         tmp_gl$model <- NULL
 
         # skip missing response levels
-        if (nrow(tmp_ti) > 0) { 
+        if (nrow(tmp_ti) > 0) {
           results[[idx]] <- list()
           results[[idx]]$tidy <- tmp_ti
           if (first) {
@@ -153,6 +155,6 @@ modelsummary_wide <- function(
     notes       = notes,
     estimate    = estimate,
     align       = align,
-    ...) 
+    ...)
 
 }
