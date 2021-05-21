@@ -1,4 +1,41 @@
-# modelsummary 0.6.6.9000
+# modelsummary 0.8.0
+
+Breaking change:
+
+* The default significance markers `stars=TRUE` have been updated to be
+  consistent with the default output from base R (e.g., in summary.lm). The new
+  significance thresholds are: 
+  "+" p < 0.1, "*" p < 0.05, "**" p < 0.01, "***" p < 0.001
+
+`datasummary_crosstab`:
+
+* New function to produce cross-tabulations
+
+`datasummary`:
+
+* `N` is smart enough to return either the number of elements in a subset or the
+  number of non-missing observations in a variable
+  
+`datasummary_balance`:
+
+* Keeps `NA`s in factor variables by default. Users can convert their variables
+  with the `factor()` function to omit `NA`s automatically.
+
+`modelsummary`:
+
+* themes can be set using global options (experimental)
+* new vcov options: "bootstrap", "HAC", "NeweyWest", "Andrews",
+  "panel-corrected", "weave", "outer-product"
+* A valid `get_gof` (`glance`) is now optional.
+* ... is pushed through to `sandwich`, which allows things like:
+  `modelsummary(model, vcov = "bootstrap", R = 1000, cluster = "firm")`
+ 
+Other:
+
+* Jupyter notebook support via `output="jupyter"`
+* Bug fixes
+
+# modelsummary 0.7.0
 
 `modelsummary`:
 
@@ -22,8 +59,6 @@
 * users can omit the stars legend note by using glue strings:
   `estimate="{estimate}{stars}"`
 * output="html" can use `gt` by setting `options(modelsummary_html="gt")` 
-* org-mode integration by specifying the export format as:
-  options(modelsummary_orgmode = "latex")
 
 `datasummary_correlation`:
 

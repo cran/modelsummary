@@ -40,14 +40,15 @@ in the table. Names refer to the original term names stored in the model
 object, e.g. c("hp:mpg"="hp X mpg") for an interaction term.}
 
 \item{vcov}{robust standard errors and other manual statistics. The \code{vcov}
-argument accepts five types of input (see the 'Details' and 'Examples'
+argument accepts six types of input (see the 'Details' and 'Examples'
 sections below):
 \itemize{
-\item string, vector, or list of strings: "robust", "HC", "HC0", "HC1", "HC2", "HC3", "HC4", "HC4m", "HC5", "stata", or "classical" (alias "constant" or "iid").
-\item formula or list of formulas with the cluster variable(s) on the right-hand side (e.g., ~clusterid).
-\item function or list of functions which return variance-covariance matrices with row and column names equal to the names of your coefficient estimates (e.g., \code{stats::vcov}, \code{sandwich::vcovHC}).
-\item list of \code{length(models)} variance-covariance matrices with row and column names equal to the names of your coefficient estimates.
-\item a list of length(models) vectors with names equal to the names of your coefficient estimates. See 'Examples' section below. Warning: since this list of vectors can include arbitrary strings or numbers, \code{modelsummary} cannot automatically calculate p values. The \code{stars} argument may thus use incorrect significance thresholds when \code{vcov} is a list of vectors.
+\item NULL returns the default uncertainty estimates of the model object
+\item string, vector, or (named) list of strings. The strings "classical", "iid" and "constant" are aliases for \code{NULL}, and they return the model's default uncertainty estimates. The strings "robust", "HC", "HC0", "HC1", "HC2", "HC3", "HC4", "HC4m", "HC5", "stata", "HAC", "NeweyWest", "Andrews", "panel-corrected", "outer-product", "weave" use variance-covariance matrices computed using functions from the \code{sandwich} package. The behavior of those functions can (and sometimes \emph{must}) be altered by passing arguments to \code{sandwich} directly from \code{modelsummary} through the ellipsis (\code{...}), but it is safer to define your own custom functions as described in the next bullet.
+\item function or (named) list of functions which return variance-covariance matrices with row and column names equal to the names of your coefficient estimates (e.g., \code{stats::vcov}, \code{sandwich::vcovHC}, \code{function(x) vcovPC(x, cluster="country")}).
+\item formula or (named) list of formulas with the cluster variable(s) on the right-hand side (e.g., ~clusterid).
+\item (named) list of \code{length(models)} variance-covariance matrices with row and column names equal to the names of your coefficient estimates.
+\item a (named) list of length(models) vectors with names equal to the names of your coefficient estimates. See 'Examples' section below. Warning: since this list of vectors can include arbitrary strings or numbers, \code{modelsummary} cannot automatically calculate p values. The \code{stars} argument may thus use incorrect significance thresholds when \code{vcov} is a list of vectors.
 }}
 
 \item{add_rows}{a data.frame (or tibble) with the same number of columns as

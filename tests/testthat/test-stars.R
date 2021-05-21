@@ -114,3 +114,4 @@ test_that("custom stars", {
   expect_equal(truth, unname(raw[[5]][1:6]))
 
 })
+

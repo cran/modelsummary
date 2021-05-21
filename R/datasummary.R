@@ -21,6 +21,11 @@
 #' the formula determines the order in which headers appear. For example,
 #' `x~mean*z` will print the `mean`-related header above the `z`-related
 #' header.`
+#' @param ... all other arguments are passed through to the
+#' table-making functions. This allows users to pass arguments directly to
+#' `datasummary` in order to affect the behavior of other functions behind
+#' the scenes, for instance:
+#' * `kableExtra::kbl(escape=FALSE)` to avoid escaping math characters in `kableExtra` tables.
 #' @examples
 #'
 #' \dontrun{
@@ -134,7 +139,8 @@ datasummary <- function(formula,
                         align = NULL,
                         add_columns = NULL,
                         add_rows = NULL,
-                        sparse_header = TRUE) {
+                        sparse_header = TRUE,
+                        ...) {
 
   sanity_output(output)
 
@@ -196,8 +202,16 @@ datasummary <- function(formula,
     output = output,
     title = title,
     add_columns = add_columns,
-    add_rows = add_rows)
+    add_rows = add_rows,
+    ...)
 
   return(out)
 
 }
+
+#' `dsummary()` is a shortcut to `datasummary()`
+#'
+#' @inherit datasummary
+#' @keywords internal
+#' @export
+dsummary <- datasummary

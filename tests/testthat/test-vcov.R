@@ -8,6 +8,69 @@ models[['OLS 2']] <- lm(Desertion ~ Crime_prop + Infants, dat)
 models[['Poisson 2']] <- glm(Desertion ~ Crime_prop + Donations, dat, family = poisson())
 models[['Logit 1']] <- glm(Clergy ~ Crime_prop + Infants, dat, family = binomial())
 
+test_that("warning for non-iid hardcoded vcov", {
+    testthat::skip_if_not_installed("fixest")
+    testthat::skip_if_not_installed("estimatr")
+
+    library(fixest)
+    library(estimatr)
+
+    mod <- feols(hp ~ mpg + drat, mtcars, cluster = "vs")
+    expect_warning(modelsummary(mod, vcov = "iid", output = "data.frame"), regexp = "IID")
+
+    mod <- lm_robust(hp ~ mpg + drat, mtcars)
+    expect_warning(modelsummary(mod, vcov = "iid", output = "data.frame"), regexp = "IID")
+
+    mod <- feols(hp ~ mpg + drat | cyl, mtcars)
+    expect_warning(modelsummary(mod, vcov = "iid", output = "data.frame"), regexp = "IID")
+
+    # assume user knows that they are doing
+    mod <- feols(mpg ~ cyl | am, data = mtcars)
+    tab <- modelsummary(mod, vcov = list("IID" = vcov(mod, se = "standard")), output = "data.frame")
+    expect_true("IID" %in% tab[["Model 1"]])
+
+    mod <- feols(hp ~ mpg | cyl ~ gear, data = mtcars)
+
+    # assume sandwich works with fixest
+    expect_warning(modelsummary(mod, vcov = list(NULL, "robust"), output = "data.frame"), NA)
+
+    # assume user knows that they are doing
+    expect_warning(modelsummary(mod, vcov = list(NULL, "robust", "iid" = vcov(mod, se = "hetero")), output = "data.frame"), NA)
+
+    # no explicit vcov names, so we raise the warning
+    expect_warning(modelsummary(mod, vcov = list(NULL, "classical", vcov(mod, se = "hetero")), output = "data.frame"),
+                   regexp = "IID")
+})
+    
+
+test_that("user-supplied vcov_type in gof section", {
+    mod <- lm(hp ~ mpg, data = mtcars)
+    vc <- list("Rob" = "robust",
+            "Stata Corp" = "stata",
+            "Newey Lewis & the News" = "NeweyWest")
+    tab <- modelsummary(mod, output = "data.frame", vcov = vc)
+    row <- unname(unlist(tab[nrow(tab), 4:6]))
+    expect_equal(row, c("Rob", "Stata Corp", "Newey Lewis & the News"))
+})
+
+
+test_that("sandwich arguments in ellipsis", {
+  library(sandwich)
+  data(PetersenCL)
+  mod <- lm(y ~ x, PetersenCL)
+  tab <- modelsummary(mod,
+                      output = "dataframe",
+                      fmt = 7,
+                      estimate = "std.error",
+                      gof_omit = ".*",
+                      statistic = NULL,
+                      vcov = "panel-corrected",
+                      cluster = "firm")
+  v <- vcovPC(mod, cluster = "firm")
+  v <- modelsummary:::rounding(sqrt(diag(v)), 7)
+  expect_equal(unname(v), tab[["Model 1"]])
+})
+  
 
 test_that("multi vcov with model recycling", {
     mod <- lm(hp ~ 1, mtcars)
@@ -58,16 +121,15 @@ test_that("lme4 and various warnings", {
   tab = modelsummary(models, output="dataframe", vcov=list("robust", "classical"))
   expect_s3_class(tab, "data.frame")
   expect_equal(ncol(tab), 5)
-  expect_warning(modelsummary(models, output="dataframe", vcov="robust"))
+  expect_error(modelsummary(models, output="dataframe", vcov="robust"), regexp = "Unable to extract")
   expect_warning(modelsummary(models, output="dataframe", vcov="classical"), NA)
   expect_warning(modelsummary(models, output="dataframe", vcov=list("robust", "classical")), NA)
   expect_warning(modelsummary(models[[2]], vcov=stats::vcov), regexp="Only.*error.*adjusted")
-  expect_warning(modelsummary(models, output="dataframe", vcov="robust"), regexp="are unadjusted")
 })
 
 
 test_that("robust character shortcuts", {
-  testthat::skip_if_not_installed("estimatr") 
+  testthat::skip_if_not_installed("estimatr")
 
   mod = lm(hp ~ mpg, mtcars)
   mod_estimatr = estimatr::lm_robust(hp ~ mpg, mtcars)
@@ -167,11 +229,11 @@ reference <- readRDS(file = "known_output/statistic-override.rds")
 
 
 test_that("bad function", {
-  expect_warning(modelsummary(models, vcov = na.omit))
+  expect_error(modelsummary(models, vcov = na.omit))
 })
 
 test_that("bad formula", {
-  expect_warning(modelsummary(models, vcov = ~bad))
+  expect_error(modelsummary(models, vcov = ~bad))
 })
 
 test_that("vector must be named", {

@@ -39,12 +39,53 @@ get_estimates <- function(model, conf_level = .95, vcov = NULL, ...) {
         }
     }
 
+    if (!inherits(out, "data.frame")) {
+      stop(sprintf(
+        '`modelsummary could not extract the required information from a model
+of class "%s". The package tried a sequence of 2 helper functions to extract
+estimates:
+
+broom::tidy(model)
+parameters::parameters(model)
+
+To draw a table, one of these commands must return a `data.frame` with a
+column named "term". The `modelsummary` website explains how to summarize
+unsupported models or add support for new models yourself:
+
+https://vincentarelbundock.github.io/modelsummary/articles/modelsummary.html
+
+These errors messages were generated during extraction:
+%s',
+        class(model)[1], paste(warning_msg, collapse = "\n")
+      ))
+    }
+
+    # tidy_custom_internal (modelsummary customization avoids name conflict)
+    out_custom <- tidy_custom_internal(model)
+    if (inherits(out_custom, "data.frame") && nrow(out_custom) > 0) {
+        if (!any(out_custom$term %in% out$term)) {
+            warning('Elements of the "term" column produced by `tidy_custom` must match model terms. `tidy_custom` was ignored.')
+        } else {
+            # R 3.6 doesn't deal well with factors
+            out_custom$term <- as.character(out_custom$term)
+            out$term <- as.character(out$term)
+            out_custom <- out_custom[out_custom$term %in% out$term, , drop = FALSE]
+            idx <- match(out_custom$term, out$term)
+            for (n in colnames(out_custom)) {
+                out[[n]][idx] <- out_custom[[n]]
+            }
+        }
+    }
+
     # tidy_custom
     out_custom <- tidy_custom(model)
     if (inherits(out_custom, "data.frame") && nrow(out_custom) > 0) {
         if (!any(out_custom$term %in% out$term)) {
             warning('Elements of the "term" column produced by `tidy_custom` must match model terms. `tidy_custom` was ignored.')
         } else {
+            # R 3.6 doesn't deal well with factors
+            out_custom$term <- as.character(out_custom$term)
+            out$term <- as.character(out$term)
             out_custom <- out_custom[out_custom$term %in% out$term, , drop = FALSE]
             idx <- match(out_custom$term, out$term)
             for (n in colnames(out_custom)) {
@@ -63,10 +104,11 @@ get_estimates <- function(model, conf_level = .95, vcov = NULL, ...) {
     if (flag1 && (flag2 || flag3 || flag4 || flag5)) {
 
       # extract overriden estimates
-      so <- extract_vcov(
+      so <- get_vcov(
         model,
         vcov = vcov,
-        conf_level = conf_level)
+        conf_level = conf_level,
+        ...)
 
       if (!is.null(so) && nrow(out) == nrow(so)) {
         # keep only columns that do not appear in so
@@ -84,24 +126,6 @@ get_estimates <- function(model, conf_level = .95, vcov = NULL, ...) {
     if (inherits(out, "data.frame")) {
         return(out)
     }
-
-    stop(sprintf(
-'`modelsummary could not extract the required information from a model
-of class "%s". The package tried a sequence of 2 helper functions to extract
-estimates:
-
-broom::tidy(model)
-parameters::parameters(model)
-
-To draw a table, one of these commands must return a `data.frame` with a
-column named "term". The `modelsummary` website explains how to summarize
-unsupported models or add support for new models yourself:
-
-https://vincentarelbundock.github.io/modelsummary/articles/modelsummary.html
-
-These errors messages were generated during extraction:
-%s',
-    class(model)[1], paste(warning_msg, collapse = "\n")))
 }
 
 

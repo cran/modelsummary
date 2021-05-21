@@ -18,7 +18,7 @@ datasummary_correlation_format(
 \item{fmt}{determines how to format numeric values
 \itemize{
 \item integer: the number of digits to keep after the period \code{format(round(x, fmt), nsmall=fmt)}
-\item character: passed to the \code{sprintf} function (e.g., '\\%.3f' keeps 3 digits with trailing zero). See \code{?sprintf}
+\item character: passed to the \code{sprintf} function (e.g., '\%.3f' keeps 3 digits with trailing zero). See \code{?sprintf}
 \item function: returns a formatted character string.
 }}
 
@@ -35,6 +35,7 @@ Mostly for internal use, but can be useful when users supply a function to
 the \code{method} argument of \code{datasummary_correlation}.
 }
 \examples{
+\dontrun{
 library(modelsummary)
 
 dat <- mtcars[, c("mpg", "hp", "disp")]
@@ -49,4 +50,5 @@ cor_fun <- function(x) {
 }
 
 datasummary_correlation(dat, method = cor_fun)
+}
 }

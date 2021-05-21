@@ -20,16 +20,16 @@ globalVariables(c('.', 'term', 'part', 'estimate', 'conf.high', 'conf.low',
 #' @param output filename or object type (character string)
 #' * Supported filename extensions: .html, .tex, .md, .txt, .png, .jpg.
 #' * Supported object types: "default", "html", "markdown", "latex", "latex_tabular", "data.frame", "modelsummary_list", "gt", "kableExtra", "huxtable", "flextable".
-#' * To change the default output format, type `options(modelsummary_default = "latex")`, where `latex` can be any of the valid object types listed above. 
-#' * Warning: the `output` argument \emph{cannot} be used when customizing tables with external packages.
+#' * To change the default output format, type `options(modelsummary_default = "latex")`, where `latex` can be any of the valid object types listed above.
+#' * Warning: users should not supply a file name to the `output` argument if they intend to customize the table with external packages.
 #' * See the 'Details' section below for more information.
 #' @param fmt determines how to format numeric values
 #' * integer: the number of digits to keep after the period `format(round(x, fmt), nsmall=fmt)`
-#' * character: passed to the `sprintf` function (e.g., '\%.3f' keeps 3 digits with trailing zero). See `?sprintf`
+#' * character: passed to the `sprintf` function (e.g., '%.3f' keeps 3 digits with trailing zero). See `?sprintf`
 #' * function: returns a formatted character string.
 #' @param stars to indicate statistical significance
 #' * FALSE (default): no significance stars.
-#' * TRUE: *=.1, **=.05, ***=.01
+#' * TRUE: +=.1, *=.05, **=.01, ***=0.001
 #' * Named numeric vector for custom stars such as `c('*' = .1, '+' = .05)`
 #' * Note: a legend will not be inserted at the bottom of the table when the `estimate` or `statistic` arguments use "glue strings" with `{stars}`.
 #' @param statistic vector of strings or `glue` strings which select uncertainty
@@ -37,19 +37,20 @@ globalVariables(c('.', 'term', 'part', 'estimate', 'conf.high', 'conf.low',
 #' uncertainty statistics.
 #' * "conf.int", "std.error", "statistic", "p.value", "conf.low", "conf.high",
 #'    or any column name produced by: `get_estimates(model)`
-#' * `glue` package strings with braces, such as: 
+#' * `glue` package strings with braces, such as:
 #'   - `"{p.value} [{conf.low}, {conf.high}]"`
 #'   - `"Std.Error: {std.error}"`
 #' * Note: Parentheses are added automatically unless the string includes `glue` curly braces `{}`.
 #' * Note: To report uncertainty statistics \emph{next} to coefficients, you can #'   supply a `glue` string to the `estimate` argument.
 #' @param vcov robust standard errors and other manual statistics. The `vcov`
-#'   argument accepts five types of input (see the 'Details' and 'Examples'
+#'   argument accepts six types of input (see the 'Details' and 'Examples'
 #'   sections below):
-#' * string, vector, or list of strings: "robust", "HC", "HC0", "HC1", "HC2", "HC3", "HC4", "HC4m", "HC5", "stata", or "classical" (alias "constant" or "iid").
-#' * formula or list of formulas with the cluster variable(s) on the right-hand side (e.g., ~clusterid).
-#' * function or list of functions which return variance-covariance matrices with row and column names equal to the names of your coefficient estimates (e.g., `stats::vcov`, `sandwich::vcovHC`).
-#' * list of `length(models)` variance-covariance matrices with row and column names equal to the names of your coefficient estimates.
-#' * a list of length(models) vectors with names equal to the names of your coefficient estimates. See 'Examples' section below. Warning: since this list of vectors can include arbitrary strings or numbers, `modelsummary` cannot automatically calculate p values. The `stars` argument may thus use incorrect significance thresholds when `vcov` is a list of vectors.
+#' * NULL returns the default uncertainty estimates of the model object
+#' * string, vector, or (named) list of strings. The strings "classical", "iid" and "constant" are aliases for `NULL`, and they return the model's default uncertainty estimates. The strings "robust", "HC", "HC0", "HC1", "HC2", "HC3", "HC4", "HC4m", "HC5", "stata", "HAC", "NeweyWest", "Andrews", "panel-corrected", "outer-product", "weave" use variance-covariance matrices computed using functions from the `sandwich` package. The behavior of those functions can (and sometimes *must*) be altered by passing arguments to `sandwich` directly from `modelsummary` through the ellipsis (`...`), but it is safer to define your own custom functions as described in the next bullet.
+#' * function or (named) list of functions which return variance-covariance matrices with row and column names equal to the names of your coefficient estimates (e.g., `stats::vcov`, `sandwich::vcovHC`, `function(x) vcovPC(x, cluster="country")`).
+#' * formula or (named) list of formulas with the cluster variable(s) on the right-hand side (e.g., ~clusterid).
+#' * (named) list of `length(models)` variance-covariance matrices with row and column names equal to the names of your coefficient estimates.
+#' * a (named) list of length(models) vectors with names equal to the names of your coefficient estimates. See 'Examples' section below. Warning: since this list of vectors can include arbitrary strings or numbers, `modelsummary` cannot automatically calculate p values. The `stars` argument may thus use incorrect significance thresholds when `vcov` is a list of vectors.
 #' @param conf_level confidence level to use for confidence intervals
 #' @param coef_map character vector. Subset, rename, and reorder coefficients.
 #' Coefficients omitted from this vector are omitted from the table. The order
@@ -64,7 +65,8 @@ globalVariables(c('.', 'term', 'part', 'estimate', 'conf.high', 'conf.low',
 #' vector. Values of the vector refer to the variable names that will appear
 #' in the table. Names refer to the original term names stored in the model
 #' object, e.g. c("hp:mpg"="hp X mpg") for an interaction term.
-#' @param gof_map 
+#' @param gof_map rename, reorder, and omit goodness-of-fit statistics and other
+#'   model information. This argument accepts 3 types of values:
 #' * NULL (default): the `modelsummary::gof_map` dictionary is used for formatting, and all unknown statistic are included.
 #' * data.frame with 3 columns named "raw", "clean", "fmt". Unknown statistics are omitted. See the 'Examples' section below.
 #' * list of lists, each of which includes 3 elements named "raw", "clean", "fmt". Unknown statistics are omitted. See the 'Examples section below'.
@@ -105,7 +107,7 @@ globalVariables(c('.', 'term', 'part', 'estimate', 'conf.high', 'conf.low',
 #' * `performance::model_performance(metrics="RMSE")` to select goodness-of-fit statistics to extract using the `performance` package (must have set `options(modelsummary_get="easystats")` first).
 #' @return a regression table in a format determined by the `output` argument.
 #' @importFrom generics glance tidy
-#' @details 
+#' @details
 #'
 #' `options`
 #'
@@ -123,7 +125,7 @@ globalVariables(c('.', 'term', 'part', 'estimate', 'conf.high', 'conf.low',
 #' `modelsummary` can use two sets of packages to extract information from
 #' statistical models: `broom` and the `easystats` family (`performance` and
 #' `parameters`). By default, it uses `broom` first and `easystats` as a
-#' fallback if `broom` fails. You can change the order of priorities 
+#' fallback if `broom` fails. You can change the order of priorities
 #' or include goodness-of-fit extracted by *both* packages by setting:
 #'
 #' `options(modelsummary_get = "broom")`
@@ -160,7 +162,7 @@ globalVariables(c('.', 'term', 'part', 'estimate', 'conf.high', 'conf.low',
 #' by the `sandwich` package. This includes objects such as: lm, glm,
 #' survreg, coxph, mlogit, polr, hurdle, zeroinfl, and more.
 #'
-#' "classical", "iid", and "constant" are aliases which do not modify
+#' NULL, "classical", "iid", and "constant" are aliases which do not modify
 #' uncertainty estimates and simply report the default standard errors stored
 #' in the model object.
 #'
@@ -173,7 +175,7 @@ globalVariables(c('.', 'term', 'part', 'estimate', 'conf.high', 'conf.low',
 #' uncertainty estimates are not be adjusted.
 #'
 #' Numeric vectors are formatted according to `fmt` and placed in brackets.
-#' Character vectors printed as given, without parentheses. 
+#' Character vectors printed as given, without parentheses.
 #'
 #' If your model type is supported by the `lmtest` package, the
 #' `vcov` argument will try to use that package to adjust all the
@@ -208,7 +210,7 @@ globalVariables(c('.', 'term', 'part', 'estimate', 'conf.high', 'conf.low',
 #'                                    "conf.int"))
 #'
 #' # estimate
-#' modelsummary(models, 
+#' modelsummary(models,
 #'   statistic = NULL,
 #'   estimate = "{estimate} [{conf.low}, {conf.high}]")
 #' modelsummary(models,
@@ -219,11 +221,17 @@ globalVariables(c('.', 'term', 'part', 'estimate', 'conf.high', 'conf.low',
 #' modelsummary(models, vcov = "robust")
 #' modelsummary(models, vcov = list("classical", "stata"))
 #' modelsummary(models, vcov = sandwich::vcovHC)
-#' modelsummary(models, 
+#' modelsummary(models,
 #'   vcov = list(stats::vcov, sandwich::vcovHC))
-#' modelsummary(models, 
+#' modelsummary(models,
 #'   vcov = list(c("(Intercept)"="", "Height"="!"),
-#'                             c("(Intercept)"="", "Height"="!", "Volume"="!!")))
+#'               c("(Intercept)"="", "Height"="!", "Volume"="!!")))
+#'
+#' # vcov with custom names
+#' modelsummary(
+#'   models,
+#'   vcov = list("Stata Corp" = "stata",
+#'               "Newey Lewis & the News" = "NeweyWest"))
 #'
 #' # coef_rename
 #' modelsummary(models, coef_map = c('Volume' = 'Large', 'Height' = 'Tall'))
@@ -234,6 +242,9 @@ globalVariables(c('.', 'term', 'part', 'estimate', 'conf.high', 'conf.low',
 #'
 #' # title
 #' modelsummary(models, title = 'This is the title')
+#'
+#' # title with LaTeX label (for numbering and referencing)
+#' modelsummary(models, title = 'This is the title \\label{tab:description}')
 #'
 #' # add_rows
 #' rows <- tibble::tribble(~term, ~Bivariate, ~Multivariate,
@@ -299,11 +310,10 @@ modelsummary <- function(
   sanity_statistic(statistic)
   sanity_conf_level(conf_level)
   sanity_coef(coef_map, coef_rename, coef_omit)
-  sanity_gof_map(gof_map, gof_omit)
+  # no gof should be OK
+  ## sanity_gof_map(gof_map, gof_omit)
   sanity_stars(stars)
   sanity_fmt(fmt)
-
-
 
   sanity_output(output)
   output_format <- sanitize_output(output)$output_format
@@ -319,7 +329,7 @@ modelsummary <- function(
   } else {
     model_names <- names(models)
   }
-
+  model_names <- pad(model_names)
 
   #######################
   #  modelsummary_list  #
@@ -372,6 +382,7 @@ modelsummary <- function(
 
   }
 
+
   term_order <- unique(unlist(lapply(est, function(x) x$term)))
   group_order <- unique(unlist(lapply(est, function(x) x$group)))
 
@@ -417,11 +428,12 @@ modelsummary <- function(
     }
   }
 
-  # group duplicates
-  if ("term" %in% colnames(est)) {
-    idx <- paste(as.character(est$term), est$statistic)
-    if (is.null(group) && anyDuplicated(idx) > 0) {
-        warning('The table includes duplicate term names. This can sometimes happen when a model produces "grouped" terms, such as in a multinomial logit or a gamlss model. Consider using the the `group` argument.')
+  # make sure there are no duplicate estimate names *within* a single model.
+  # this cannot be in input sanity checks. idx paste allows multiple statistics.
+  if (is.null(group$group_name) && "term" %in% group$lhs) {
+    idx <- paste(est$term, est$statistic)
+    if (anyDuplicated(idx) > 1) {
+      warning('The table includes duplicate term names. This can happen when `coef_map` or `coef_rename` are misused. This can also happen when a model produces "grouped" terms, such as in multinomial logit or gamlss models. You may want to call `get_estimates(model)` to see how estimates are labelled internally, and use the `group` argument of the `modelsummary` function.')
     }
   }
 
@@ -431,12 +443,17 @@ modelsummary <- function(
   #####################
   gof <- list()
   for (i in seq_along(msl)) {
-    gof[[i]] <- format_gof(msl[[i]]$glance,
-                           fmt = fmt,
-                           gof_map = gof_map,
-                           ...)
-    colnames(gof[[i]])[2] <- model_names[i]
+    if (is.data.frame(msl[[i]]$glance)) {
+      gof[[i]] <- format_gof(msl[[i]]$glance,
+                             fmt = fmt,
+                             gof_map = gof_map,
+                             ...)
+      colnames(gof[[i]])[2] <- model_names[i]
+    } else {
+      gof[[i]] <- NULL
+    }
   }
+
 
   f <- function(x, y) merge(x, y, all = TRUE, sort = FALSE, by = "term")
   gof <- Reduce(f, gof)
@@ -444,12 +461,14 @@ modelsummary <- function(
   gof <- map_omit_gof(gof, gof_omit, gof_map)
 
   # combine estimates and gof
-  if (nrow(gof) > 0 &&
+  if (is.data.frame(gof) &&
+      nrow(gof) > 0 &&
       all(colnames(gof) %in% colnames(est))) {
     tab <- bind_rows(est, gof)
   } else {
     tab <- est
   }
+
 
 
   ##################
@@ -479,6 +498,12 @@ modelsummary <- function(
   }
 
   # stars
+  if (isTRUE(stars)) {
+    rlang::warn(
+      message = "In version 0.8.0 of the `modelsummary` package, the default significance markers produced by the `stars=TRUE` argument were changed to be consistent with R's defaults.",
+      .frequency = "once",
+      .frequency_id = "stars_true_consistency")
+  }
   if (!isFALSE(stars) && !any(grepl("\\{stars\\}", c(estimate, statistic)))) {
     stars_note <- make_stars_note(stars)
     if (is.null(notes)) {
@@ -522,6 +547,12 @@ modelsummary <- function(
   }
 
 
+  # remove "empty" confidence intervals or standard errors (HACK)
+  for (i in seq_along(tab)) {
+    tab[[i]] <- gsub("\\[,\\s*\\]|\\(\\s*\\)", "", tab[[i]])
+  }
+
+
   # build table
   factory(
     tab,
@@ -549,6 +580,13 @@ map_omit_rename_estimates <- function(estimates,
                              coef_omit,
                              group_map) {
 
+
+    # coef_omit
+    if (!is.null(coef_omit)) {
+        idx <- !grepl(coef_omit, estimates$term, perl = TRUE)
+        estimates <- estimates[idx, , drop = FALSE]
+    }
+
     # coef_rename
     if (!is.null(coef_rename)) {
         if (is.character(coef_rename)) {
@@ -559,6 +597,7 @@ map_omit_rename_estimates <- function(estimates,
         estimates$term <- replace_dict(estimates$term, dict)
     }
 
+
     # coef_map
     if (!is.null(coef_map)) {
         if (is.null(names(coef_map))) {
@@ -568,12 +607,8 @@ map_omit_rename_estimates <- function(estimates,
         estimates$term <- replace_dict(estimates$term, coef_map)
     }
 
-    # coef_omit
-    if (!is.null(coef_omit)) {
-        idx <- !grepl(coef_omit, estimates$term, perl = TRUE)
-        estimates <- estimates[idx, , drop = FALSE]
-    }
 
+    # group_map
     if (!is.null(group_map)) {
         if (is.null(names(group_map))) {
             group_map <- stats::setNames(group_map, group_map)
@@ -582,14 +617,8 @@ map_omit_rename_estimates <- function(estimates,
         estimates$group <- replace_dict(estimates$group, group_map)
     }
 
-    # make sure no duplicate estimate names *within* a single model. this
-    # cannot be in input sanity checks. idx paste allows multiple statistics.
-    idx <- paste(estimates$term, estimates$statistic)
-    if (anyDuplicated(idx) > 2) {
-      stop('Two coefficients from a single model cannot share the same name.')
-    }
 
-  return(estimates)
+    return(estimates)
 }
 
 
@@ -598,7 +627,8 @@ map_omit_rename_estimates <- function(estimates,
 #' @keywords internal
 map_omit_gof <- function(gof, gof_omit, gof_map) {
 
-  if (nrow(gof) == 0) {
+  if (is.null(gof) ||
+      is.data.frame(gof) && nrow(gof) == 0) {
     return(gof)
   }
 
@@ -655,7 +685,7 @@ group_reshape <- function(estimates, lhs, rhs, group_name) {
          length(rhs) == 1 && rhs == "model")) {
       return(estimates)
 
-    # model ~ term 
+    # model ~ term
     } else if (length(lhs) == 1 && lhs == "model" &&
         length(rhs) == 1 && rhs == "term") {
       out <- tidyr::pivot_longer(estimates,
@@ -726,7 +756,31 @@ get_list_of_modelsummary_lists <- function(models, conf_level, vcov, ...) {
 
     vcov_type <- get_vcov_type(vcov)
 
+    vcov_names <- names(vcov)
 
+
+    # warning for models with hard-coded non-IID vcov
+    hardcoded <- c("fixest", "lm_robust")
+    flag_vcov <- NULL
+
+    for (i in 1:number_of_models) {
+        # trust users when they specify vcov names
+        if (is.null(vcov_names[[i]]) || vcov_names[[i]] == "") {
+            j <- ifelse(length(models) == 1, 1, i)
+            if (is.character(vcov_type[[i]]) &&
+                tolower(vcov_type[[i]]) %in% c("iid", "classical", "constant") &&
+                length(intersect(hardcoded, class(models[[j]])) > 0)) {
+                flag_vcov <- i
+            }
+        }
+    }
+
+    if (!is.null(flag_vcov)) {
+        j <- ifelse(length(models) == 1, 1, flag_vcov)
+        warning(sprintf('When the `vcov` argument is set to "iid", "classical", or "constant", `modelsummary` extracts the default variance-covariance matrix from the model object. For objects of class `%s`, the default vcov is not always IID. Please make sure that the standard error label matches the numeric results in the table. Note that the `vcov` argument accepts a named list for users who want to customize the standard error labels in their regression tables.', class(models[[j]])[1]))
+    }
+
+    # extract
     out <- list()
 
     for (i in 1:number_of_models) {

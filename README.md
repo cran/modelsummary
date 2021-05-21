@@ -6,7 +6,7 @@
 [![R build status](https://github.com/vincentarelbundock/modelsummary/workflows/R-CMD-check/badge.svg)](https://github.com/vincentarelbundock/modelsummary/actions)
 [![codecov](https://codecov.io/gh/vincentarelbundock/modelsummary/branch/master/graph/badge.svg)](https://codecov.io/gh/vincentarelbundock/modelsummary)
 [![status](https://tinyverse.netlify.com/badge/modelsummary)](https://CRAN.R-project.org/package=modelsummary)
-
+[![](http://cranlogs.r-pkg.org/badges/grand-total/modelsummary?color=green)](https://cran.r-project.org/package=modelsummary)
 <!-- badges: end -->
 
 `modelsummary` creates tables and plots to summarize statistical models and data in `R`. 
@@ -21,6 +21,7 @@ The tables and plots produced by `modelsummary` are beautiful and highly customi
     - `modelplot`: Coefficient plots.
 2. Data Summary
     - `datasummary`: Powerful tool to create (multi-level) cross-tabs and data summaries.
+    - `datasummary_crosstab`: Cross-tabulations.
     - `datasummary_balance`: Balance tables with subgroup statistics and difference in means (aka "Table 1").
     - `datasummary_correlation`: Correlation tables.
     - `datasummary_skim`: Quick overview ("skim") of a dataset.

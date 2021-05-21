@@ -11,6 +11,10 @@ sanitize_group <- function(group) {
   lhs <- all.vars(stats::update(group, ". ~ 0"))
   variables <- c(rhs, lhs)
 
+  if (length(intersect(rhs, lhs) > 0)) {
+    stop("The `group` formula cannot include the same variable on both sides.")
+  }
+
   if (!all(c("model", "term") %in% c(lhs, rhs))) {
     flag_error <- TRUE
   }
@@ -34,7 +38,7 @@ model ~ term
 
 displays models as rows and parameter estimates as columns. Inverting the formula would display models as columns and terms as rows.
 
-The formula can also include a third, optional, component: a group identifier. In contrast to the "term" and "model" components, the name of the group identifier is not fixed. It must correspond to the name of a column in the data.frame produced by `get_estimates(model)`. For example, applying the `get_estimates` function to a multinomial logit model returns a column called "response", which identifies the parameters that correspond to each value of the responde variable:
+The formula can also include a third, optional, component: a group identifier. In contrast to the "term" and "model" components, the name of the group identifier is not fixed. It must correspond to the name of a column in the data.frame produced by `get_estimates(model)`. For example, applying the `get_estimates` function to a multinomial logit model returns a column called "response", which identifies the parameters that correspond to each value of the response variable:
 
 model + response ~ term')
   }

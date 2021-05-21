@@ -1,5 +1,7 @@
 1s
+3f
 AppVeyor
+CMD
 Crosstabs
 Customizable
 DropEmpty
@@ -25,10 +27,13 @@ ggplot2
 orgmode
 u00d7
 Horst
+HAC
 HPxM
 JPG
+Jupyter
 Lalonde
 NA’
+NeweyWest
 NPercent
 NUnique
 Ncol
