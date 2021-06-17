@@ -17,7 +17,6 @@ The tables and plots produced by `modelsummary` are beautiful and highly customi
 
 1. Model Summary
     - `modelsummary`: Regression tables with side-by-side models.
-    - `modelsummary_wide`: Regression tables for categorical response models or grouped coefficients.
     - `modelplot`: Coefficient plots.
 2. Data Summary
     - `datasummary`: Powerful tool to create (multi-level) cross-tabs and data summaries.
@@ -178,6 +177,7 @@ modelsummary(models, output = "table.docx")
 
 There are several excellent alternatives to draw model summary tables in `R`:
 
+  - [gtsummary](http://www.danieldsjoberg.com/gtsummary/)
   - [texreg](https://cran.r-project.org/package=texreg)
   - [stargazer](https://cran.r-project.org/package=stargazer)
   - [apsrtable](https://cran.r-project.org/package=apsrtable)

@@ -19,7 +19,7 @@ globalVariables(c('.', 'term', 'part', 'estimate', 'conf.high', 'conf.low',
 #' @param models a model or (optionally named) list of models
 #' @param output filename or object type (character string)
 #' * Supported filename extensions: .html, .tex, .md, .txt, .png, .jpg.
-#' * Supported object types: "default", "html", "markdown", "latex", "latex_tabular", "data.frame", "modelsummary_list", "gt", "kableExtra", "huxtable", "flextable".
+#' * Supported object types: "default", "html", "markdown", "latex", "latex_tabular", "data.frame", "modelsummary_list", "gt", "kableExtra", "huxtable", "flextable", "jupyter".
 #' * To change the default output format, type `options(modelsummary_default = "latex")`, where `latex` can be any of the valid object types listed above.
 #' * Warning: users should not supply a file name to the `output` argument if they intend to customize the table with external packages.
 #' * See the 'Details' section below for more information.
@@ -315,6 +315,7 @@ modelsummary <- function(
   sanity_stars(stars)
   sanity_fmt(fmt)
 
+  sanity_output_modelsummary(output) # more informative error specific to `modelsummary`
   sanity_output(output)
   output_format <- sanitize_output(output)$output_format
 
@@ -480,6 +481,7 @@ modelsummary <- function(
 
   # interaction : becomes ×
   if (is.null(coef_map) &&
+      is.null(coef_rename) &&
       "term" %in% colnames(tab) &&
       output_format != 'rtf') {
     idx <- tab$part != 'gof'
@@ -504,7 +506,9 @@ modelsummary <- function(
       .frequency = "once",
       .frequency_id = "stars_true_consistency")
   }
-  if (!isFALSE(stars) && !any(grepl("\\{stars\\}", c(estimate, statistic)))) {
+
+  stars_note <- getOption("modelsummary_stars_note", default = TRUE)
+  if (isTRUE(stars_note) && !isFALSE(stars) && !any(grepl("\\{stars\\}", c(estimate, statistic)))) {
     stars_note <- make_stars_note(stars)
     if (is.null(notes)) {
       notes <- stars_note
@@ -679,15 +683,14 @@ group_reshape <- function(estimates, lhs, rhs, group_name) {
     lhs[lhs == group_name] <- "group"
     rhs[rhs == group_name] <- "group"
 
-    # term ~ model (standard)
+    # term ~ model (default)
     if (is.null(lhs) ||
         (length(lhs) == 1 && lhs == "term" &&
          length(rhs) == 1 && rhs == "model")) {
       return(estimates)
 
     # model ~ term
-    } else if (length(lhs) == 1 && lhs == "model" &&
-        length(rhs) == 1 && rhs == "term") {
+    } else if (length(lhs) == 1 && lhs == "model" && length(rhs) == 1 && rhs == "term") {
       out <- tidyr::pivot_longer(estimates,
                                  cols = -c("group", "term", "statistic"),
                                  names_to = "model")
@@ -696,7 +699,7 @@ group_reshape <- function(estimates, lhs, rhs, group_name) {
       # order matters for sorting
       out <- out[, unique(c("group", "model", "statistic", colnames(out)))]
 
-    # term + group ~ model
+    ## term + group ~ model
     } else if (all(c("term", "group") %in% lhs)) {
         idx <- unique(c(lhs, colnames(estimates)))
         out <- estimates[, idx, drop = FALSE]
@@ -715,6 +718,7 @@ group_reshape <- function(estimates, lhs, rhs, group_name) {
         idx <- unique(c(lhs, colnames(out)))
         out <- out[, idx, drop = FALSE]
 
+    ## term ~ group + model
     } else if (all(c("group", "model") %in% rhs)) {
         out <- estimates
         out <- tidyr::pivot_longer(out,
@@ -726,6 +730,12 @@ group_reshape <- function(estimates, lhs, rhs, group_name) {
                                   names_from = "idx_col",
                                   values_from = "value",
                                   values_fill = "")
+    ## model ~ term + group
+    } else if (all(c("term", "group") %in% rhs)) {
+      out <- tidyr::pivot_longer(estimates,
+                                 cols = -c("group", "term", "statistic"),
+                                 names_to = "model")
+      out <- tidyr::pivot_wider(out, names_from = rhs, names_sep = " / ")
     }
 
     out[out == "NA"] <- ""

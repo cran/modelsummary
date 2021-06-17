@@ -19,7 +19,7 @@
 #' \dontrun{
 #' dat <- mtcars
 #' dat$vs <- as.logical(dat$vs)
-#' dat$cyl <- as.factor(dat$vs)
+#' dat$cyl <- as.factor(dat$cyl)
 #' datasummary_skim(dat)
 #' datasummary_skim(dat, "categorical")
 #'
@@ -281,34 +281,37 @@ datasummary_skim_categorical <- function(
   drop_too_many_levels <- NULL
   drop_entirely_na <- NULL
 
+
   for (n in colnames(dat_new)) {
+
+    # completely missing
+    if (all(is.na(dat_new[[n]]))) {
+      dat_new[[n]] <- NULL
+      drop_entirely_na <- c(drop_entirely_na, n)
+    }
 
     if (is.logical(dat_new[[n]]) |
         is.character(dat_new[[n]]) |
         is.factor(dat_new[[n]])) {
 
-      # convert to factor
-      dat_new[[n]] <- factor(dat_new[[n]])
+      # convert to factor and keep NAs as distinct level
+      if (is.logical(dat_new[[n]]) | is.character(dat_new[[n]])) {
+        dat_new[[n]] <- factor(dat_new[[n]], exclude = NULL)
+      }
 
       # tables::tabular breaks on ""
+      if (is.factor(dat_new[[n]]) && "" %in% levels(dat_new[[n]])) {
+        idx <- levels(dat_new[[n]]) == ""
+        levels(dat_new[[n]])[idx] <- " "
+      }
+
+      ## factors with too many levels
       if (is.factor(dat_new[[n]])) {
-        levels(dat_new[[n]])[levels(dat_new[[n]]) == ""] <- " "
-      }
-
-      # completely missing
-      if (all(is.na(dat_new[[n]]))) {
-        dat_new[[n]] <- NULL
-        drop_entirely_na <- c(drop_entirely_na, n)
-      } else {
-        # factors with too many levels
-        if (is.factor(dat_new[[n]])) {
           if (length(levels(dat_new[[n]])) > 50) {
-            dat_new[[n]] <- NULL
-            drop_too_many_levels <- c(drop_too_many_levels, n)
+              dat_new[[n]] <- NULL
+              drop_too_many_levels <- c(drop_too_many_levels, n)
           }
-        }
       }
-
 
     # discard non-factors
     } else {
