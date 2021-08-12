@@ -1,4 +1,4 @@
-52990baf70af69d81c545ff2e1f92156 *DESCRIPTION
+a954538c5c4954bd85e15fc58fbb52d3 *DESCRIPTION
 07a12a1dd03b44770e94acb5eecf7f93 *NAMESPACE
 3c669fa2df3e1fbf4eda15f5b4718157 *NEWS.md
 e2629e7a7d56c7aaace67389e0607441 *R/bind.R
@@ -47,7 +47,7 @@ b16ebfee03e0b29098f56f0ca245fb62 *R/utils_pad.R
 c240fd33dba9bdbcdb5cd48f0a9bacb4 *R/utils_replace.R
 5599392fbeeaa4332730bdf1833b762c *R/utils_rounding.R
 d56bd3e8ad732c05a6d021774c3b5380 *README.md
-f19ef774a27ef78de80bc26a6668932c *build/modelsummary.pdf
+0ad67a84254435e0d2a924cc7032c626 *build/modelsummary.pdf
 da1a368cebf5ff75ae18b12b834cca2a *inst/WORDLIST
 a675e2ff55990a5a8f05761267ba96f7 *man/All.Rd
 e81042b67419127222f810c8f1a472a3 *man/AllObs.Rd
@@ -218,7 +218,7 @@ ef8d370802640caa1a661d15393d63d3 *tests/testthat/test-modelplot.R
 55cff091f45af1ea66888f20a693b176 *tests/testthat/test-modelsummary_list.R
 de48461219fd4b0524880939b0eaeedb *tests/testthat/test-modelsummary_wide.R
 2462d85eaef97faac9db24ef3cff4f0b *tests/testthat/test-na.R
-dea88e7f81b3bcce74000ad1b02902cc *tests/testthat/test-rmarkdown.R
+da256681a67cedccc2f5c9cc6068269f *tests/testthat/test-rmarkdown.R
 924e219795cc1ae83889ebf5f3cf3627 *tests/testthat/test-rounding.R
 15c0bc49f4de463ce6e0132da0c55fee *tests/testthat/test-stars.R
 3281d54ded1ac8ef1c3c2f2579c27c9f *tests/testthat/test-statistic.R
