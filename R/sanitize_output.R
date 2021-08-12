@@ -4,6 +4,38 @@
 #' @noRd
 sanitize_output <- function(output) {
 
+
+  flag <- checkmate::check_string(output)
+  fun <- settings_get("function_called")
+  if (!isTRUE(flag) && !is.null(fun) && fun == "modelsummary") {
+    stop("The `output` argument must be a string. Type `?modelsummary` for details. This error is sometimes raised when users supply multiple models to `modelsummary` but forget to wrap them in a list. This works: `modelsummary(list(model1, model2))`. This does *not* work: `modelsummary(model1, model2)`")
+  }
+
+  object_types <- c('default', 'gt', 'kableExtra', 'flextable', 'huxtable',
+                    'html', 'jupyter', 'latex', 'latex_tabular', 'markdown',
+                    'dataframe', 'data.frame', 'modelsummary_list')
+  extension_types <- c('html', 'tex', 'md', 'txt', 'docx', 'pptx', 'rtf',
+                       'jpg', 'png')
+
+  checkmate::assert_string(output)
+
+  cond1 <- output %in% object_types
+  if (isFALSE(cond1)) {
+    extension <- tools::file_ext(output)
+    cond2 <- extension %in% extension_types
+    if (isTRUE(cond2)) {
+      checkmate::assert_path_for_output(output, overwrite = TRUE)
+    } else {
+      msg <- paste0('The `output` argument must be ',
+        paste(object_types, collapse = ', '),
+        ', or a valid file path with one of these extensions: ',
+        paste(extension_types, collapse = ', '))
+      stop(msg)
+    }
+  }
+
+
+
   extension_dict <- c(
     "md"   = "markdown",
     "Rmd"  = "markdown",
@@ -51,11 +83,10 @@ sanitize_output <- function(output) {
 
   # kableExtra is the only factory that I use for markdown
   if (output == 'markdown') {
-    out <- list(
-      "output_factory" = "kableExtra",
-      "output_file"    = NULL,
-      "output_format"  = "markdown")
-    return(out)
+    settings_set("output_factory", "kableExtra")
+    settings_set("output_format", "markdown")
+    settings_set("output_file", NULL)
+    return(invisible(NULL))
   }
 
   # rename otherwise an extension is wrongly detected
@@ -96,12 +127,26 @@ sanitize_output <- function(output) {
     output_format <- "latex"
   }
 
-  # result
-  out <- list(
-    # unname to avoid weird issue in kableExtra::kbl do.call arguments
-    "output_factory" = unname(output_factory),
-    "output_file"    = unname(output_file),
-    "output_format"  = unname(output_format))
-  return(out)
+  ## warning siunitx & booktabs in preamble
+  if (settings_equal("format_numeric_latex", "siunitx") && (output %in% c("latex", "latex_tabular") || tools::file_ext(output) == "tex")) {
+      rlang::warn( message = 
+'To compile a LaTeX document with this table, the following commands must be placed in the document preamble:
+
+\\usepackage{booktabs}
+\\usepackage{siunitx}
+\\newcolumntype{d}{S[input-symbols = ()]}
+
+To disable `siunitx` and prevent `modelsummary` from wrapping numeric entries in `\\num{}`, call:
+
+options("modelsummary_format_numeric_latex" = "plain")
+',
+      .frequency = "once",
+      .frequency_id = "siunitx_preamble")
+  }
+
+  # settings environment
+  settings_set("output_factory", unname(output_factory))
+  settings_set("output_format", unname(output_format))
+  settings_set("output_file", unname(output_file))
 
 }

@@ -19,23 +19,21 @@ factory <- function(tab,
 
 
   # sanity check functions are hosted in R/sanity_checks.R
-  sanity_output(output)
   sanity_title(title)
   sanity_notes(notes)
+  sanitize_output(output)
 
   # parse output
-  output_list <- sanitize_output(output)
-
-  if (output_list$output_factory == 'gt') {
-    f <- factory_gt
-  } else if (output_list$output_factory == 'kableExtra') {
-    f <- factory_kableExtra
-  } else if (output_list$output_factory == 'flextable') {
-    f <- factory_flextable
-  } else if (output_list$output_factory == 'huxtable') {
-    f <- factory_huxtable
-  } else if (output_list$output_factory == 'dataframe') {
-    f <- factory_dataframe
+  if (settings_equal("output_factory", "gt")) {
+    factory_fun <- factory_gt
+  } else if (settings_equal("output_factory", "kableExtra")) {
+    factory_fun <- factory_kableExtra
+  } else if (settings_equal("output_factory", "flextable")) {
+    factory_fun <- factory_flextable
+  } else if (settings_equal("output_factory", "huxtable")) {
+    factory_fun <- factory_huxtable
+  } else if (settings_equal("output_factory", "dataframe")) {
+    factory_fun <- factory_dataframe
   }
 
   # flat header if necessary
@@ -43,9 +41,9 @@ factory <- function(tab,
   if (!is.null(flat_header)) {
     flat_factories <- c('flextable', 'huxtable', 'dataframe')
     flat_formats <- c('markdown', 'word', 'powerpoint')
-    if ((output_list$output_factory %in% flat_factories) ||
-      output_list$output_format %in% flat_formats) {
-      attr(tab, "header_bottom") <- colnames(tab)
+    if (settings_get("output_factory") %in% flat_factories ||
+        settings_get("output_format") %in% flat_formats) {
+        attr(tab, "header_bottom") <- colnames(tab)
 
       # datasummary_balance with dinm produces more cols than flat_header
       for (i in seq_along(flat_header)) {
@@ -110,7 +108,7 @@ factory <- function(tab,
   if (!is.null(add_rows)) {
 
     # data.frame includes metadata columns
-    if (output_list$output_format == "dataframe") {
+    if (settings_equal("output_format", "dataframe")) {
       # only for modelsummary, not for datasummary
 
       if (all(c("term", "statistic") %in% colnames(tab))) {
@@ -149,21 +147,26 @@ factory <- function(tab,
     }
   }
 
-  # sanity align: after add_columns
-  sanity_align(align, tab)
+  ## align: sanity must be checked after add_columns
+  if (is.null(align)) {
+    align <- strrep("l", ncol(tab))
+  } else {
+    checkmate::assert_true(nchar(align) == ncol(tab))
+  }
+  align <- strsplit(align, "")[[1]]
 
-  # build table
-  out <- f(tab,
+
+  ## build table
+  out <- factory_fun(tab,
     align = align,
     hrule = hrule,
     notes = notes,
-    output_file = output_list$output_file,
-    output_format = output_list$output_format,
     title = title,
     ...)
 
+
   if (output == "jupyter" ||
-      (output == "default" && getOption("modelsummary_default", "kableExtra") == "jupyter")) {
+      (output == "default" && settings_equal("output_default", "jupyter"))) {
     assert_dependency("IRdisplay")
     IRdisplay::display_html(as.character(out))
   } else {

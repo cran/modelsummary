@@ -43,9 +43,16 @@ datasummary_skim <- function(data,
                              title  = NULL,
                              notes  = NULL,
                              align  = NULL,
+                             escape = TRUE,
                              ...) {
 
-  sanity_output(output)
+  ## settings 
+  settings_init(settings = list(
+     "function_called" = "datasummary_skim"
+  ))
+  sanitize_output(output)
+  sanitize_escape(escape)
+
 
   checkmate::assert_true(type %in% c("numeric", "categorical", "dataset"))
 
@@ -55,22 +62,29 @@ datasummary_skim <- function(data,
   if (type == "numeric") {
     out <- datasummary_skim_numeric(data, output = output, fmt = fmt,
                                     histogram = histogram, title = title,
-                                    notes = notes, align = align, ...)
+                                    notes = notes, align = align,
+                                    escape = escape, ...)
   }
 
   if (type == "categorical") {
     out <- datasummary_skim_categorical(data, output = output, fmt = fmt,
                                         title = title, notes = notes, align = align,
-                                        ...)
+                                        escape = escape, ...)
   }
 
   if (type == "dataset") {
     out <- datasummary_skim_dataset(data, output = output, title = title,
-                                    notes = notes, align = align, ...)
+                                    notes = notes, align = align,
+                                    escape = escape, ...)
   }
 
-  return(out)
-
+  if (!is.null(settings_get("output_file"))) {
+    settings_rm()
+    return(invisible(out))
+  } else {
+    settings_rm()
+    return(out)
+  }
 }
 
 #' Internal function to skim whole datasets
@@ -82,6 +96,7 @@ datasummary_skim_dataset <- function(
   title,
   notes,
   align,
+  escape,
   ...) {
 
 
@@ -127,34 +142,34 @@ datasummary_skim_numeric <- function(
   title,
   notes,
   align,
+  escape,
   ...) {
 
   # output format
-  output_info <- sanitize_output(output)
+  sanitize_output(output)
 
   # draw histogram?
   if (histogram) {
 
     # histogram is a kableExtra-specific option
-    if (output_info$output_factory != "kableExtra") {
+    if (!settings_equal("output_factory", "kableExtra")) {
       histogram <- FALSE
     }
 
     # write to file
-    if (!is.null(output_info$output_file)) {
-      if (!output_info$output_format %in% c("html", "png", "jpg")) {
+    if (!is.null(settings_get("output_file"))) {
+      if (!settings_equal("output_format", c("html", "png", "jpg"))) {
         histogram <- FALSE
       }
 
     # interactive or Rmarkdown/knitr
     } else {
       if (check_dependency("knitr")) {
-        if (!output_info$output_format %in% c("default", "html", "kableExtra") &&
-            !knitr::is_latex_output()) {
+        if (!settings_equal("output_format", c("default", "html", "kableExtra")) && !knitr::is_latex_output()) {
           histogram <- FALSE
         }
       } else {
-        if (!output_info$output_format %in% c("default", "html", "kableExtra")) {
+        if (!settings_equal("output_format", c("default", "html", "kableExtra"))) {
           histogram <- FALSE
         }
       }
@@ -162,11 +177,7 @@ datasummary_skim_numeric <- function(
 
     # if flag was flipped
     if (!histogram) {
-      warning('The histogram argument is only supported for (a) output types
-              "default", "html", or "kableExtra"; (b) writing to file paths
-              with extensions ".html", ".jpg", or ".png"; and (c) Rmarkdown
-              or knitr documents compiled to PDF or HTML. Use
-              `histogram=FALSE` to silence this warning.')
+      warning('The histogram argument is only supported for (a) output types "default", "html", or "kableExtra"; (b) writing to file paths with extensions ".html", ".jpg", or ".png"; and (c) Rmarkdown or knitr documents compiled to PDF or HTML. Use `histogram=FALSE` to silence this warning.')
     }
 
   }
@@ -193,7 +204,6 @@ datasummary_skim_numeric <- function(
   if (histogram) {
 
     histogram_col <- function(x) ""
-
     f <- All(dat_new, numeric = TRUE, factor = FALSE) ~
          Heading("Unique (#)") * NUnique +
          Heading("Missing (%)") * PercentMissing +
@@ -215,7 +225,7 @@ datasummary_skim_numeric <- function(
     }
 
     # don't use output=filepath.html when post-processing
-    if (!is.null(output_info$output_file)) {
+    if (!is.null(settings_get("output_file"))) {
       output <- "kableExtra"
     }
 
@@ -225,23 +235,23 @@ datasummary_skim_numeric <- function(
         output = output,
         title = title,
         align = align,
-        notes = notes)
+        notes = notes,
+        escape = escape)
+
     out <- kableExtra::column_spec(out,
         column = 9,
         image = kableExtra::spec_hist(histogram_list,
                                       col = "black",
-                                      same_lim = FALSE)
-      )
+                                      same_lim = FALSE))
 
     # don't use output=filepath.html when post-processing
-    if (!is.null(output_info$output_file)) {
-      kableExtra::save_kable(out, file = output_info$output_file)
+    if (!is.null(settings_get("output_file"))) {
+      kableExtra::save_kable(out, file = settings_get("output_file"))
       return(invisible(out))
     }
 
   # without histogram
   } else {
-
     f <- All(dat_new, numeric = TRUE, factor = FALSE) ~
          Heading("Unique (#)") * NUnique +
          Heading("Missing (%)") * PercentMissing +
@@ -252,7 +262,8 @@ datasummary_skim_numeric <- function(
         output = output,
         title = title,
         align = align,
-        notes = notes)
+        notes = notes,
+        escape = escape)
 
   }
 
@@ -271,6 +282,7 @@ datasummary_skim_categorical <- function(
   title,
   notes,
   align,
+  escape,
   ...) {
 
   dat_new <- data

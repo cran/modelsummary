@@ -20,13 +20,14 @@ globalVariables(c('.', 'term', 'part', 'estimate', 'conf.high', 'conf.low',
 #' @param output filename or object type (character string)
 #' * Supported filename extensions: .html, .tex, .md, .txt, .png, .jpg.
 #' * Supported object types: "default", "html", "markdown", "latex", "latex_tabular", "data.frame", "modelsummary_list", "gt", "kableExtra", "huxtable", "flextable", "jupyter".
-#' * To change the default output format, type `options(modelsummary_default = "latex")`, where `latex` can be any of the valid object types listed above.
-#' * Warning: users should not supply a file name to the `output` argument if they intend to customize the table with external packages.
-#' * See the 'Details' section below for more information.
+#' * Warning: Users should not supply a file name to the `output` argument if they intend to customize the table with external packages. See the 'Details' section.
+#' * LaTeX compilation requires the `booktabs` and `siunitx` packages, but `siunitx` can be disabled or replaced with global options. See the 'Details' section.
+#' * The default output formats and table-making packages can be modified with global options. See the 'Details' section.
 #' @param fmt determines how to format numeric values
 #' * integer: the number of digits to keep after the period `format(round(x, fmt), nsmall=fmt)`
 #' * character: passed to the `sprintf` function (e.g., '%.3f' keeps 3 digits with trailing zero). See `?sprintf`
 #' * function: returns a formatted character string.
+#' * Note on LaTeX formatting: To ensure proper typography, all numeric entries are enclosed in the `\num{}` command from the `siunitx` LaTeX package by default. This behavior can be altered with global options. See the 'Details' section.
 #' @param stars to indicate statistical significance
 #' * FALSE (default): no significance stars.
 #' * TRUE: +=.1, *=.05, **=.01, ***=0.001
@@ -60,7 +61,7 @@ globalVariables(c('.', 'term', 'part', 'estimate', 'conf.high', 'conf.low',
 #' in the table, and its names identify the original term names stored in the
 #' model object: `c("hp:mpg"="HPxM/G")`.
 #' @param coef_omit string regular expression. Omits all matching coefficients
-#' from the table using `grepl(perl=TRUE)`.
+#' from the table using `grepl(perl=TRUE)`. This argument uses perl-compatible regular expressions, which allows expressions such as `"Int|ABC" which omits coefficients matching either "Int" or "ABC", and `"^(?!.*Intercept)"` which omits every term except the intercept.
 #' @param coef_rename named character vector or function which returns a named
 #' vector. Values of the vector refer to the variable names that will appear
 #' in the table. Names refer to the original term names stored in the model
@@ -71,7 +72,7 @@ globalVariables(c('.', 'term', 'part', 'estimate', 'conf.high', 'conf.low',
 #' * data.frame with 3 columns named "raw", "clean", "fmt". Unknown statistics are omitted. See the 'Examples' section below.
 #' * list of lists, each of which includes 3 elements named "raw", "clean", "fmt". Unknown statistics are omitted. See the 'Examples section below'.
 #' @param gof_omit string regular expression. Omits all matching gof statistics from
-#' the table (using `grepl(perl=TRUE)`).
+#' the table. This argument uses perl-compatible regular expressions (`grepl(perl=TRUE)`), which allows expressions such as `".*"` which omits everything, and `"^(?!R2|Num)"` which omits every term except those that start with "R2" or "Num".
 #' @param group a two-sided formula with two or three components which describes
 #' how groups of parameters should be displayed. The formula must include both
 #' a "term" and a "model" component. In addition, a component can be used to
@@ -95,15 +96,22 @@ globalVariables(c('.', 'term', 'part', 'estimate', 'conf.high', 'conf.low',
 #' * `"estimate"`
 #' * `"{estimate} ({std.error}){stars}"`
 #' * `"{estimate} [{conf.low}, {conf.high}]"`
-#' @param align A character string of length equal to the number of columns in
-#' the table.  "lcr" means that the first column will be left-aligned, the 2nd
-#' column center-aligned, and the 3rd column right-aligned.
+#' @param align A string with a number of characters equal to the number of columns in
+#' the table (e.g., `align = "lcc"`).  Valid characters: l, c, r, S.
+#' * "l": left-aligned column
+#' * "c": centered column
+#' * "r": right-aligned column
+#' * "d": dot-aligned column. Only supported for LaTeX/PDF tables produced by `kableExtra`. These commands must appear in the LaTeX preamble (they are added automatically when compiling Rmarkdown documents to PDF):
+#'   - `\usepackage{booktabs}`
+#'   - `\usepackage{siunitx}`
+#'   - `\newcolumntype{d}{S[input-symbols = ()]}`
+#' @param escape boolean TRUE escapes or substitutes LaTeX/HTML characters which could
+#' prevent the file from compiling/displaying. This setting does not affect captions or notes.
 #' @param ... all other arguments are passed through to the extractor and
 #' table-making functions. This allows users to pass arguments directly to
 #' `modelsummary` in order to affect the behavior of other functions behind
 #' the scenes. Examples include:
 #' * `broom::tidy(exponentiate=TRUE)` to exponentiate logistic regression
-#' * `kableExtra::kbl(escape=FALSE)` to avoid escaping math characters in `kableExtra` tables.
 #' * `performance::model_performance(metrics="RMSE")` to select goodness-of-fit statistics to extract using the `performance` package (must have set `options(modelsummary_get="easystats")` first).
 #' @return a regression table in a format determined by the `output` argument.
 #' @importFrom generics glance tidy
@@ -132,6 +140,17 @@ globalVariables(c('.', 'term', 'part', 'estimate', 'conf.high', 'conf.low',
 #' `options(modelsummary_get = "easystats")`
 #' `options(modelsummary_get = "all")`
 #'
+#' By default, LaTeX tables enclose all numeric entries in the `\num{}` command
+#' from the siunitx package. To prevent this behavior, or to enclose numbers
+#' in dollar signs (for LaTeX math mode), users can call:
+#'
+#' `options(modelsummary_format_numeric_latex = "plain")`
+#' `options(modelsummary_format_numeric_latex = "mathmode")`
+#'
+#' A similar option can be used to display numerical entries using MathJax in
+#' HTML tables:
+#'
+#' `options(modelsummary_format_numeric_html = "mathjax")`
 #'
 #' `output` argument:
 #'
@@ -295,11 +314,18 @@ modelsummary <- function(
   align       = NULL,
   notes       = NULL,
   title       = NULL,
+  escape      = TRUE,
   ...) {
 
+  ## settings 
+  settings_init(settings = list(
+     "function_called" = "modelsummary"
+  ))
 
-
-  # sanitation
+  ## sanity functions validate variables/settings
+  ## sanitize functions validate & modify & initialize
+  sanitize_output(output)           # early
+  sanitize_escape(escape)
   sanity_ellipsis(vcov, ...)        # before sanitize_vcov
   models <- sanitize_models(models) # before sanitize_vcov
   vcov <- sanitize_vcov(vcov, length(models), ...)
@@ -310,14 +336,9 @@ modelsummary <- function(
   sanity_statistic(statistic)
   sanity_conf_level(conf_level)
   sanity_coef(coef_map, coef_rename, coef_omit)
-  # no gof should be OK
-  ## sanity_gof_map(gof_map, gof_omit)
   sanity_stars(stars)
   sanity_fmt(fmt)
-
-  sanity_output_modelsummary(output) # more informative error specific to `modelsummary`
-  sanity_output(output)
-  output_format <- sanitize_output(output)$output_format
+  sanity_align(align, estimate = estimate, statistic = statistic, stars = stars)
 
   # confidence intervals are expensive
   if (!any(grepl("conf", c(estimate, statistic)))) {
@@ -331,6 +352,10 @@ modelsummary <- function(
     model_names <- names(models)
   }
   model_names <- pad(model_names)
+  if (isTRUE(escape)) {
+     model_names <- escape_string(model_names)
+  }
+
 
   #######################
   #  modelsummary_list  #
@@ -343,7 +368,7 @@ modelsummary <- function(
 
 
 
-  if (output_format == "modelsummary_list") {
+  if (settings_equal("output_format", "modelsummary_list")) {
     if (length(msl) == 1) {
       return(msl[[1]])
     } else {
@@ -382,7 +407,6 @@ modelsummary <- function(
     est[[model_names[i]]] <- tmp
 
   }
-
 
   term_order <- unique(unlist(lapply(est, function(x) x$term)))
   group_order <- unique(unlist(lapply(est, function(x) x$group)))
@@ -471,7 +495,6 @@ modelsummary <- function(
   }
 
 
-
   ##################
   #  output table  #
   ##################
@@ -483,7 +506,7 @@ modelsummary <- function(
   if (is.null(coef_map) &&
       is.null(coef_rename) &&
       "term" %in% colnames(tab) &&
-      output_format != 'rtf') {
+      !settings_equal("output_format", "rtf")) {
     idx <- tab$part != 'gof'
     tab$term <- ifelse(idx, gsub(':', ' \u00d7 ', tab$term), tab$term)
   }
@@ -499,15 +522,9 @@ modelsummary <- function(
     hrule <- NULL
   }
 
-  # stars
-  if (isTRUE(stars)) {
-    rlang::warn(
-      message = "In version 0.8.0 of the `modelsummary` package, the default significance markers produced by the `stars=TRUE` argument were changed to be consistent with R's defaults.",
-      .frequency = "once",
-      .frequency_id = "stars_true_consistency")
-  }
 
-  stars_note <- getOption("modelsummary_stars_note", default = TRUE)
+  # stars
+  stars_note <- settings_get("stars_note")
   if (isTRUE(stars_note) && !isFALSE(stars) && !any(grepl("\\{stars\\}", c(estimate, statistic)))) {
     stars_note <- make_stars_note(stars)
     if (is.null(notes)) {
@@ -518,7 +535,7 @@ modelsummary <- function(
   }
 
   # data.frame output keeps redundant info
-  if (output_format != "dataframe") {
+  if (!settings_equal("output_format", "dataframe")) {
 
     tab <- redundant_labels(tab, "model")
     tab <- redundant_labels(tab, "group")
@@ -537,7 +554,7 @@ modelsummary <- function(
   tmp <- setdiff(group$lhs, c("model", "term"))
   if (length(tmp) == 0) {
     tab$group <- NULL
-  } else if (output_format != "dataframe") {
+  } else if (!settings_equal("output_format", "dataframe")) {
     colnames(tab)[colnames(tab) == "group"] <- "        "
   }
 
@@ -551,14 +568,21 @@ modelsummary <- function(
   }
 
 
-  # remove "empty" confidence intervals or standard errors (HACK)
+  # HACK: remove "empty" confidence intervals or standard errors and omit empty rows
   for (i in seq_along(tab)) {
-    tab[[i]] <- gsub("\\[,\\s*\\]|\\(\\s*\\)", "", tab[[i]])
+    tab[[i]] <- gsub("\\(\\s*\\)", "", tab[[i]])
+    tab[[i]] <- gsub("\\(\\\\num\\{NA\\}\\)", "", tab[[i]])
+    tab[[i]] <- gsub("\\[,\\s*\\]", "", tab[[i]])
+    tab[[i]] <- gsub("\\[\\\\num\\{NA\\}, \\\\num\\{NA\\}\\]", "", tab[[i]])
+    tab[[i]] <- gsub("\\{\\}", "", tab[[i]])
   }
+  idx <- apply(tab, 1, function(x) any(x != ""))
+  tab <- tab[idx, ]
 
 
-  # build table
-  factory(
+
+  ## build table
+  out <- factory(
     tab,
     align    = align,
     fmt      = fmt,
@@ -570,6 +594,14 @@ modelsummary <- function(
     ...
   )
 
+  if (!is.null(settings_get("output_file"))) {
+    settings_rm()
+    return(invisible(out))
+  } else {
+    settings_rm()
+    return(out)
+  }
+
 }
 
 
@@ -579,13 +611,14 @@ modelsummary <- function(
 #'
 #' @keywords internal
 map_omit_rename_estimates <- function(estimates,
-                             coef_rename,
-                             coef_map,
-                             coef_omit,
-                             group_map) {
+                                      coef_rename,
+                                      coef_map,
+                                      coef_omit,
+                                      group_map) {
 
 
-    # coef_omit
+
+    ## coef_omit
     if (!is.null(coef_omit)) {
         idx <- !grepl(coef_omit, estimates$term, perl = TRUE)
         estimates <- estimates[idx, , drop = FALSE]
@@ -601,16 +634,18 @@ map_omit_rename_estimates <- function(estimates,
         estimates$term <- replace_dict(estimates$term, dict)
     }
 
-
     # coef_map
     if (!is.null(coef_map)) {
         if (is.null(names(coef_map))) {
             coef_map <- stats::setNames(coef_map, coef_map)
         }
-        estimates <- estimates[estimates$term %in% names(coef_map), , drop = FALSE]
+        idx <- estimates$term %in% names(coef_map)
+        if (!any(idx)) {
+            stop("At least one of the term names in each model must appear in `coef_map`.")
+        }
+        estimates <- estimates[idx, , drop = FALSE]
         estimates$term <- replace_dict(estimates$term, coef_map)
     }
-
 
     # group_map
     if (!is.null(group_map)) {
@@ -621,6 +656,16 @@ map_omit_rename_estimates <- function(estimates,
         estimates$group <- replace_dict(estimates$group, group_map)
     }
 
+
+    ## escape if needed
+    ## (must be done after rename/map, otherwise all rows are dropped)
+    if (settings_equal("escape", TRUE)) {
+        for (i in c("group", "term", "model")) {
+            if (i %in% colnames(estimates)) {
+                estimates[[i]] <- escape_string(estimates[[i]])
+            }
+        }
+    }
 
     return(estimates)
 }
@@ -676,6 +721,7 @@ map_omit_gof <- function(gof, gof_omit, gof_map) {
 
 #' internal function to reshape grouped estimates
 #'
+#' @importFrom stats reshape
 #' @keywords internal
 #' @noRd
 group_reshape <- function(estimates, lhs, rhs, group_name) {
@@ -691,10 +737,25 @@ group_reshape <- function(estimates, lhs, rhs, group_name) {
 
     # model ~ term
     } else if (length(lhs) == 1 && lhs == "model" && length(rhs) == 1 && rhs == "term") {
-      out <- tidyr::pivot_longer(estimates,
-                                 cols = -c("group", "term", "statistic"),
-                                 names_to = "model")
-      out <- tidyr::pivot_wider(out, names_from = "term")
+      ## out <- tidyr::pivot_longer(estimates,
+      ##                            cols = -c("group", "term", "statistic"),
+      ##                            names_to = "model")
+      ## out <- tidyr::pivot_wider(out, names_from = "term")
+      out <- reshape(
+        estimates,
+        varying = setdiff(colnames(estimates), c("group", "term", "statistic")),
+        idvar = c("group", "term", "statistic"),
+        times = setdiff(colnames(estimates), c("group", "term", "statistic")),
+        v.names = "value",
+        timevar = "model",
+        direction = "long")
+      out <- reshape(
+        out,
+        timevar = "term",
+        idvar = c("group", "statistic", "model"),
+        direction = "wide")
+      colnames(out) <- gsub("^value\\.", "", colnames(out))
+      row.names(out) <- NULL
 
       # order matters for sorting
       out <- out[, unique(c("group", "model", "statistic", colnames(out)))]
@@ -705,37 +766,111 @@ group_reshape <- function(estimates, lhs, rhs, group_name) {
         out <- estimates[, idx, drop = FALSE]
 
     } else if (all(c("term", "model") %in% lhs)) {
+        ## out <- tidyr::pivot_longer(
+        ##     estimates,
+        ##     cols = !tidyselect::any_of(c("part", "group", "term", "statistic")),
+        ##     names_to = "model")
+        ## out <- tidyr::pivot_wider(
+        ##     out,
+        ##     names_from = "group",
+        ##     values_from = "value",
+        ##     values_fill = "")
         out <- estimates
-        out <- tidyr::pivot_longer(
-            out,
-            cols = !tidyselect::any_of(c("part", "group", "term", "statistic")),
-            names_to = "model")
-        out <- tidyr::pivot_wider(
-            out,
-            names_from = "group",
-            values_from = "value",
-            values_fill = "")
+        out <- reshape(
+          out,
+          varying = setdiff(colnames(estimates), c("part", "group", "term", "statistic")),
+          idvar = c("group", "term", "statistic"),
+          times = setdiff(colnames(estimates), c("part", "group", "term", "statistic")),
+          v.names = "value",
+          timevar = "model",
+          direction = "long")
+        out <- reshape(
+          out,
+          timevar = "group",
+          idvar = setdiff(colnames(out), c("group", "value")),
+          direction = "wide")
+        row.names(out) <- NULL
+        colnames(out) <- gsub("^value\\.", "", colnames(out))
+
         idx <- unique(c(lhs, colnames(out)))
         out <- out[, idx, drop = FALSE]
 
     ## term ~ group + model
     } else if (all(c("group", "model") %in% rhs)) {
+
         out <- estimates
-        out <- tidyr::pivot_longer(out,
-                                   cols = !tidyselect::any_of(c("part", "group", "term", "statistic")),
-                                   names_to = "model")
+
+        ## out <- tidyr::pivot_longer(
+        ##   out,
+        ##   cols = !tidyselect::any_of(c("part", "group", "term", "statistic")),
+        ##   names_to = "model")
+        ## out <- tidyr::pivot_wider(out,
+        ##                           names_from = "idx_col",
+        ##                           values_from = "value",
+        ##                           values_fill = "")
+        out <- reshape(
+          out,
+          varying = setdiff(colnames(estimates), c("part", "group", "term", "statistic")),
+          idvar = c("group", "term", "statistic"),
+          times = setdiff(colnames(estimates), c("part", "group", "term", "statistic")),
+          v.names = "value",
+          timevar = "model",
+          direction = "long")
+
+        ## preserve order of columns (rhs variables are ordered factors)
+        row.names(out) <- NULL
+        out[[rhs[1]]] <- factor(out[[rhs[1]]], unique(out[[rhs[1]]]))
+        out[[rhs[2]]] <- factor(out[[rhs[2]]], unique(out[[rhs[2]]]))
+        out <- out[order(out[[rhs[1]]], out[[rhs[2]]]),]
+
         out$idx_col <- paste(out[[rhs[1]]], "/", out[[rhs[2]]])
         out$model <- out$group <- NULL
-        out <- tidyr::pivot_wider(out,
-                                  names_from = "idx_col",
-                                  values_from = "value",
-                                  values_fill = "")
+        out <- reshape(
+          out,
+          timevar = "idx_col",
+          idvar = setdiff(colnames(out), c("idx_col", "value")),
+          direction = "wide")
+        row.names(out) <- NULL
+        colnames(out) <- gsub("^value\\.", "", colnames(out))
+
     ## model ~ term + group
     } else if (all(c("term", "group") %in% rhs)) {
-      out <- tidyr::pivot_longer(estimates,
-                                 cols = -c("group", "term", "statistic"),
-                                 names_to = "model")
-      out <- tidyr::pivot_wider(out, names_from = rhs, names_sep = " / ")
+      ## out <- tidyr::pivot_longer(estimates,
+      ##                            cols = -c("group", "term", "statistic"),
+      ##                            names_to = "model")
+      ## out <- tidyr::pivot_wider(out, names_from = rhs, names_sep = " / ")
+      out <- estimates
+      out[[rhs[1]]] <- factor(out[[rhs[1]]], unique(out[[rhs[1]]]))
+      out[[rhs[2]]] <- factor(out[[rhs[2]]], unique(out[[rhs[2]]]))
+
+      out <- reshape(
+        out,
+        varying = setdiff(colnames(estimates), c(rhs, "statistic")),
+        idvar = c(rhs, "statistic"),
+        times = setdiff(colnames(estimates), c(rhs, "statistic")),
+        v.names = "value",
+        timevar = "model",
+        direction = "long")
+
+      row.names(out) <- NULL
+
+      ## preserve order of columns (rhs variables are ordered factors)
+      out <- out[order(out[[rhs[1]]], out[[rhs[2]]]),]
+
+      out$rhs <- paste(out[[rhs[1]]], out[[rhs[2]]], sep = " / ")
+      out[[rhs[1]]] <- out[[rhs[2]]] <- NULL
+
+      out <- reshape(
+        out,
+        timevar = "rhs",
+        idvar = setdiff(colnames(out), c("rhs", "value")),
+        direction = "wide")
+      row.names(out) <- NULL
+      colnames(out) <- gsub("^value\\.", "", colnames(out))
+
+    ## group ~ model + term
+    } else if (length(lhs) == 1 && "group" %in% lhs) {
+      stop("`group` formulas of the form group~model+term are not currently supported. To follow progress and put pressure on the `modelsummary` developers, visit: https://github.com/vincentarelbundock/modelsummary/issues/349")
     }
 
     out[out == "NA"] <- ""

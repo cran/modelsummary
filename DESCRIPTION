@@ -9,7 +9,7 @@ Description: Create beautiful and customizable tables to summarize several
     and it can produce tables in HTML, LaTeX, Word, Markdown, PDF, PowerPoint,
     Excel, RTF, JPG, or PNG. Tables can easily be embedded in 'Rmarkdown' or 
     'knitr' dynamic documents.
-Version: 0.8.1
+Version: 0.9.0
 Authors@R: c(person("Vincent", "Arel-Bundock", 
                    email = "vincent.arel-bundock@umontreal.ca", 
                    role = c("aut", "cre"),
@@ -37,18 +37,17 @@ URL: https://vincentarelbundock.github.io/modelsummary/
 BugReports: https://github.com/vincentarelbundock/modelsummary/issues/
 Depends: R (>= 3.5.0)
 Imports: broom, checkmate, generics, glue, insight, kableExtra (>=
-        1.2.1), parameters, performance, rlang, tables, tidyr,
-        tidyselect
-Suggests: AER, broom.mixed, estimatr, flextable, fixest, gamlss,
-        ggplot2, gt (>= 0.3.0), huxtable, IRdisplay, knitr, lme4,
-        lmtest, MASS, nnet, officer, rmarkdown, sandwich, testthat,
-        vdiffr, spelling, covr
+        1.2.1), parameters, performance, rlang, tables
+Suggests: AER, broom.mixed, digest, estimatr, flextable, fixest,
+        gamlss, ggplot2, gt (>= 0.3.0), huxtable, IRdisplay, knitr,
+        lme4, lmtest, MASS, nnet, officer, rmarkdown, sandwich,
+        testthat, vdiffr, spelling, covr
 License: GPL-3
 Encoding: UTF-8
 Language: en-US
 RoxygenNote: 7.1.1
 NeedsCompilation: no
-Packaged: 2021-06-17 15:23:09 UTC; vince
+Packaged: 2021-08-12 02:11:26 UTC; vincent
 Author: Vincent Arel-Bundock [aut, cre]
     (<https://orcid.org/0000-0003-2042-7063>),
   Joachim Gassen [ctb] (<https://orcid.org/0000-0003-4364-2911>),
@@ -58,4 +57,4 @@ Author: Vincent Arel-Bundock [aut, cre]
   Benjamin Elbers [ctb] (0000-0001-5392-3448)
 Maintainer: Vincent Arel-Bundock <vincent.arel-bundock@umontreal.ca>
 Repository: CRAN
-Date/Publication: 2021-06-17 16:10:02 UTC
+Date/Publication: 2021-08-12 05:00:02 UTC

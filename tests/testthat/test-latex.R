@@ -2,6 +2,25 @@ models <- list(
   lm(hp ~ mpg, mtcars),
   lm(hp ~ mpg + drat, mtcars))
 
+test_that("latex threeparttable argument", {
+    tab1 <- modelsummary(models, output = "latex", stars = TRUE)
+    tab2 <- modelsummary(models, output = "latex", threeparttable = TRUE, stars = TRUE)
+    expect_false(grepl("threeparttable", tab1))
+    expect_true(grepl("threeparttable", tab2))
+    expect_equal(sum(grepl("threeparttable", strsplit(tab2, "\n")[[1]])), 2)
+
+    
+    ## kableExtra::footnote has a bug with multiple footnotes and threeparttable, so we combine notes.
+    ft <- "Here is a very very very very very very very very very very very very very very very very very long footnote"
+    tab3 <- modelsummary(models,
+                         output = "latex",
+                         title = "Regression output",
+                         notes = ft, 
+                         stars = TRUE,
+                         threeparttable = TRUE)
+    expect_equal(sum(grepl("threeparttable", strsplit(tab3, "\n")[[1]])), 2)
+})
+
 
 test_that("stars_note < are protected by $ in latex", {
   tab <- modelsummary(models, stars=TRUE, output="latex")
@@ -9,19 +28,20 @@ test_that("stars_note < are protected by $ in latex", {
 })
 
 
-test_that("model names protected by multicolumn with dcolumn",{
-  tab <- modelsummary(
-    models, 
-    stars = TRUE, 
-    output = "latex",
-    align = c("l", "D{.}{.}{-1}", "D{.}{.}{-1}"))
-  expect_true(grepl("multicolumn....c..Model", tab))
-})
+## dcolumn is no longer officially supported
+## test_that("model names protected by multicolumn with dcolumn",{
+##   tab <- modelsummary(
+##     models, 
+##     stars = TRUE, 
+##     output = "latex",
+##     align = c("l", "D{.}{.}{-1}", "D{.}{.}{-1}"))
+##   expect_true(grepl("multicolumn....c..Model", tab))
+## })
 
 test_that("output = latex_tabular", {
-  tab <- modelsummary(
-    models,
-    output = "latex_tabular")
-  truth = "\n\\begin{tabular}[t]{lcc}\n\\toprule\n  & Model 1 & Model 2\\\\\n\\midrule\n(Intercept) & 324.082 & 278.515\\\\\n & (27.433) & (55.415)\\\\\nmpg & -8.830 & -9.985\\\\\n & (1.310) & (1.792)\\\\\ndrat &  & 19.126\\\\\n &  & (20.198)\\\\\n\\midrule\nNum.Obs. & 32 & 32\\\\\nR2 & 0.602 & 0.614\\\\\nR2 Adj. & 0.589 & 0.588\\\\\nAIC & 336.9 & 337.9\\\\\nBIC & 341.3 & 343.7\\\\\nLog.Lik. & -165.428 & -164.940\\\\\nF & 45.460 & 23.100\\\\\n\\bottomrule\n\\end{tabular}"
-  expect_identical(as.character(truth), as.character(tab))
+    expect_known_output(modelsummary(models,
+                                     output = "latex_tabular"),
+                        file = "known_output/latex_1.tex",
+                        print = TRUE,
+                        update = FALSE)
 })

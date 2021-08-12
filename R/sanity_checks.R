@@ -1,3 +1,4 @@
+
 #' assert if dependency is installed
 #'
 #' @noRd
@@ -22,6 +23,15 @@ check_dependency <- function(library_name) {
 #' sanity check
 #'
 #' @noRd
+sanitize_escape <- function(escape) {
+  checkmate::assert_flag(escape, null.ok = FALSE)
+  settings_set("escape", escape)
+}
+
+
+#' sanity check
+#'
+#' @noRd
 sanity_group_map <- function(group_map) {
   if (!is.null(group_map)) {
     if (is.null(names(group_map))) {
@@ -31,6 +41,7 @@ sanity_group_map <- function(group_map) {
     }
   }
 }
+
 
 #' sanity check
 #'
@@ -61,12 +72,24 @@ sanity_model_names <- function(modelnames) {
 #' sanity check
 #'
 #' @noRd
-sanity_align <- function(align, tab) {
-  checkmate::assert(
-    checkmate::check_character(align, len = 1, null.ok = TRUE),
-    checkmate::check_character(align, len = ncol(tab), null.ok = TRUE),
-    combine = "or"
-  )
+sanity_align <- function(align, estimate = NULL, statistic = NULL, stars = FALSE) {
+    checkmate::assert_string(align, null.ok = TRUE)
+    if (!is.null(align) && any(grepl("[^lcrd]", align))) {
+        stop('The `align` argument must be a character string which only includes the letters l, c, r, or d. Example: "lcdd"')
+    }
+
+    if (any(grepl("d", align))) {
+        if (!settings_equal("output_factory", "kableExtra") ||
+            !settings_equal("output_format", c("latex", "latex_tabular")) ||
+            (!is.null(estimate) && any(grepl("\\{", estimate))) ||
+            (!is.null(estimate) && "conf.int" %in% estimate) ||
+            (!is.null(statistic) && any(grepl("\\{", statistic))) ||
+            (!is.null(statistic) && "conf.int" %in% statistic) ||
+            !isFALSE(stars)) {
+            stop('The "d" character is only supported in the `align` argument for LaTeX/PDF tables produced by the `kableExtra` package. It is not supported when the `estimate` or `statistic` arguments include glue strings or confidence intervals. It is only supported when the `stars` argument is `FALSE`. These constraints should be relaxed in the near future. See here to follow progress: https://github.com/vincentarelbundock/modelsummary/issues/354')
+        }
+        settings_set("siunitx_scolumns", TRUE)
+    }
 }
 
 
@@ -218,6 +241,13 @@ sanity_factory <- function(factory_dict) {
 #'
 #' @noRd
 sanity_stars <- function(stars) {
+  if (isTRUE(stars)) {
+    rlang::warn(
+      message = "In version 0.8.0 of the `modelsummary` package, the default significance markers produced by the `stars=TRUE` argument were changed to be consistent with R's defaults.",
+      .frequency = "once",
+      .frequency_id = "stars_true_consistency")
+  }
+
   checkmate::assert(
     checkmate::check_flag(stars),
     checkmate::check_numeric(stars, lower = 0, upper = 1, names = 'unique')
@@ -239,48 +269,6 @@ sanity_notes <- function(notes) {
         checkmate::check_character(note),
         checkmate::check_class(note, 'from_markdown')
       )
-    }
-  }
-}
-
-
-#' sanity check
-#' more informative error for a common modelsummary user-error
-#'
-#' @noRd
-sanity_output_modelsummary <- function(output) {
-  flag <- checkmate::check_string(output)
-  if (!isTRUE(flag)) {
-    stop("The `output` argument must be a string. Type `?modelsummary` for details. This error is sometimes raised when users supply multiple models to `modelsummary` but forget to wrap them in a list. This works: `modelsummary(list(model1, model2))`. This does *not* work: `modelsummary(model1, model2)`")
-  }
-}
-
-
-#' sanity check
-#'
-#' @noRd
-sanity_output <- function(output) {
-
-  object_types <- c('default', 'gt', 'kableExtra', 'flextable', 'huxtable',
-                    'html', 'jupyter', 'latex', 'latex_tabular', 'markdown',
-                    'dataframe', 'data.frame', 'modelsummary_list')
-  extension_types <- c('html', 'tex', 'md', 'txt', 'docx', 'pptx', 'rtf',
-                       'jpg', 'png')
-
-  checkmate::assert_string(output)
-
-  cond1 <- output %in% object_types
-  if (isFALSE(cond1)) {
-    extension <- tools::file_ext(output)
-    cond2 <- extension %in% extension_types
-    if (isTRUE(cond2)) {
-      checkmate::assert_path_for_output(output, overwrite = TRUE)
-    } else {
-      msg <- paste0('The `output` argument must be ',
-        paste(object_types, collapse = ', '),
-        ', or a valid file path with one of these extensions: ',
-        paste(extension_types, collapse = ', '))
-      stop(msg)
     }
   }
 }

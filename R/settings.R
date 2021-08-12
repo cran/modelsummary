@@ -1,0 +1,54 @@
+modelsummary_settings <- new.env()
+
+settings_init <- function(settings = NULL) {
+    settings_rm()
+
+    default_settings <- list(
+        "format_numeric_latex" = getOption("modelsummary_format_numeric_latex", default = "siunitx"),
+        "format_numeric_html" = getOption("modelsummary_format_numeric_html", default = "minus"),
+        "siunitx_scolumns" = FALSE,
+        "output_default" = getOption("modelsummary_default", default = "kableExtra"),
+        "stars_note" = getOption("modelsummary_stars_note", default = TRUE))
+
+    checkmate::assert_list(settings, null.ok = TRUE, names = "unique")
+
+    if (!is.null(settings)) {
+        settings <- c(settings, default_settings)
+    }
+
+    for (i in seq_along(settings)) {
+        settings_set(names(settings)[i], settings[[i]])
+    }
+}
+
+settings_get <- function(name) {
+    if (name %in% names(modelsummary_settings)) {
+        get(name, envir = modelsummary_settings)
+    } else {
+        NULL
+    }
+}
+
+settings_set <- function(name, value) {
+    assign(name, value = value, envir = modelsummary_settings)
+}
+
+settings_rm <- function(name = NULL) {
+    if (is.null(name)) {
+        rm(list = names(modelsummary_settings), envir = modelsummary_settings)
+    } else {
+        rm(list = name, envir = modelsummary_settings)
+    }
+}
+
+settings_equal <- function(name, comparison) {
+    k <- settings_get(name)
+    if (!is.null(k) && length(comparison) == 1 && k == comparison) {
+        out <- TRUE
+    } else if (!is.null(k) && length(comparison) > 1 && k %in% comparison) {
+        out <- TRUE
+    } else {
+        out <- FALSE
+    }
+    return(out)
+}

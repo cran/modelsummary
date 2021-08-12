@@ -1,3 +1,42 @@
+# modelsummary 0.8.1.9000
+
+Breaking change:
+
+* Support for `dcolumn` for dot-aligned columns is deprecated. Use "d" in the `align` argument instead.
+
+Other changes:
+
+* LaTeX output: Numeric entries are wrapped in the `\num{}` function from the
+  `siunitx` package by default. This produces much nicer formatting. This can be
+  disabled with a global option. See `?modelsummary`
+* The `align` argument accepts a "d" column for dot-alignment using the
+  `siunitx` LaTeX package: `align="ldd"`.
+* HTML tables display proper minus signs.
+* New `escape` argument in most table-building functions.
+* LaTeX output accepts the `threeparttable=TRUE` argument through `...`
+* No more dependency on `tidyr`
+
+`modelsummary`:
+
+* `group`: The order of terms in the formula determines the order of rows/columns
+
+`modelsummary_wide`: 
+
+* Note: This function will eventually be deprecated
+* Bugfix with statistic=NULL. 
+
+`modelplot`:
+
+* Preserves order of models in the user-supplied list
+
+`datasummary_crosstab`:
+
+* `statistic=NULL` produces a very basic crosstab
+
+`datasummary_crosstab`:
+
+* Default alignment "lrrrrr" consistent with other datasummary_* functions
+
 # modelsummary 0.8.1
 
 `modelsummary`:

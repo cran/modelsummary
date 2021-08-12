@@ -140,9 +140,17 @@ datasummary <- function(formula,
                         add_columns = NULL,
                         add_rows = NULL,
                         sparse_header = TRUE,
+                        escape = TRUE,
                         ...) {
 
-  sanity_output(output)
+  ## settings 
+  settings_init(settings = list(
+     "function_called" = "datasummary"
+  ))
+
+  sanitize_output(output)
+  sanitize_escape(escape)
+
 
   # convenience: transform logical and character to factor
   # are there use-cases for character variables?
@@ -184,6 +192,7 @@ datasummary <- function(formula,
     align <- paste0(strrep('l', stub_width),
       strrep('r', tab_width - stub_width))
   }
+  align <- paste(align, collapse = "")
 
   # convert to numeric if fmt==NULL
   if (is.null(fmt)) {
@@ -191,6 +200,13 @@ datasummary <- function(formula,
     for (i in (idx + 1):ncol(dse)) {
       dse[[i]] <- as.numeric(dse[[i]])
     }
+  }
+
+  ## escape stub
+  if (settings_equal("escape", TRUE)) {
+      for (i in 1:attr(dse, "stub_width")) {
+          dse[, i] <- escape_string(dse[, i])
+      }
   }
 
   # build
@@ -205,7 +221,11 @@ datasummary <- function(formula,
     add_rows = add_rows,
     ...)
 
-  return(out)
+  if (!is.null(settings_get("output_file"))) {
+    return(invisible(out))
+  } else {
+    return(out)
+  }
 
 }
 

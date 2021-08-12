@@ -17,6 +17,7 @@ datasummary_balance(
   add_rows = NULL,
   dinm = TRUE,
   dinm_statistic = "std.error",
+  escape = TRUE,
   ...
 )
 }
@@ -32,9 +33,9 @@ consider them when calculating the difference in means.}
 \itemize{
 \item Supported filename extensions: .html, .tex, .md, .txt, .png, .jpg.
 \item Supported object types: "default", "html", "markdown", "latex", "latex_tabular", "data.frame", "modelsummary_list", "gt", "kableExtra", "huxtable", "flextable", "jupyter".
-\item To change the default output format, type \code{options(modelsummary_default = "latex")}, where \code{latex} can be any of the valid object types listed above.
-\item Warning: users should not supply a file name to the \code{output} argument if they intend to customize the table with external packages.
-\item See the 'Details' section below for more information.
+\item Warning: Users should not supply a file name to the \code{output} argument if they intend to customize the table with external packages. See the 'Details' section.
+\item LaTeX compilation requires the \code{booktabs} and \code{siunitx} packages, but \code{siunitx} can be disabled or replaced with global options. See the 'Details' section.
+\item The default output formats and table-making packages can be modified with global options. See the 'Details' section.
 }}
 
 \item{fmt}{determines how to format numeric values
@@ -42,15 +43,26 @@ consider them when calculating the difference in means.}
 \item integer: the number of digits to keep after the period \code{format(round(x, fmt), nsmall=fmt)}
 \item character: passed to the \code{sprintf} function (e.g., '\%.3f' keeps 3 digits with trailing zero). See \code{?sprintf}
 \item function: returns a formatted character string.
+\item Note on LaTeX formatting: To ensure proper typography, all numeric entries are enclosed in the \verb{\\num\{\}} command from the \code{siunitx} LaTeX package by default. This behavior can be altered with global options. See the 'Details' section.
 }}
 
 \item{title}{string}
 
 \item{notes}{list or vector of notes to append to the bottom of the table.}
 
-\item{align}{A character string of length equal to the number of columns in
-the table.  "lcr" means that the first column will be left-aligned, the 2nd
-column center-aligned, and the 3rd column right-aligned.}
+\item{align}{A string with a number of characters equal to the number of columns in
+the table (e.g., \code{align = "lcc"}).  Valid characters: l, c, r, S.
+\itemize{
+\item "l": left-aligned column
+\item "c": centered column
+\item "r": right-aligned column
+\item "d": dot-aligned column. Only supported for LaTeX/PDF tables produced by \code{kableExtra}. These commands must appear in the LaTeX preamble (they are added automatically when compiling Rmarkdown documents to PDF):
+\itemize{
+\item \verb{\\usepackage\{booktabs\}}
+\item \verb{\\usepackage\{siunitx\}}
+\item \verb{\\newcolumntype\{d\}\{S[input-symbols = ()]\}}
+}
+}}
 
 \item{add_columns}{a data.frame (or tibble) with the same number of rows as
 your main table.}
@@ -68,13 +80,15 @@ installed. If \code{data} includes columns named "blocks", "clusters", or
 
 \item{dinm_statistic}{string: "std.error" or "p.value"}
 
+\item{escape}{boolean TRUE escapes or substitutes LaTeX/HTML characters which could
+prevent the file from compiling/displaying. This setting does not affect captions or notes.}
+
 \item{...}{all other arguments are passed through to the extractor and
 table-making functions. This allows users to pass arguments directly to
 \code{modelsummary} in order to affect the behavior of other functions behind
 the scenes. Examples include:
 \itemize{
 \item \code{broom::tidy(exponentiate=TRUE)} to exponentiate logistic regression
-\item \code{kableExtra::kbl(escape=FALSE)} to avoid escaping math characters in \code{kableExtra} tables.
 \item \code{performance::model_performance(metrics="RMSE")} to select goodness-of-fit statistics to extract using the \code{performance} package (must have set \code{options(modelsummary_get="easystats")} first).
 }}
 }

@@ -11,6 +11,7 @@ datasummary_correlation(
   title = NULL,
   notes = NULL,
   method = "pearson",
+  escape = TRUE,
   ...
 )
 }
@@ -21,9 +22,9 @@ datasummary_correlation(
 \itemize{
 \item Supported filename extensions: .html, .tex, .md, .txt, .png, .jpg.
 \item Supported object types: "default", "html", "markdown", "latex", "latex_tabular", "data.frame", "modelsummary_list", "gt", "kableExtra", "huxtable", "flextable", "jupyter".
-\item To change the default output format, type \code{options(modelsummary_default = "latex")}, where \code{latex} can be any of the valid object types listed above.
-\item Warning: users should not supply a file name to the \code{output} argument if they intend to customize the table with external packages.
-\item See the 'Details' section below for more information.
+\item Warning: Users should not supply a file name to the \code{output} argument if they intend to customize the table with external packages. See the 'Details' section.
+\item LaTeX compilation requires the \code{booktabs} and \code{siunitx} packages, but \code{siunitx} can be disabled or replaced with global options. See the 'Details' section.
+\item The default output formats and table-making packages can be modified with global options. See the 'Details' section.
 }}
 
 \item{fmt}{determines how to format numeric values
@@ -31,6 +32,7 @@ datasummary_correlation(
 \item integer: the number of digits to keep after the period \code{format(round(x, fmt), nsmall=fmt)}
 \item character: passed to the \code{sprintf} function (e.g., '\%.3f' keeps 3 digits with trailing zero). See \code{?sprintf}
 \item function: returns a formatted character string.
+\item Note on LaTeX formatting: To ensure proper typography, all numeric entries are enclosed in the \verb{\\num\{\}} command from the \code{siunitx} LaTeX package by default. This behavior can be altered with global options. See the 'Details' section.
 }}
 
 \item{title}{string}
@@ -48,9 +50,11 @@ corresponding to variable names. Note that the
 output of custom correlation functions.
 }}
 
+\item{escape}{boolean TRUE escapes or substitutes LaTeX/HTML characters which could
+prevent the file from compiling/displaying. This setting does not affect captions or notes.}
+
 \item{...}{other parameters are passed through to the table-making
-packages. This can be used, for example, to pass arguments such
-as \code{escape=FALSE} to \code{kableExtra}.}
+packages.}
 }
 \description{
 The names of the variables displayed in the correlation table are the names

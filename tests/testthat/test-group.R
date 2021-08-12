@@ -1,7 +1,7 @@
 # replicability: this gets reverted at the end of the file 
 options(modelsummary_get = "easystats")
 
-library(gamlss)
+suppressPackageStartupMessages(library(gamlss))
 data(trees)
 models <- list()
 models[['Bivariate']] <- lm(Girth ~ Height, data = trees)
@@ -9,8 +9,25 @@ models[['Multivariate']] <- lm(Girth ~ Height + Volume, data = trees)
 models[["GAMLSS"]] <- gamlss(y~pb(x),sigma.fo=~pb(x),family=BCT, data=abdom, method=mixed(1,20), trace=FALSE)
 
 
-test_that("flipped table (no groups)", {
+test_that("Michael E Flynn ultra-niche bug check", {
+    library(nnet)
+    library(modelsummary)
+    dat_multinom <- mtcars
+    dat_multinom$cyl <- as.factor(dat_multinom$cyl)
+    dat_multinom$under_score <- dat_multinom$mpg
+    mod <- list(
+        "a" = nnet::multinom(cyl ~ under_score, data = dat_multinom, trace = FALSE),
+        "b" = nnet::multinom(cyl ~ under_score + drat, data = dat_multinom, trace = FALSE))
+    coef_list = c("under_score" = "Under Score")
+    expect_error(modelsummary(mod,
+                              output = "latex",
+                              coef_map = coef_list,
+                              group = term ~ model + response),
+                 NA)
+})
 
+
+test_that("flipped table (no groups)", {
     mod = list(
     lm(hp ~ mpg, mtcars),
     lm(hp ~ mpg + drat, mtcars))
@@ -21,7 +38,8 @@ test_that("flipped table (no groups)", {
 })
 
 
-test_that("group: nnet::multinom", {
+test_that("TODO: not implemented yet", {
+    ## Issue #349
     skip_if_not_installed("nnet")
 
     library(nnet)
@@ -32,34 +50,92 @@ test_that("group: nnet::multinom", {
         nnet::multinom(cyl ~ mpg, data = dat_multinom, trace = FALSE),
         nnet::multinom(cyl ~ mpg + drat, data = dat_multinom, trace = FALSE))
 
-    tab <- modelsummary(mod, "data.frame", group = response + term ~ model)
+    expect_error(trash <- capture.output(tab <- modelsummary(mod, "data.frame", group = response ~ term + model)),
+                 regexp = "pressure")
+})
+
+
+test_that("nnet::multinom: order of rows determined by formula terms", {
+    skip_if_not_installed("nnet")
+
+    library(nnet)
+    dat_multinom <- mtcars
+    dat_multinom$cyl <- as.factor(dat_multinom$cyl)
+
+    mod <- list(
+        nnet::multinom(cyl ~ mpg, data = dat_multinom, trace = FALSE),
+        nnet::multinom(cyl ~ mpg + drat, data = dat_multinom, trace = FALSE))
+
+    ## order of rows determined by order of formula terms
+    trash <- capture.output(tab <- modelsummary(mod, "data.frame", group = response + term ~ model))
     expect_s3_class(tab, "data.frame")
     expect_equal(colnames(tab),
                  c("part", "group", "term", "statistic", "Model 1", "Model 2"))
+    expect_equal(tab$term[1:4], c("(Intercept)", "(Intercept)", "mpg", "mpg"))
+    expect_equal(tab$group[1:12], c(rep("6", 6), rep("8", 6)))
 
-    tab <- modelsummary(mod, "data.frame", group = model + term ~ response)
+    ## order of rows determined by order of formula terms
+    trash <- capture.output(tab <- modelsummary(mod, "data.frame", group = term + response ~ model))
+    expect_s3_class(tab, "data.frame")
+    expect_equal(colnames(tab),
+                 c("part", "term", "group", "statistic", "Model 1", "Model 2"))
+    expect_equal(tab$term[1:4], rep("(Intercept)", 4))
+    expect_equal(tab$group[1:4], c("6", "6", "8", "8"))
+
+    ## order of rows determined by order of formula terms
+    trash <- capture.output(tab <- modelsummary(mod, "data.frame", group = model + term ~ response))
     expect_s3_class(tab, "data.frame")
     expect_equal(colnames(tab),
                  c("part", "model", "term", "statistic", "6", "8"))
+    expect_equal(tab$model[1:10], c(rep("Model 1", 4), rep("Model 2", 6)))
 
-    tab <- modelsummary(mod, "data.frame", group = term ~ model + response)
+    ## order of rows determined by order of formula terms
+    trash <- capture.output(tab <- modelsummary(mod, "data.frame", group = term + model ~ response))
     expect_s3_class(tab, "data.frame")
     expect_equal(colnames(tab),
-                 c("part", "term", "statistic", "Model 1 / 6", "Model 2 / 6",
-                   "Model 1 / 8", "Model 2 / 8"))
+                 c("part", "term", "model", "statistic", "6", "8"))
+    expect_equal(tab$model[1:3], c("Model 1", "Model 1", "Model 2"))
 
-    tab <- modelsummary(mod, "data.frame", group = model ~ term + response)
+})
+
+test_that("nnet::multinom: order of columns determined by formula terms", {
+    skip_if_not_installed("nnet")
+
+    library(nnet)
+    dat_multinom <- mtcars
+    dat_multinom$cyl <- as.factor(dat_multinom$cyl)
+
+    mod <- list(
+        nnet::multinom(cyl ~ mpg, data = dat_multinom, trace = FALSE),
+        nnet::multinom(cyl ~ mpg + drat, data = dat_multinom, trace = FALSE))
+
+    ## term ~ model + response
+    trash <- capture.output(tab <- modelsummary(mod, "data.frame", group = term ~ model + response))
+    expect_s3_class(tab, "data.frame")
+    expect_equal(colnames(tab),
+                 c("part", "term", "statistic", "Model 1 / 6", "Model 1 / 8", "Model 2 / 6", "Model 2 / 8"))
+
+    ## term ~ response + model
+    trash <- capture.output(tab <- modelsummary(mod, "data.frame", group = term ~ response + model))
+    expect_s3_class(tab, "data.frame")
+    expect_equal(colnames(tab),
+                 c("part", "term", "statistic", "6 / Model 1", "6 / Model 2", "8 / Model 1", "8 / Model 2"))
+
+    ## model ~ term + response
+    trash <- capture.output(tab <- modelsummary(mod, "data.frame", group = model ~ term + response))
     expect_s3_class(tab, "data.frame")
     expect_equal(colnames(tab),
                  c("part", "statistic", "model", "(Intercept) / 6",
                  "(Intercept) / 8", "mpg / 6", "mpg / 8", "drat / 6",
                  "drat / 8"))
 
-    tab <- modelsummary(mod, "data.frame", group = model ~ response + term)
+    ## model ~ response + term
+    trash <- capture.output(tab <- modelsummary(mod, "data.frame", group = model ~ response + term))
     expect_s3_class(tab, "data.frame")
     expect_equal(colnames(tab),
-                 c("part", "statistic", "model", "6 / (Intercept)", "8 / (Intercept)", 
-                   "6 / mpg", "8 / mpg", "6 / drat", "8 / drat"))
+                 c("part", "statistic", "model", "6 / (Intercept)", "6 / mpg",
+                   "6 / drat", "8 / (Intercept)", "8 / mpg", "8 / drat"))
+
 })
 
 
@@ -92,7 +168,6 @@ test_that("grouped coefficients: gamlss", {
     tab <- modelsummary(mod, "data.frame", group = term ~ component + model)
     expect_s3_class(tab, "data.frame")
 
-    
     tab <- modelsummary(mod, "data.frame", group = term + model ~ component)
     expect_s3_class(tab, "data.frame")
 
@@ -113,7 +188,6 @@ test_that("model names are preserved", {
                  group = component + term ~ model)
     expect_true(all(c("GA", "GA 2") %in% colnames(tab)))
 })
-
 
 
 options(modelsummary_get = NULL)
