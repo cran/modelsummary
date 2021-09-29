@@ -52,6 +52,24 @@ sanitize_output <- function(output) {
     "htm"  = "html",
     "html" = "html")
 
+
+  ## deprecated global options
+  bad <- c("modelsummary_default", "modelsummary_html", "modelsummary_latex",
+           "modelsummary_markdown", "modelsummary_jpg", "modelsummary_png",
+           "modelsummary_rtf", "modelsummary_word", "modelsummary_powerpoint")
+  for (a in bad) {
+      b <- gsub("modelsummary_", "modelsummary_factory_", a)
+      tmp <- getOption(a, default = NULL)
+      if (!is.null(tmp)) {
+          options(b = tmp)
+          msg <- sprintf('The "%s" global option is deprecated. Please use "%s" instead.', a, b)
+          rlang::warn( message = msg,
+                      .frequency = "once",
+                      .frequency_id = a)
+      }
+  }
+
+
   factory_dict <- c(
     "dataframe"      = "dataframe",
     "data.frame"     = "dataframe",
@@ -62,21 +80,24 @@ sanitize_output <- function(output) {
     "markdown"       = "kableExtra",
     "latex_tabular"  = "kableExtra",
     "modelsummary_list" = "modelsummary_list",
-    "jupyter"        = getOption("modelsummary_html", default       = "kableExtra"),
-    "latex"          = getOption("modelsummary_latex", default      = "kableExtra"),
-    "html"           = getOption("modelsummary_html", default       = "kableExtra"),
-    "jpg"            = getOption("modelsummary_jpg", default        = "kableExtra"),
-    "png"            = getOption("modelsummary_png", default        = "kableExtra"),
-    "rtf"            = getOption("modelsummary_rtf", default        = "gt"),
-    "word"           = getOption("modelsummary_word", default       = "flextable"),
-    "powerpoint"     = getOption("modelsummary_powerpoint", default = "flextable"))
+    "jupyter"        = getOption("modelsummary_factory_html", default       = "kableExtra"),
+    "latex"          = getOption("modelsummary_factory_latex", default      = "kableExtra"),
+    "html"           = getOption("modelsummary_factory_html", default       = "kableExtra"),
+    "jpg"            = getOption("modelsummary_factory_jpg", default        = "kableExtra"),
+    "png"            = getOption("modelsummary_factory_png", default        = "kableExtra"),
+    "rtf"            = getOption("modelsummary_factory_rtf", default        = "gt"),
+    "word"           = getOption("modelsummary_factory_word", default       = "flextable"),
+    "powerpoint"     = getOption("modelsummary_factory_powerpoint", default = "flextable"))
 
-  # sanity check: are user-supplied global options ok?
+  ## sanity check: are user-supplied global options ok?
   sanity_factory(factory_dict)
+
+  ## save user input to check later
+  output_user <- output
 
   # defaults
   if (output == "default") {
-      output <- getOption("modelsummary_default", default = "kableExtra")
+      output <- getOption("modelsummary_factory_default", default = "kableExtra")
   } else if (output == "jupyter") {
       output <- "html"
   }
@@ -105,13 +126,16 @@ sanitize_output <- function(output) {
     output_file <- output
   }
 
-  # knit to word
-  if (check_dependency("knitr") && check_dependency("rmarkdown")) {
-    fmt <- try(rmarkdown::default_output_format(
-      knitr::current_input())$name, silent = TRUE)
+  # knit to word using flextable
+  if (isTRUE(check_dependency("knitr")) && isTRUE(check_dependency("rmarkdown"))) {
+    ## try to guess the knitr output format
+    fmt <- try(rmarkdown::default_output_format(knitr::current_input())$name, silent = TRUE)
     if (!inherits(fmt, "try-error")) {
-      word_fmt <- c("word_document", "rdocx_document", "officedown::rdocx_document")
-      if (any(word_fmt %in% fmt)) {
+      word_fmt <- c("word_document",
+                    "rdocx_document", "officedown::rdocx_document",
+                    "word_document2", "bookdown::word_document2")
+      ## change to word output format only if `output` is "default" or "flextable"
+      if (any(word_fmt %in% fmt) && output_user %in% c("flextable", "default")) {
         output_format <- "word"
       }
     }

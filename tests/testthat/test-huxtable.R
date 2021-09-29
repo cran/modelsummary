@@ -22,18 +22,17 @@ test_that("markdown caption and notes", {
     modelsummary(models, "huxtable", title = "test title", notes = "test note",
       stars = TRUE) %>%
       huxtable::to_md())
-  expect_known_output(cat(unknown),
-                      "known_output/huxtable-title-notes.md", update = FALSE)
+  expect_snapshot(cat(unknown))
 })
 
 
 test_that("save to file", {
 
-  options(modelsummary_html = 'huxtable')
-  options(modelsummary_rtf = 'huxtable')
-  options(modelsummary_latex = 'huxtable')
-  options(modelsummary_word = 'huxtable')
-  options(modelsummary_powerpoint = 'huxtable')
+  options(modelsummary_factory_html = 'huxtable')
+  options(modelsummary_factory_rtf = 'huxtable')
+  options(modelsummary_factory_latex = 'huxtable')
+  options(modelsummary_factory_word = 'huxtable')
+  options(modelsummary_factory_powerpoint = 'huxtable')
 
   random <- random_string()
 
@@ -57,10 +56,10 @@ test_that("save to file", {
   expect_error(modelsummary(models, filename), NA)
   unlink(filename)
 
-  options(modelsummary_html = 'kableExtra')
-  options(modelsummary_rtf = 'gt')
-  options(modelsummary_latex = 'kableExtra')
-  options(modelsummary_word = 'flextable')
-  options(modelsummary_powerpoint = 'flextable')
+  options(modelsummary_factory_html = 'kableExtra')
+  options(modelsummary_factory_rtf = 'gt')
+  options(modelsummary_factory_latex = 'kableExtra')
+  options(modelsummary_factory_word = 'flextable')
+  options(modelsummary_factory_powerpoint = 'flextable')
 
 })

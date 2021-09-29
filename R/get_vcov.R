@@ -1,9 +1,16 @@
 #' Allow users to override uncertainty estimates
 #' @param model object type with an available `tidy` method.
 #' @inheritParams modelsummary
-#' @noRd
+#' @keywords internal
 #' @return a numeric vector of test statistics
 get_vcov <- function(model, vcov = NULL, conf_level = NULL, ...) {
+    UseMethod("get_vcov", model)
+}
+
+
+
+#' @keywords internal
+get_vcov.default <- function(model, vcov = NULL, conf_level = NULL, ...) {
 
   if (all(sapply(vcov, is.null))) return(NULL)
 
@@ -153,7 +160,7 @@ get_vcov <- function(model, vcov = NULL, conf_level = NULL, ...) {
 
 get_coeftest <- function(model, vcov, conf_level) {
 
-  if (!check_dependency("lmtest")) return(NULL)
+  if (!isTRUE(check_dependency("lmtest"))) return(NULL)
 
   gof <- try(
     lmtest::coeftest(model, vcov. = vcov), silent = TRUE)
@@ -184,7 +191,6 @@ get_coeftest <- function(model, vcov, conf_level) {
 }
 
 
-
 #' internal function
 #'
 #' @param v a string or formula describing the standard error type
@@ -196,8 +202,7 @@ get_vcov_type <- function(vcov) {
 
   get_vcov_type_inner <- function(v) {
     if (is.character(v)) {
-      if (v %in% c("robust", "classical", "stata", "classical", "constant",
-                   "panel-corrected", "Andrews", "outer-product")) {
+      if (v %in% c("robust", "classical", "stata", "classical", "constant", "panel-corrected", "Andrews", "outer-product")) {
          out <- tools::toTitleCase(v)
        } else if (v == "NeweyWest") {
          out <- "Newey-West"
@@ -205,7 +210,7 @@ get_vcov_type <- function(vcov) {
          out <- toupper(v)
        }
     } else if (inherits(v, "formula")) {
-      out <- paste("C:", as.character(v)[2])
+      out <- paste("by:", gsub("\\+", "\\&", gsub(":", "\\ & ", as.character(v)[2])))
     } else if (is.null(v)) {
       out <- NULL
     } else if (is.function(v)) {

@@ -21,8 +21,9 @@ format_gof <- function(gof, fmt, gof_map, ...) {
   } else {
     gm_list <- gof_map
   }
-  gm_raw <- sapply(gm_list, function(x) x$raw)
-  gm_clean <- sapply(gm_list, function(x) x$clean)
+  # `as.character` is needed for R-devel changes to `intersect` with empty sets
+  gm_raw <- as.character(sapply(gm_list, function(x) x$raw))
+  gm_clean <- as.character(sapply(gm_list, function(x) x$clean))
 
   # round
   unknown <- setdiff(colnames(gof), gm_raw)
@@ -43,10 +44,13 @@ format_gof <- function(gof, fmt, gof_map, ...) {
     gof <- gof[, colnames(gof) %in% gm_raw, drop = FALSE]
   }
 
-  # reorder
+  # reorder columns
   idx1 <- intersect(gm_raw, colnames(gof))
   idx2 <- setdiff(colnames(gof), gm_raw)
-  gof <- gof[c(idx1, idx2)]
+  # avoid errors on some CI platforms
+  idx <- unlist(c(idx1, idx2), recursive = TRUE)
+  gof <- as.data.frame(gof)
+  gof <- gof[, idx, drop = FALSE]
 
   # some gof were kept
   if (ncol(gof) > 0) {

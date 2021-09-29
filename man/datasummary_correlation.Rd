@@ -7,10 +7,13 @@
 datasummary_correlation(
   data,
   output = "default",
+  method = "pearson",
   fmt = 2,
+  align = NULL,
+  add_rows = NULL,
+  add_columns = NULL,
   title = NULL,
   notes = NULL,
-  method = "pearson",
   escape = TRUE,
   ...
 )
@@ -27,18 +30,6 @@ datasummary_correlation(
 \item The default output formats and table-making packages can be modified with global options. See the 'Details' section.
 }}
 
-\item{fmt}{determines how to format numeric values
-\itemize{
-\item integer: the number of digits to keep after the period \code{format(round(x, fmt), nsmall=fmt)}
-\item character: passed to the \code{sprintf} function (e.g., '\%.3f' keeps 3 digits with trailing zero). See \code{?sprintf}
-\item function: returns a formatted character string.
-\item Note on LaTeX formatting: To ensure proper typography, all numeric entries are enclosed in the \verb{\\num\{\}} command from the \code{siunitx} LaTeX package by default. This behavior can be altered with global options. See the 'Details' section.
-}}
-
-\item{title}{string}
-
-\item{notes}{list or vector of notes to append to the bottom of the table.}
-
 \item{method}{character or function
 \itemize{
 \item character: "pearson", "kendall", "spearman", or "pearspear"
@@ -49,6 +40,40 @@ corresponding to variable names. Note that the
 \code{datasummary_correlation_format} can often be useful for formatting the
 output of custom correlation functions.
 }}
+
+\item{fmt}{determines how to format numeric values
+\itemize{
+\item integer: the number of digits to keep after the period \code{format(round(x, fmt), nsmall=fmt)}
+\item character: passed to the \code{sprintf} function (e.g., '\%.3f' keeps 3 digits with trailing zero). See \code{?sprintf}
+\item function: returns a formatted character string.
+\item Note on LaTeX formatting: To ensure proper typography, all numeric entries are enclosed in the \verb{\\num\{\}} command from the \code{siunitx} LaTeX package by default. This behavior can be altered with global options. See the 'Details' section.
+}}
+
+\item{align}{A string with a number of characters equal to the number of columns in
+the table (e.g., \code{align = "lcc"}).  Valid characters: l, c, r, S.
+\itemize{
+\item "l": left-aligned column
+\item "c": centered column
+\item "r": right-aligned column
+\item "d": dot-aligned column. Only supported for LaTeX/PDF tables produced by \code{kableExtra}. These commands must appear in the LaTeX preamble (they are added automatically when compiling Rmarkdown documents to PDF):
+\itemize{
+\item \verb{\\usepackage\{booktabs\}}
+\item \verb{\\usepackage\{siunitx\}}
+\item \verb{\\newcolumntype\{d\}\{S[input-symbols = ()]\}}
+}
+}}
+
+\item{add_rows}{a data.frame (or tibble) with the same number of columns as
+your main table. By default, rows are appended to the bottom of the table.
+You can define a "position" attribute of integers to set the row positions.
+See Examples section below.}
+
+\item{add_columns}{a data.frame (or tibble) with the same number of rows as
+your main table.}
+
+\item{title}{string}
+
+\item{notes}{list or vector of notes to append to the bottom of the table.}
 
 \item{escape}{boolean TRUE escapes or substitutes LaTeX/HTML characters which could
 prevent the file from compiling/displaying. This setting does not affect captions or notes.}
@@ -61,6 +86,62 @@ The names of the variables displayed in the correlation table are the names
 of the columns in the \code{data}. You can rename those columns (with or without
 spaces) to produce a table of human-readable variables.
 }
+\section{Global Options}{
+
+
+The behavior of \code{modelsummary} can be affected by setting global options:
+\itemize{
+\item \code{modelsummary_factory_default}
+\item \code{modelsummary_factory_latex}
+\item \code{modelsummary_factory_html}
+\item \code{modelsummary_factory_png}
+\item \code{modelsummary_get}
+\item \code{modelsummary_format_numeric_latex}
+\item \code{modelsummary_format_numeric_html}
+}
+\subsection{Table-making packages}{
+
+\code{modelsummary} supports 4 table-making packages: \code{kableExtra}, \code{gt},
+\code{flextable}, and \code{huxtable}. Some of these packages have overlapping
+functionalities. For example, 3 of those packages can export to LaTeX. To
+change the default backend used for a specific file format, you can use
+the \code{options} function:
+
+\code{options(modelsummary_factory_html = 'kableExtra')}
+\code{options(modelsummary_factory_latex = 'gt')}
+\code{options(modelsummary_factory_word = 'huxtable')}
+\code{options(modelsummary_factory_png = 'gt')}
+}
+
+\subsection{Model extraction functions}{
+
+\code{modelsummary} can use two sets of packages to extract information from
+statistical models: \code{broom} and the \code{easystats} family (\code{performance} and
+\code{parameters}). By default, it uses \code{broom} first and \code{easystats} as a
+fallback if \code{broom} fails. You can change the order of priorities
+or include goodness-of-fit extracted by \emph{both} packages by setting:
+
+\code{options(modelsummary_get = "broom")}
+\code{options(modelsummary_get = "easystats")}
+\code{options(modelsummary_get = "all")}
+}
+
+\subsection{Formatting numeric entries}{
+
+By default, LaTeX tables enclose all numeric entries in the \verb{\\num\{\}} command
+from the siunitx package. To prevent this behavior, or to enclose numbers
+in dollar signs (for LaTeX math mode), users can call:
+
+\code{options(modelsummary_format_numeric_latex = "plain")}
+\code{options(modelsummary_format_numeric_latex = "mathmode")}
+
+A similar option can be used to display numerical entries using MathJax in
+HTML tables:
+
+\code{options(modelsummary_format_numeric_html = "mathjax")}
+}
+}
+
 \examples{
 \dontrun{
 library(modelsummary)

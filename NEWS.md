@@ -1,4 +1,26 @@
-# modelsummary 0.8.1.9000
+# modelsummary 0.9.2
+
+`modelsummary`:
+
+* Improved `vcov` argument handling for `fixest` models (#357 by @grantmcdermott)
+* Fix display of `fixest::i()` variables and interactions (#361 by @grantmcdermott)
+* Consistent display of clustered SEs (#356, #363 and #366 by @grantmcdermott)
+
+`datasummary_correlation`:
+
+* `add_rows` and `add_columns` arguments are now available here.
+
+Misc:
+
+* Global options for output factories are renamed: `modelsummary_factory_default`, `modelsummary_factory_html`, etc.
+* Hot fix for change in R-devel behavior or `intersect`
+
+Bug fixes:
+
+* `datasummary_balance`: escape variable names when `escape=TRUE`
+* Blogdown LaTeX dependency bug when output is HTML
+
+# modelsummary 0.9.1
 
 Breaking change:
 
@@ -117,7 +139,7 @@ Other:
   Bayesian models.
 * users can omit the stars legend note by using glue strings:
   `estimate="{estimate}{stars}"`
-* output="html" can use `gt` by setting `options(modelsummary_html="gt")` 
+* output="html" can use `gt` by setting `options(modelsummary_factory_html="gt")` 
 
 `datasummary_correlation`:
 

@@ -1,23 +1,16 @@
-
-#' assert if dependency is installed
-#'
-#' @noRd
-assert_dependency <- function(library_name, msg = NULL) {
-  if (is.null(msg)) {
-    msg <- "Please install the %s package."
-  }
-  if (!requireNamespace(library_name, quietly = TRUE)) {
-    stop(sprintf(msg, library_name))
-  }
-}
-
-
 #' check if dependency is installed
 #'
 #' @noRd
 check_dependency <- function(library_name) {
-  requireNamespace(library_name, quietly = TRUE)
+  flag <- requireNamespace(library_name, quietly = TRUE)
+  if (isFALSE(flag)) {
+      msg <- sprintf("Please install the `%s` package.", library_name)
+      return(msg)
+  } else {
+      return(TRUE)
+  }
 }
+assert_dependency <- checkmate::makeAssertionFunction(check_dependency)
 
 
 #' sanity check
@@ -227,7 +220,7 @@ sanity_factory <- function(factory_dict) {
   check_option('jpg', c('flextable', 'kableExtra'))
 
   # check default
-  modelsummary_default <- getOption("modelsummary_default", default = "kableExtra")
+  modelsummary_default <- getOption("modelsummary_factory_default", default = "kableExtra")
   checkmate::assert_true(modelsummary_default %in% c("gt", "kableExtra",
                                                      "flextable", "huxtable",
                                                      "jupyter", "markdown",
@@ -287,6 +280,10 @@ sanity_add_rows <- function(add_rows, models) {
     checkmate::assert_true(all(
       colnames(add_rows) %in% c('term', 'section', 'position', names(models))))
   }
+}
+
+sanity_add_columns <- function(add_columns) {
+    checkmate::assert_data_frame(add_columns, min.cols = 1, null.ok = TRUE)
 }
 
 

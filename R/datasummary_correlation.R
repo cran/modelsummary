@@ -15,6 +15,7 @@
 #'     `datasummary_correlation_format` can often be useful for formatting the
 #'     output of custom correlation functions.
 #' }
+#' @template options
 #' @param ... other parameters are passed through to the table-making
 #'     packages.
 #' @export
@@ -93,10 +94,13 @@
 #' }
 datasummary_correlation <- function(data,
                                     output = 'default',
+                                    method = "pearson",
                                     fmt = 2,
+                                    align = NULL,
+                                    add_rows = NULL,
+                                    add_columns = NULL,
                                     title = NULL,
                                     notes = NULL,
-                                    method = "pearson",
                                     escape = TRUE,
                                     ...) {
 
@@ -109,6 +113,7 @@ datasummary_correlation <- function(data,
   # sanity checks
   sanitize_output(output)
   sanitize_escape(escape)
+  sanity_add_columns(add_columns)
 
   any_numeric <- any(sapply(data, is.numeric) == TRUE)
   if (any_numeric == FALSE) {
@@ -167,8 +172,13 @@ datasummary_correlation <- function(data,
   out <- cbind(rowname = row.names(out), out)
   colnames(out) <- c(' ', col_names)
 
-  align <- paste0('l', strrep('r', ncol(out) - 1))
-  align <- paste(align, collapse = "")
+  if (is.null(align)) {
+      ncols <- ncol(out)
+      if (!is.null(add_columns)) {
+          ncols <- ncols + ncol(add_columns)
+      }
+      align <- paste0('l', strrep('r', ncols - 1))
+  }
 
   if (settings_equal("escape", TRUE)) {
     out[, 1] <- escape_string(out[, 1])
@@ -178,8 +188,10 @@ datasummary_correlation <- function(data,
   out <- factory(out,
     align = align,
     hrule = NULL,
-    notes = notes,
     output = output,
+    add_rows = add_rows,
+    add_columns = add_columns,
+    notes = notes,
     title = title,
     ...)
 
