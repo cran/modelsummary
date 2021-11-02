@@ -5,16 +5,25 @@ mod <- glm(am ~ mpg, mtcars, family = binomial)
 ###################
 test_that("glance_custom.glm", {
   glance_custom.glm <- function(x) {
-    data.frame("test"=1.54, "test2"="lkkd", "test3"=as.integer(2),
-               "test4"=TRUE)
+    data.frame("test" = 1.54, "test2" = "lkkd", "test3" = as.integer(2), "test4" = TRUE)
   }
   # beware of testthat scoping issue
-  assign("glance_custom.glm", glance_custom.glm, envir=.GlobalEnv)
+  assign("glance_custom.glm", glance_custom.glm, envir = .GlobalEnv)
   out <- modelsummary(mod, "data.frame")
-  expect_equal(dim(out), c(12, 4))
-  rm("glance_custom.glm", envir=.GlobalEnv)
+  expect_equal(dim(out), c(13, 4))
+  rm("glance_custom.glm", envir = .GlobalEnv)
 })
 
+test_that("glance_custom.glm preserve order", {
+  glance_custom.glm <- function(x) {
+    data.frame("test5" = 1.54, "test6" = "lkkd", "test3" = as.integer(2), "test4" = TRUE)
+  }
+  # beware of testthat scoping issue
+  assign("glance_custom.glm", glance_custom.glm, envir = .GlobalEnv)
+  out <- modelsummary(mod, "data.frame")
+  expect_true(all(out$term[10:13] == c("test5", "test6", "test3", "test4")))
+  rm("glance_custom.glm", envir = .GlobalEnv)
+})
 
 #################
 #  tidy_custom  #

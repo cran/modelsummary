@@ -4,6 +4,12 @@ random_string <- function() {
   paste(sample(letters, 30, replace=TRUE), collapse="")
 }
 
+test_that("escape group names", {
+  dat <- mtcars
+  dat$vs <- ifelse(dat$vs == 1, "yes_yes", "no_no")
+  expect_snapshot(datasummary_balance(~vs, data = dat, output = "latex", escape = TRUE))
+  expect_snapshot(datasummary_balance(~vs, data = dat, output = "latex", escape = FALSE))
+})
 
 test_that("stub is escaped in latex", {
   tmp <- data.frame(
@@ -76,7 +82,8 @@ test_that("palmer penguins was once broken with kableExtra", {
 test_that('variable name with spaces', {
   tmp <- mtcars
   colnames(tmp)[1] <- "testing spaces"
-  tab <- expect_error(datasummary_balance(~vs, data = tmp, output = "dataframe"), NA)
+  expect_error(datasummary_balance(~vs, data = tmp, output = "dataframe"), NA)
+  tab <- datasummary_balance(~vs, data = tmp, output = "dataframe")
   expect_equal(dim(tab), c(10, 7))
 })
 
@@ -143,7 +150,8 @@ test_that('more than two conditions', {
   tab <- datasummary_balance(~gear, tmp, output = 'dataframe', dinm = FALSE)
   expect_s3_class(tab, 'data.frame')
   expect_equal(dim(tab), c(14, 8))
-  tab <- expect_warning(datasummary_balance(~gear, tmp, output = 'dataframe', dinm = TRUE))
+  expect_warning(datasummary_balance(~gear, tmp, output = 'dataframe', dinm = TRUE))
+  tab <- suppressWarnings(datasummary_balance(~gear, tmp, output = 'dataframe', dinm = TRUE))
   expect_equal(dim(tab), c(14, 8))
 })
 
@@ -242,6 +250,59 @@ test_that('estimatr: clusters, blocks, weights', {
 })
 
 
+#############
+#  weights  #
+#############
+
+test_that("error on missing data in weights", {
+  set.seed(1024)
+  dat <- datw <- mtcars
+  datw$weights <- runif(nrow(datw))
+  datw$weights[2] <- NA
+  expect_error(datasummary_balance(~ am, data = datw), regexp = "include missing data")
+})
+
+test_that("warning: weights not supported for categorical", {
+  set.seed(1024)
+  datw <- mtcars
+  datw$weights <- runif(nrow(datw))
+  datw$am <- factor(datw$am)
+  datw$cyl <- factor(datw$cyl)
+  expect_warning(datasummary_balance(~ am, data = datw), regexp = "However")
+})
+
+test_that("numeric weights", {
+  set.seed(1024)
+  dat <- datw <- mtcars
+  datw$weights <- runif(nrow(datw))
+  tab <- datasummary_balance(~ am, data = datw, output = "data.frame", fmt = NULL)
+  tab_noweights <- datasummary_balance(~ am, data = dat, output = "data.frame", fmt = NULL)
+
+  # weights and no weights give different results
+  for (i in 2:ncol(tab)) {
+    expect_true(all(tab[[i]] != tab_noweights[[i]]))
+  }
+
+  # mean: manual
+  for (am in 0:1) {
+    idx <- datw$am == am
+    for (v in tab[[1]]) {
+      unknown <- weighted.mean(datw[[v]][idx], datw$weights[idx])
+      expect_equal(unknown, tab[tab[[1]] == v, sprintf("%s Mean", am)])
+    }
+  }
+
+  # sd: manual
+  for (am in 0:1) {
+    idx <- datw$am == am
+    for (v in tab[[1]]) {
+      unknown <- weighted.sd(datw[[v]][idx], datw$weights[idx])
+      expect_equal(unknown, tab[tab[[1]] == v, sprintf("%s Std. Dev.", am)])
+    }
+  }
+})
+
+
 ######################
 #  various datasets  #
 ######################
@@ -255,3 +316,6 @@ test_that('datasummary_balance: various datasets', {
   expect_equal(tab[1, 6], '5.5')
   expect_equal(tab[1, 7], '0.4')
 })
+
+
+

@@ -111,7 +111,7 @@ globalVariables(c('.', 'term', 'part', 'estimate', 'conf.high', 'conf.low',
 #' table-making functions. This allows users to pass arguments directly to
 #' `modelsummary` in order to affect the behavior of other functions behind
 #' the scenes. Examples include:
-#' * `broom::tidy(exponentiate=TRUE)` to exponentiate logistic regression
+#' * `broom::tidy(exponentiate=TRUE)` to exponentiate logistic regression. Please see the `modelsummary` vignette on the package website for important technical notes on this topic.
 #' * `performance::model_performance(metrics="RMSE")` to select goodness-of-fit statistics to extract using the `performance` package (must have set `options(modelsummary_get="easystats")` first).
 #' @return a regression table in a format determined by the `output` argument.
 #' @importFrom generics glance tidy
@@ -152,6 +152,7 @@ modelsummary <- function(
 
   ## sanity functions validate variables/settings
   ## sanitize functions validate & modify & initialize
+  checkmate::assert_string(gof_omit, null.ok = TRUE)
   sanitize_output(output)           # early
   sanitize_escape(escape)
   sanity_ellipsis(vcov, ...)        # before sanitize_vcov
@@ -160,6 +161,7 @@ modelsummary <- function(
   number_of_models <- max(length(models), length(vcov))
   estimate <- sanitize_estimate(estimate, number_of_models)
   group <- sanitize_group(group)
+  gof_map <- sanitize_gof_map(gof_map)
   sanity_group_map(group_map)
   sanity_statistic(statistic)
   sanity_conf_level(conf_level)
@@ -309,8 +311,6 @@ modelsummary <- function(
       gof[[i]] <- NULL
     }
   }
-
-
   f <- function(x, y) merge(x, y, all = TRUE, sort = FALSE, by = "term")
   gof <- Reduce(f, gof)
 
@@ -428,9 +428,13 @@ modelsummary <- function(
     ...
   )
 
-  if (!is.null(settings_get("output_file"))) {
+  # invisible return
+  if (!is.null(settings_get("output_file")) ||
+      output == "jupyter" ||
+      (output == "default" && settings_equal("output_default", "jupyter"))) {
     settings_rm()
     return(invisible(out))
+  # visible return
   } else {
     settings_rm()
     return(out)
@@ -515,38 +519,43 @@ map_omit_gof <- function(gof, gof_omit, gof_map) {
     return(gof)
   }
 
-  # row identifier
+  # row identifier as first column
   gof$part <- "gof"
-
   gof <- gof[, unique(c("part", "term", names(gof)))]
 
-  # omit
+  # gof_omit
   if (!is.null(gof_omit)) {
     idx <- !grepl(gof_omit, gof$term, perl = TRUE)
     gof <- gof[idx, , drop = FALSE]
   }
 
   # map
-  if (is.null(gof_map)) {
-    # assign here and not in the function definition because we use NULL to
-    # figure out if F-stat should be included by default for lm models.
-    gm_list <- get("gof_map", envir = loadNamespace("modelsummary"))
-    gm_list <- lapply(seq_len(nrow(gm_list)), function(i) gm_list[i, ])
-  } else if (inherits(gof_map, "data.frame")) {
-    gm_list <- lapply(seq_len(nrow(gof_map)), function(i) gof_map[i, ])
+  gm_raw <- sapply(gof_map, function(x) x$raw)
+  gm_clean <- sapply(gof_map, function(x) x$clean)
+  gm_omit <- try(sapply(gof_map, function(x) x$omit), silent = TRUE)
+
+  if (is.logical(gm_omit)) {
+    if (isTRUE(attr(gof_map, "whitelist"))) {
+      gof <- gof[gof$term %in% gm_clean[gm_omit == FALSE], , drop = FALSE]
+    } else {
+      gof <- gof[!gof$term %in% gm_clean[gm_omit == TRUE], , drop = FALSE]
+    }
   } else {
-    gm_list <- gof_map
+    if (isTRUE(attr(gof_map, "whitelist"))) {
+      gof <- gof[gof$term %in% gm_clean, , drop = FALSE]
+    }
   }
 
-  gm_raw <- sapply(gm_list, function(x) x$raw)
-  gm_clean <- sapply(gm_list, function(x) x$clean)
-  gof_names <- gm_clean[match(gof$term, gm_raw)]
-  gof_names[is.na(gof_names)] <- gof$term[is.na(gof_names)]
-  gof$term <- gof_names
+  tmp <- gm_clean[match(gof$term, gm_raw)]
+  tmp[is.na(tmp)] <- gof$term[is.na(tmp)]
+  gof$term <- tmp
   idx <- match(gof$term, gm_clean)
+  # hack to keep unmatched gof at the end of the table
+  # important for unknown glance_custom entries
+  idx[is.na(idx)] <- 1e6 + 1:sum(is.na(idx))
   gof <- gof[order(idx, gof$term), ]
 
-  # important for modelsummary_get="all"
+  # important for modelsummary_get = "all"
   gof <- unique(gof)
 
   return(gof)
@@ -704,7 +713,35 @@ group_reshape <- function(estimates, lhs, rhs, group_name) {
 
     ## group ~ model + term
     } else if (length(lhs) == 1 && "group" %in% lhs) {
-      stop("`group` formulas of the form group~model+term are not currently supported. To follow progress and put pressure on the `modelsummary` developers, visit: https://github.com/vincentarelbundock/modelsummary/issues/349")
+
+      out <- estimates
+      out <- reshape(
+         out,
+         varying = setdiff(colnames(estimates), c("part", "group", "term", "statistic")),
+         idvar = c("group", "term", "statistic"),
+         times = setdiff(colnames(estimates), c("part", "group", "term", "statistic")),
+         v.names = "value",
+         timevar = "model",
+         direction = "long")
+
+      # avoid duplicate row error
+      row.names(out) <- NULL 
+
+      ## preserve order of columns (rhs variables are ordered factors)
+      out[[lhs]] <- factor(out[[lhs]], levels = unique(out[[lhs]]))
+
+      out <- out[order(out[[rhs[1]]], out[[rhs[2]]]),]
+      out$idx_col <- paste(out[[rhs[1]]], "/", out[[rhs[2]]])
+      out[[rhs[1]]] <- out[[rhs[2]]] <- NULL
+      out <- reshape(out,
+                     timevar = "idx_col",
+                     idvar = setdiff(colnames(out), c("idx_col", "value")),
+                     direction = "wide")
+      row.names(out) <- NULL
+      colnames(out) <- gsub("^value\\.", "", colnames(out))
+
+      out <- out[order(out[[lhs]]), ]
+
     }
 
     out[out == "NA"] <- ""

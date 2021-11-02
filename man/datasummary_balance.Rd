@@ -26,8 +26,9 @@ datasummary_balance(
 on the right-hand side.}
 
 \item{data}{A data.frame (or tibble). If this data includes columns called
-"blocks", "clusters", and/or "weights", the "estimatr" package will
-consider them when calculating the difference in means.}
+"blocks", "clusters", and/or "weights", the "estimatr" package will consider
+them when calculating the difference in means. If there is a \code{weights}
+column, the reported mean and standard errors will also be weighted.}
 
 \item{output}{filename or object type (character string)
 \itemize{
@@ -88,7 +89,7 @@ table-making functions. This allows users to pass arguments directly to
 \code{modelsummary} in order to affect the behavior of other functions behind
 the scenes. Examples include:
 \itemize{
-\item \code{broom::tidy(exponentiate=TRUE)} to exponentiate logistic regression
+\item \code{broom::tidy(exponentiate=TRUE)} to exponentiate logistic regression. Please see the \code{modelsummary} vignette on the package website for important technical notes on this topic.
 \item \code{performance::model_performance(metrics="RMSE")} to select goodness-of-fit statistics to extract using the \code{performance} package (must have set \code{options(modelsummary_get="easystats")} first).
 }}
 }

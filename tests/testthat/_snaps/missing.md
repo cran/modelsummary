@@ -1,7 +1,7 @@
 # random effects variance components do not have standard errors and produce "empty"
 
     Code
-      cat(modelsummary(mod, output = "latex"))
+      cat(mod)
     Output
       \begin{table}
       \centering
@@ -14,7 +14,7 @@
       hp & \num{-0.066}\\
        & (\num{0.011})\\
       SD (Intercept) & \num{3.100}\\
-      SD (Observations) & \num{1.776}\\
+      SD (Observations) & \num{3.153}\\
       Num.Obs. & \num{32}\\
       R2 Marg. & \num{0.511}\\
       \midrule

@@ -1,3 +1,19 @@
+# modelsummary 0.9.3
+
+`modelsummary`:
+
+* F statistic takes into account `vcov` argument
+* Support group = group ~ model + term
+
+`datasummary_balance`:
+
+* Weighted means and standard deviations are now supported. Counts and percentages are not, but raise a warning.
+
+Misc:
+
+* Bugfix: rounding in LaTeX w/ siunitx and NaN entries.
+* output='jupyter' no longer prints an extraneous TRUE to the notebook
+
 # modelsummary 0.9.2
 
 `modelsummary`:
