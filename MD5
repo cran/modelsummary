@@ -1,6 +1,6 @@
-30088e983340e8c97dfe6b42b188f804 *DESCRIPTION
+194933c785ccff1ccaaf860e7e2668fa *DESCRIPTION
 07a12a1dd03b44770e94acb5eecf7f93 *NAMESPACE
-faf78aac7dce187d97bd5d2df2cd0aa9 *NEWS.md
+400743f241dd19be18fbec5f2d60c615 *NEWS.md
 c1c705427dd21bbad64d9c61a990f79b *R/coef_rename.R
 b464bf396230d3cf8537adacc3c215cd *R/convenience.R
 a411ef5c4e63f564815d60a44ae1e547 *R/datasummary.R
@@ -51,10 +51,10 @@ e657580c34e1189f198c18f16fc838c0 *R/tidy_custom.R
 b16ebfee03e0b29098f56f0ca245fb62 *R/utils_pad.R
 95a198a0d91a5753e1c59c80cbc03b6a *R/utils_print.R
 c240fd33dba9bdbcdb5cd48f0a9bacb4 *R/utils_replace.R
-7bcae83a0cff727fb857a8dcde3bd069 *R/utils_rounding.R
+6451e63a8162adb21c7984f3ead1ce51 *R/utils_rounding.R
 da58b5f5c32689edd9056a17de9547f6 *R/utils_stats.R
-f5dde5ad14f731766ae0e03d7a384284 *README.md
-83ae36178a7bec37171e6c06ee1dd834 *build/modelsummary.pdf
+a3774044bddabe3b836439e8e29791f6 *README.md
+f4d131d1ff0e20180acb55ee3b6f439e *build/modelsummary.pdf
 a5b6bd4b01d35c5b77281b357d922a66 *inst/WORDLIST
 a675e2ff55990a5a8f05761267ba96f7 *man/All.Rd
 e81042b67419127222f810c8f1a472a3 *man/AllObs.Rd
@@ -153,7 +153,7 @@ d4ef375e5e485cc6d3624e46b630c8b5 *tests/testthat/_snaps/modelplot/model-order.sv
 1db43c6e0b7ebda83802e842ee033f82 *tests/testthat/_snaps/modelplot/multiple-plots-facet.svg
 cfaaaf73c54643b18480b0bd0edf022a *tests/testthat/_snaps/modelplot/multiple-plots-vanilla.svg
 03b1fbd55defce314b6209ce42058554 *tests/testthat/_snaps/modelplot/vanilla.svg
-23829c8cdca304b9a157d8c7e99deb83 *tests/testthat/_snaps/rounding.md
+e8c49c7a60d4aa2b91f976e136eaf046 *tests/testthat/_snaps/rounding.md
 c2f24abc6de4d957b904d3773fd36931 *tests/testthat/helper-requiet.R
 845c461fb60c20b7bf88039be707c009 *tests/testthat/known_output/add_columns_1.R
 4caa7a5e7244d5019f548217f8c9c230 *tests/testthat/known_output/background_color.html
@@ -257,7 +257,7 @@ d0534f084bf2991af8e24ee1e1b7c88d *tests/testthat/test-modelsummary_wide.R
 299b18651ba4d2da1a4b4ca721171c4a *tests/testthat/test-pkg-fixest.R
 bf08d3fb6d0ba282737a8b53825c54bd *tests/testthat/test-pkg-stats.R
 738e197850a5acf29a9999c490a68611 *tests/testthat/test-rmarkdown.R
-44aef63f30379180d4e25f12ae471c91 *tests/testthat/test-rounding.R
+f2ebd8ebceb656681ae6301e07727fb0 *tests/testthat/test-rounding.R
 15c0bc49f4de463ce6e0132da0c55fee *tests/testthat/test-stars.R
 3281d54ded1ac8ef1c3c2f2579c27c9f *tests/testthat/test-statistic.R
 5d470ecb5bb9f0b90f4096e24bc473e8 *tests/testthat/test-statistic_override.R

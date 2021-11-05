@@ -9,7 +9,7 @@ Description: Create beautiful and customizable tables to summarize several
     and it can produce tables in HTML, LaTeX, Word, Markdown, PDF, PowerPoint,
     Excel, RTF, JPG, or PNG. Tables can easily be embedded in 'Rmarkdown' or 
     'knitr' dynamic documents.
-Version: 0.9.3
+Version: 0.9.4
 Authors@R: c(person("Vincent", "Arel-Bundock", 
                    email = "vincent.arel-bundock@umontreal.ca", 
                    role = c("aut", "cre"),
@@ -72,7 +72,7 @@ Collate: 'coef_rename.R' 'convenience.R' 'datasummary.R'
         'utils_print.R' 'utils_replace.R' 'utils_rounding.R'
         'utils_stats.R'
 NeedsCompilation: no
-Packaged: 2021-11-02 14:37:57 UTC; vincent
+Packaged: 2021-11-05 14:33:30 UTC; vincent
 Author: Vincent Arel-Bundock [aut, cre]
     (<https://orcid.org/0000-0003-2042-7063>),
   Joachim Gassen [ctb] (<https://orcid.org/0000-0003-4364-2911>),
@@ -83,4 +83,4 @@ Author: Vincent Arel-Bundock [aut, cre]
   Grant McDermott [ctb] (<https://orcid.org/0000-0001-7883-8573>)
 Maintainer: Vincent Arel-Bundock <vincent.arel-bundock@umontreal.ca>
 Repository: CRAN
-Date/Publication: 2021-11-02 15:20:02 UTC
+Date/Publication: 2021-11-05 16:20:02 UTC
