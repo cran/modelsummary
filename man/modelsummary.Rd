@@ -108,7 +108,10 @@ from the table using \code{grepl(perl=TRUE)}. This argument uses perl-compatible
 \item{coef_rename}{named character vector or function which returns a named
 vector. Values of the vector refer to the variable names that will appear
 in the table. Names refer to the original term names stored in the model
-object, e.g. c("hp:mpg"="hp X mpg") for an interaction term.}
+object, e.g. c("hp:mpg"="hp X mpg") for an interaction term.
+If you provide a function to \code{coef_rename}, \code{modelsummary} will create a named
+vector for you by deriving the new variable names from the vector of original
+term names with your function.}
 
 \item{gof_map}{rename, reorder, and omit goodness-of-fit statistics and other
 model information. This argument accepts 3 types of values:
@@ -192,8 +195,7 @@ are only stored in a \code{modelsummary_list} if explicitly requested:
 \details{
 
 
-\verb{backup <- modelsummary(models, output = "modelsummary_list"}
-\verb{                       statistic = "conf.int")}
+\code{backup <- modelsummary(models, output = "modelsummary_list", statistic = "conf.int")}
 \code{modelsummary(backup)}
 
 When a file name with a valid extension is supplied to the \code{output} argument,
@@ -341,7 +343,9 @@ modelsummary(
               "Newey Lewis & the News" = "NeweyWest"))
 
 # coef_rename
-modelsummary(models, coef_map = c('Volume' = 'Large', 'Height' = 'Tall'))
+modelsummary(models, coef_rename = c('Volume' = 'Large', 'Height' = 'Tall'))
+modelsummary(models, coef_rename = toupper)
+modelsummary(models, coef_rename = coef_rename)
 
 # coef_map
 modelsummary(models, coef_map = c('Volume' = 'Large', 'Height' = 'Tall'))
@@ -362,6 +366,13 @@ modelsummary(models, add_rows = rows)
 
 # notes
 modelsummary(models, notes = list('A first note', 'A second note'))
+
+# gof_map: tribble
+library(tibble)
+gm <- tribble(
+  ~raw,        ~clean,      ~fmt,
+  "r.squared", "R Squared", 5)
+modelsummary(models, gof_map = gm)
 
 # gof_map: data.frame
 gm <- modelsummary::gof_map

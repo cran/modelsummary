@@ -9,7 +9,7 @@ Description: Create beautiful and customizable tables to summarize several
     and it can produce tables in HTML, LaTeX, Word, Markdown, PDF, PowerPoint,
     Excel, RTF, JPG, or PNG. Tables can easily be embedded in 'Rmarkdown' or 
     'knitr' dynamic documents.
-Version: 0.9.4
+Version: 0.9.5
 Authors@R: c(person("Vincent", "Arel-Bundock", 
                    email = "vincent.arel-bundock@umontreal.ca", 
                    role = c("aut", "cre"),
@@ -46,11 +46,12 @@ Imports: broom, checkmate, generics, glue, insight, kableExtra (>=
 Suggests: betareg, bookdown, broom.mixed, covr, digest, DT, estimatr,
         fixest, flextable, gamlss, ggplot2, gt (>= 0.3.0), huxtable,
         IRdisplay, knitr, lfe, lme4, lmtest, magick, officer,
-        rmarkdown, sandwich, spelling, testthat, MASS, mice, nnet,
-        pscl, vdiffr
+        rmarkdown, sandwich, spelling, testthat, tibble, MASS, mice,
+        nnet, pscl, vdiffr
 License: GPL-3
 Encoding: UTF-8
 Config/testthat/edition: 3
+Config/testthat/start-first: pkg-lme4
 Language: en-US
 RoxygenNote: 7.1.2
 Collate: 'coef_rename.R' 'convenience.R' 'datasummary.R'
@@ -72,7 +73,7 @@ Collate: 'coef_rename.R' 'convenience.R' 'datasummary.R'
         'utils_print.R' 'utils_replace.R' 'utils_rounding.R'
         'utils_stats.R'
 NeedsCompilation: no
-Packaged: 2021-11-05 14:33:30 UTC; vincent
+Packaged: 2022-01-10 17:01:10 UTC; vincent
 Author: Vincent Arel-Bundock [aut, cre]
     (<https://orcid.org/0000-0003-2042-7063>),
   Joachim Gassen [ctb] (<https://orcid.org/0000-0003-4364-2911>),
@@ -83,4 +84,4 @@ Author: Vincent Arel-Bundock [aut, cre]
   Grant McDermott [ctb] (<https://orcid.org/0000-0001-7883-8573>)
 Maintainer: Vincent Arel-Bundock <vincent.arel-bundock@umontreal.ca>
 Repository: CRAN
-Date/Publication: 2021-11-05 16:20:02 UTC
+Date/Publication: 2022-01-10 17:32:48 UTC
