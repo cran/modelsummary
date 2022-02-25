@@ -1,3 +1,14 @@
+# modelsummary 0.9.6
+
+`datasummary_balance`:
+
+* Accepts `~ 1` as a formula to summarize all data.
+
+Misc:
+
+* documentation improvements
+* RMSE included by default in models of class `lm`
+
 # modelsummary 0.9.5
 
 `modelsummary`:

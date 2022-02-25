@@ -23,7 +23,8 @@ datasummary_balance(
 }
 \arguments{
 \item{formula}{a one-sided formula with the "condition" or "column" variable
-on the right-hand side.}
+on the right-hand side. ~1 can be used to show summary statistics for the
+full data set}
 
 \item{data}{A data.frame (or tibble). If this data includes columns called
 "blocks", "clusters", and/or "weights", the "estimatr" package will consider
@@ -32,8 +33,8 @@ column, the reported mean and standard errors will also be weighted.}
 
 \item{output}{filename or object type (character string)
 \itemize{
-\item Supported filename extensions: .html, .tex, .md, .txt, .png, .jpg.
-\item Supported object types: "default", "html", "markdown", "latex", "latex_tabular", "data.frame", "modelsummary_list", "gt", "kableExtra", "huxtable", "flextable", "jupyter".
+\item Supported filename extensions: .docx, .html, .tex, .md, .txt, .png, .jpg.
+\item Supported object types: "default", "html", "markdown", "latex", "latex_tabular", "data.frame", "gt", "kableExtra", "huxtable", "flextable", "jupyter". The "modelsummary_list" value produces a lightweight object which can be saved and fed back to the \code{modelsummary} function.
 \item Warning: Users should not supply a file name to the \code{output} argument if they intend to customize the table with external packages. See the 'Details' section.
 \item LaTeX compilation requires the \code{booktabs} and \code{siunitx} packages, but \code{siunitx} can be disabled or replaced with global options. See the 'Details' section.
 \item The default output formats and table-making packages can be modified with global options. See the 'Details' section.
@@ -44,7 +45,7 @@ column, the reported mean and standard errors will also be weighted.}
 \item integer: the number of digits to keep after the period \code{format(round(x, fmt), nsmall=fmt)}
 \item character: passed to the \code{sprintf} function (e.g., '\%.3f' keeps 3 digits with trailing zero). See \code{?sprintf}
 \item function: returns a formatted character string.
-\item Note on LaTeX formatting: To ensure proper typography, all numeric entries are enclosed in the \verb{\\num\{\}} command from the \code{siunitx} LaTeX package by default. This behavior can be altered with global options. See the 'Details' section.
+\item LaTeX output: To ensure proper typography, all numeric entries are enclosed in the \verb{\\num\{\}} command, which requires the \code{siunitx} package to be loaded in the LaTeX preamble. This behavior can be altered with global options. See the 'Details' section.
 }}
 
 \item{title}{string}
@@ -94,8 +95,9 @@ the scenes. Examples include:
 }}
 }
 \description{
-Balance table: Summary statistics for different subsets of the data (e.g.,
-control and treatment groups)
+Creates balance tables with summary statistics for different subsets of the
+data (e.g., control and treatment groups). It can also be used to create
+summary tables for full data sets.
 }
 \section{Global Options}{
 
