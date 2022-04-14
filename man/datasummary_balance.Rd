@@ -53,7 +53,7 @@ column, the reported mean and standard errors will also be weighted.}
 \item{notes}{list or vector of notes to append to the bottom of the table.}
 
 \item{align}{A string with a number of characters equal to the number of columns in
-the table (e.g., \code{align = "lcc"}).  Valid characters: l, c, r, S.
+the table (e.g., \code{align = "lcc"}).  Valid characters: l, c, r, d.
 \itemize{
 \item "l": left-aligned column
 \item "c": centered column
@@ -86,12 +86,12 @@ installed. If \code{data} includes columns named "blocks", "clusters", or
 prevent the file from compiling/displaying. This setting does not affect captions or notes.}
 
 \item{...}{all other arguments are passed through to the extractor and
-table-making functions. This allows users to pass arguments directly to
-\code{modelsummary} in order to affect the behavior of other functions behind
-the scenes. Examples include:
+table-making functions (by default \code{broom::tidy} and \code{kableExtra::kbl}, but
+this can be customized). This allows users to pass arguments directly to
+\code{modelsummary} in order to affect the behavior of other functions behind the
+scenes. For example,
 \itemize{
-\item \code{broom::tidy(exponentiate=TRUE)} to exponentiate logistic regression. Please see the \code{modelsummary} vignette on the package website for important technical notes on this topic.
-\item \code{performance::model_performance(metrics="RMSE")} to select goodness-of-fit statistics to extract using the \code{performance} package (must have set \code{options(modelsummary_get="easystats")} first).
+\item \code{performance::model_performance(metrics="RMSE")} to select goodness-of-fit statistics to extract using the \code{performance} package (must have set \code{options(modelsummary_get="easystats")} first). This can be useful for some models when statistics take a long time to compute.
 }}
 }
 \description{

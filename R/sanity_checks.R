@@ -43,7 +43,8 @@ sanity_ellipsis <- function(vcov, ...) {
   ellip <- list(...)
 
   if ("statistic_vertical" %in% names(ellip)) {
-    warning("The `statistic_vertical` argument is deprecated and will be ignored. To display uncertainty estimates next to your coefficients, use a `glue` string in the `estimate` argument. See `?modelsummary`")
+    warning("The `statistic_vertical` argument is deprecated and will be ignored. To display uncertainty estimates next to your coefficients, use a `glue` string in the `estimate` argument. See `?modelsummary`",
+            call. = FALSE)
   }
 
   if (!is.null(vcov) && ("statistic_override" %in% names(ellip))) {
@@ -83,6 +84,22 @@ sanity_align <- function(align, estimate = NULL, statistic = NULL, stars = FALSE
         }
         settings_set("siunitx_scolumns", TRUE)
     }
+}
+
+
+#' sanity check
+#'
+#' @noRd
+sanitize_exponentiate <- function(exponentiate, number_of_models) {
+  checkmate::assert(
+    checkmate::check_logical(exponentiate, len = 1),
+    checkmate::check_logical(exponentiate, len = number_of_models))
+  if (length(exponentiate) == 1) {
+    out <- rep(exponentiate, number_of_models)
+  } else {
+    out <- exponentiate
+  }
+  return(out)
 }
 
 
@@ -218,13 +235,6 @@ sanity_factory <- function(factory_dict) {
 #'
 #' @noRd
 sanity_stars <- function(stars) {
-  # if (isTRUE(stars)) {
-    # rlang::warn(
-    #   message = "In version 0.8.0 of the `modelsummary` package, the default significance markers produced by the `stars=TRUE` argument were changed to be consistent with R's defaults.",
-    #   .frequency = "once",
-    #   .frequency_id = "stars_true_consistency")
-  # }
-
   checkmate::assert(
     checkmate::check_flag(stars),
     checkmate::check_numeric(stars, lower = 0, upper = 1, names = 'unique')
@@ -296,6 +306,19 @@ sanity_tidy <- function(tidy_output, tidy_custom, estimate, statistic, modelclas
   }
 }
 
+
+sanity_ds_data <- function(formula, data) {
+  checkmate::assert_data_frame(data)
+  # labelled data does not play well with All()
+  is_labelled <- any(sapply(data, inherits, "haven_labelled"))
+  is_all <- any(grepl("^All\\(", as.character(formula)))
+  if (is_all && is_labelled) {
+    msg <- "It is not safe to use labelled data with the `datasummary()` family of functions. We recommend that you convert labelled variables to standard vectors using `as.vector()` or `as.numeric()` before calling a `datasummary_*()` function."
+    warn_once(msg, id = "datasummary_all_labelled")
+  }
+}
+
+  
 #' sanity check: datasummary
 #'
 #' @noRd
@@ -306,9 +329,11 @@ sanity_ds_nesting_factor <- function(formula, data) {
   termlabs <- labels(stats::terms(formula))
   warn <- any(sapply(idx, function(x) any(grepl(x, termlabs))))
   if (warn) {
-    warning('You are trying to create a nested table by applying the * operator to a character or a logical variable. It is usually a good idea to convert such variables to a factor before calling datasummary: dat$y<-as.factor(dat$y). Alternatively, you could wrap your categorical variable inside Factor() in the datasummary call itself: datasummary(x ~ Factor(y) * z, data)\n')
+    warning('You are trying to create a nested table by applying the * operator to a character or a logical variable. It is usually a good idea to convert such variables to a factor before calling datasummary: dat$y<-as.factor(dat$y). Alternatively, you could wrap your categorical variable inside Factor() in the datasummary call itself: datasummary(x ~ Factor(y) * z, data)\n',
+            call. = FALSE)
   }
 }
+
 
 #' sanity check: datasummary_balance
 #'

@@ -87,12 +87,14 @@ datasummary_balance <- function(formula,
 
     if (dinm && !isTRUE(check_dependency("estimatr"))) {
         dinm <- FALSE
-        warning("Please install the `estimatr` package or set `dinm=FALSE` to suppress this warning.")
+        warning("Please install the `estimatr` package or set `dinm=FALSE` to suppress this warning.",
+                call. = FALSE)
     }
 
     if (dinm && (length(unique(data[[rhs]])) > 2)) {
         dinm <- FALSE
-        warning("The difference in means can only be calculate with two groups in the right-hand side variable. Set `dinm=FALSE` to suppress this warning.")
+        warning("The difference in means can only be calculate with two groups in the right-hand side variable. Set `dinm=FALSE` to suppress this warning.",
+                call. = FALSE)
     }
 
     ## factors
@@ -250,9 +252,7 @@ datasummary_balance <- function(formula,
     ## weights warning
     if (isTRUE(any_factor) && "weights" %in% colnames(data)) {
       msg <- 'When the `data` used in `datasummary_balance` contains a "weights" column, the means, standard deviations, difference in means, and standard errors of numeric variables are adjusted to account for weights. However, the counts and percentages for categorical variables are not adjusted.'
-      rlang::warn( message = msg,
-                  .frequency = "once",
-                  .frequency_id = "factor_weights_not_supported")
+      warning(msg, call. = FALSE)
     }
 
     ## make table
@@ -337,6 +337,10 @@ sanitize_datasummary_balance_data <- function(formula, data) {
   # tables::tabular does not play well with tibbles
   data <- as.data.frame(data)
 
+  # tables::All() does not play well with labelled data (hack formula which
+  # includes All())
+  sanity_ds_data(All(data) ~ x + y, data)
+
   if (formula != ~1) {
 
       # rhs condition variable
@@ -391,11 +395,13 @@ sanitize_datasummary_balance_data <- function(formula, data) {
   }
 
   if (!is.null(drop_too_many_levels)) {
-    warning(sprintf("These variables were omitted because they include more than 50 levels: %s.", paste(drop_too_many_levels, collapse = ", ")))
+    warning(sprintf("These variables were omitted because they include more than 50 levels: %s.", paste(drop_too_many_levels, collapse = ", ")),
+            call. = FALSE)
   }
 
   if (!is.null(drop_entirely_na)) {
-    warning(sprintf("These variables were omitted because they are entirely missing: %s.", paste(drop_entirely_na, collapse = ", ")))
+    warning(sprintf("These variables were omitted because they are entirely missing: %s.", paste(drop_entirely_na, collapse = ", ")),
+            call. = FALSE)
   }
 
   return(data)

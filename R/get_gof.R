@@ -88,7 +88,8 @@ performance::model_performance(model)
 One of these functions must return a one-row `data.frame`. The `modelsummary` website explains how to summarize unsupported models or add support for new models yourself:
 
 https://vincentarelbundock.github.io/modelsummary/articles/modelsummary.html',
-class(model)[1]))
+class(model)[1]),
+            call. = FALSE)
 }
 
 
@@ -134,10 +135,8 @@ get_gof_parameters <- function(model, ...) {
       # this is the list of "common" metrics in `performance`
       # documentation, but their code includes R2_adj, which produces
       # a two-row glance and gives us issues.
-      msg <- '`modelsummary` uses the `performance` package to extract goodness-of-fit statistics from models of this class. You can specify the statistics you wish to compute by supplying a `metrics` argument to `modelsummary`, which will then push it forward to `performance`: `modelsummary(mod,metrics=c("RMSE","R2")` See `?performance::performance` for more information. Please note that some statistics are expensive to compute.'
-      rlang::warn( message = msg,
-                  .frequency = "once",
-                  .frequency_id = "performance_gof_expensive")
+      msg <- '`modelsummary` uses the `performance` package to extract goodness-of-fit statistics from models of this class. You can specify the statistics you wish to compute by supplying a `metrics` argument to `modelsummary`, which will then push it forward to `performance`: `modelsummary(mod,metrics=c("RMSE","R2")` Alternatively, you can use `metrics="all"`, but note that some statistics are expensive to compute. See `?performance::performance` for details.'
+      warn_once(msg, "performance_gof_expensive")
 
       metrics <- c("RMSE", "LOOIC", "WAIC")
     } else {

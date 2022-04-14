@@ -61,6 +61,10 @@ globalVariables(c('.', 'term', 'part', 'estimate', 'conf.high', 'conf.low',
 #' * named list of `length(models)` variance-covariance matrices with row and column names equal to the names of your coefficient estimates.
 #' * a named list of length(models) vectors with names equal to the names of your coefficient estimates. See 'Examples' section below. Warning: since this list of vectors can include arbitrary strings or numbers, `modelsummary` cannot automatically calculate p values. The `stars` argument may thus use incorrect significance thresholds when `vcov` is a list of vectors.
 #' @param conf_level confidence level to use for confidence intervals
+#' @param exponentiate TRUE, FALSE, or logical vector of length equal to the
+#' number of models. If TRUE, the `estimate`, `conf.low`, and `conf.high`
+#' statistics are exponentiated, and the `std.error` is transformed to
+#' `exp(estimate)*std.error`.
 #' @param coef_map character vector. Subset, rename, and reorder coefficients.
 #' Coefficients omitted from this vector are omitted from the table. The order
 #' of the vector determines the order of the table.  `coef_map` can be a named
@@ -78,8 +82,9 @@ globalVariables(c('.', 'term', 'part', 'estimate', 'conf.high', 'conf.low',
 #' vector for you by deriving the new variable names from the vector of original
 #' term names with your function.
 #' @param gof_map rename, reorder, and omit goodness-of-fit statistics and other
-#'   model information. This argument accepts 3 types of values:
+#'   model information. This argument accepts 4 types of values:
 #' * NULL (default): the `modelsummary::gof_map` dictionary is used for formatting, and all unknown statistic are included.
+#' * character vector such as `c("rmse", "nobs", "r.squared")`. Elements correspond to colnames in the data.frame produced by `get_gof(model)`. The default dictionary is used to format and rename statistics.
 #' * data.frame with 3 columns named "raw", "clean", "fmt". Unknown statistics are omitted. See the 'Examples' section below.
 #' * list of lists, each of which includes 3 elements named "raw", "clean", "fmt". Unknown statistics are omitted. See the 'Examples section below'.
 #' @param gof_omit string regular expression. Omits all matching gof statistics from
@@ -107,7 +112,7 @@ globalVariables(c('.', 'term', 'part', 'estimate', 'conf.high', 'conf.low',
 #' * `"{estimate} ({std.error}){stars}"`
 #' * `"{estimate} [{conf.low}, {conf.high}]"`
 #' @param align A string with a number of characters equal to the number of columns in
-#' the table (e.g., `align = "lcc"`).  Valid characters: l, c, r, S.
+#' the table (e.g., `align = "lcc"`).  Valid characters: l, c, r, d.
 #' * "l": left-aligned column
 #' * "c": centered column
 #' * "r": right-aligned column
@@ -118,11 +123,11 @@ globalVariables(c('.', 'term', 'part', 'estimate', 'conf.high', 'conf.low',
 #' @param escape boolean TRUE escapes or substitutes LaTeX/HTML characters which could
 #' prevent the file from compiling/displaying. This setting does not affect captions or notes.
 #' @param ... all other arguments are passed through to the extractor and
-#' table-making functions. This allows users to pass arguments directly to
-#' `modelsummary` in order to affect the behavior of other functions behind
-#' the scenes. Examples include:
-#' * `broom::tidy(exponentiate=TRUE)` to exponentiate logistic regression. Please see the `modelsummary` vignette on the package website for important technical notes on this topic.
-#' * `performance::model_performance(metrics="RMSE")` to select goodness-of-fit statistics to extract using the `performance` package (must have set `options(modelsummary_get="easystats")` first).
+#' table-making functions (by default `broom::tidy` and `kableExtra::kbl`, but
+#' this can be customized). This allows users to pass arguments directly to
+#' `modelsummary` in order to affect the behavior of other functions behind the
+#' scenes. For example,
+#' * `performance::model_performance(metrics="RMSE")` to select goodness-of-fit statistics to extract using the `performance` package (must have set `options(modelsummary_get="easystats")` first). This can be useful for some models when statistics take a long time to compute.
 #' @return a regression table in a format determined by the `output` argument.
 #' @importFrom generics glance tidy
 #' @export
@@ -134,6 +139,7 @@ modelsummary <- function(
   statistic   = "std.error",
   vcov        = NULL,
   conf_level  = 0.95,
+  exponentiate = FALSE,
   stars       = FALSE,
   coef_map    = NULL,
   coef_omit   = NULL,
@@ -164,6 +170,7 @@ modelsummary <- function(
   vcov <- sanitize_vcov(vcov, length(models), ...)
   number_of_models <- max(length(models), length(vcov))
   estimate <- sanitize_estimate(estimate, number_of_models)
+  exponentiate <- sanitize_exponentiate(exponentiate, number_of_models)
   group <- sanitize_group(group)
   gof_map <- sanitize_gof_map(gof_map)
   sanity_group_map(group_map)
@@ -226,6 +233,7 @@ modelsummary <- function(
       conf_level = conf_level,
       stars      = stars,
       group_name = group$group_name,
+      exponentiate = exponentiate[[i]],
       ...)
 
     # before merging to collapse
@@ -295,7 +303,8 @@ modelsummary <- function(
   if (is.null(group$group_name) && "term" %in% group$lhs) {
     idx <- paste(est$term, est$statistic)
     if (anyDuplicated(idx) > 1) {
-      warning('The table includes duplicate term names. This can happen when `coef_map` or `coef_rename` are misused. This can also happen when a model produces "grouped" terms, such as in multinomial logit or gamlss models. You may want to call `get_estimates(model)` to see how estimates are labelled internally, and use the `group` argument of the `modelsummary` function.')
+      warning('The table includes duplicate term names. This can happen when `coef_map` or `coef_rename` are misused. This can also happen when a model produces "grouped" terms, such as in multinomial logit or gamlss models. You may want to call `get_estimates(model)` to see how estimates are labelled internally, and use the `group` argument of the `modelsummary` function.',
+              call. = FALSE)
     }
   }
 
@@ -797,7 +806,8 @@ get_list_of_modelsummary_lists <- function(models, conf_level, vcov, ...) {
 
     if (!is.null(flag_vcov)) {
         j <- ifelse(length(models) == 1, 1, flag_vcov)
-        warning(sprintf('When the `vcov` argument is set to "iid", "classical", or "constant", `modelsummary` extracts the default variance-covariance matrix from the model object. For objects of class `%s`, the default vcov is not always IID. Please make sure that the standard error label matches the numeric results in the table. Note that the `vcov` argument accepts a named list for users who want to customize the standard error labels in their regression tables.', class(models[[j]])[1]))
+        warning(sprintf('When the `vcov` argument is set to "iid", "classical", or "constant", `modelsummary` extracts the default variance-covariance matrix from the model object. For objects of class `%s`, the default vcov is not always IID. Please make sure that the standard error label matches the numeric results in the table. Note that the `vcov` argument accepts a named list for users who want to customize the standard error labels in their regression tables.', class(models[[j]])[1]),
+                call. = FALSE)
     }
 
     # extract

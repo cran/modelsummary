@@ -1,7 +1,9 @@
 skip_if(getRversion() < '3.6.6') # change in .Rng
 requiet("fixest")
+skip_if_not_installed("fixest", minimum_version = "0.10.4")
 
 test_that("simple model", {
+  skip_if_not_installed("fixest", minimum_version = "0.10.5")# Issue #291 on fixest repo
   mod <- feols(Sepal.Length ~ Sepal.Width + Petal.Length | Species, iris)
   raw <- modelsummary(mod, "data.frame")
   expect_s3_class(raw, "data.frame")
@@ -44,4 +46,19 @@ test_that("fixest std.error labels", {
   expect_false("Std.Errors" %in% tab1$term)
   expect_false("Std.Errors" %in% tab2$term)
   expect_true("Std.Errors" %in% tab3$term)
+})
+
+
+test_that("regression: 
+          issue #450", {
+    requiet("sandwich")
+    mod <- feols(mpg ~ wt, data = mtcars)
+
+    se1 <- sqrt(diag(vcovHC(mod, type = "HC3")))
+    se2 <- get_estimates(mod, vcov = "HC3")$std.error
+    expect_equal(se2, se1, ignore_attr = TRUE)
+
+    se1 <- sqrt(diag(vcovHC(mod, type = "HC1")))
+    se2 <- get_estimates(mod, vcov = "HC1")$std.error
+    expect_equal(se2, se1, ignore_attr = TRUE)
 })

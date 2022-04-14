@@ -117,9 +117,10 @@ vector for you by deriving the new variable names from the vector of original
 term names with your function.}
 
 \item{gof_map}{rename, reorder, and omit goodness-of-fit statistics and other
-model information. This argument accepts 3 types of values:
+model information. This argument accepts 4 types of values:
 \itemize{
 \item NULL (default): the \code{modelsummary::gof_map} dictionary is used for formatting, and all unknown statistic are included.
+\item character vector such as \code{c("rmse", "nobs", "r.squared")}. Elements correspond to colnames in the data.frame produced by \code{get_gof(model)}. The default dictionary is used to format and rename statistics.
 \item data.frame with 3 columns named "raw", "clean", "fmt". Unknown statistics are omitted. See the 'Examples' section below.
 \item list of lists, each of which includes 3 elements named "raw", "clean", "fmt". Unknown statistics are omitted. See the 'Examples section below'.
 }}
@@ -133,7 +134,7 @@ You can define a "position" attribute of integers to set the row positions.
 See Examples section below.}
 
 \item{align}{A string with a number of characters equal to the number of columns in
-the table (e.g., \code{align = "lcc"}).  Valid characters: l, c, r, S.
+the table (e.g., \code{align = "lcc"}).  Valid characters: l, c, r, d.
 \itemize{
 \item "l": left-aligned column
 \item "c": centered column
@@ -154,12 +155,12 @@ the table (e.g., \code{align = "lcc"}).  Valid characters: l, c, r, S.
 "vertical"}
 
 \item{...}{all other arguments are passed through to the extractor and
-table-making functions. This allows users to pass arguments directly to
-\code{modelsummary} in order to affect the behavior of other functions behind
-the scenes. Examples include:
+table-making functions (by default \code{broom::tidy} and \code{kableExtra::kbl}, but
+this can be customized). This allows users to pass arguments directly to
+\code{modelsummary} in order to affect the behavior of other functions behind the
+scenes. For example,
 \itemize{
-\item \code{broom::tidy(exponentiate=TRUE)} to exponentiate logistic regression. Please see the \code{modelsummary} vignette on the package website for important technical notes on this topic.
-\item \code{performance::model_performance(metrics="RMSE")} to select goodness-of-fit statistics to extract using the \code{performance} package (must have set \code{options(modelsummary_get="easystats")} first).
+\item \code{performance::model_performance(metrics="RMSE")} to select goodness-of-fit statistics to extract using the \code{performance} package (must have set \code{options(modelsummary_get="easystats")} first). This can be useful for some models when statistics take a long time to compute.
 }}
 }
 \value{
