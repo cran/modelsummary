@@ -16,6 +16,17 @@ factory_dataframe <- function(tab,
 
   out <- tab
 
+  # empty higher level headers in datasummary
+  colnames(out) <- gsub("^\\|\\|\\|\\|", "", colnames(out))
+  colnames(out) <- gsub("\\|\\|\\|\\|$", "", colnames(out))
+
+  # secret internal arguments
+  if (!isTRUE(list(...)$internal_call)) {
+    colnames(out) <- gsub("\\|\\|\\|\\|", " / ", colnames(out))
+    colnames(out) <- ifelse(colnames(out) == " ", colnames(out), trimws(colnames(out)))
+    colnames(out) <- pad(trimws(colnames(out)))
+  }
+
   # factor -> character (useful for R<4.0.0)
   for (i in seq_along(out)) {
     if (is.factor(out[[i]])) {

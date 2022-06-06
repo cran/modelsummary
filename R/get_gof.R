@@ -6,8 +6,14 @@
 #' @export
 get_gof <- function(model, vcov_type = NULL, ...) {
 
+    # secret argument passed internally
+    # gof_map = NULL: no value supplied by the user
+    # gof_map = NA: the user explicitly wants to exclude everything
+    dots <- list(...)
+    if (isTRUE(is.na(dots$gof_map))) return(NULL)
+
     # priority
-    get_priority <- getOption("modelsummary_get", default = "broom")
+    get_priority <- getOption("modelsummary_get", default = "easystats")
     checkmate::assert_choice(
       get_priority,
       choices = c("broom", "easystats", "parameters", "performance", "all"))
@@ -82,8 +88,8 @@ get_gof <- function(model, vcov_type = NULL, ...) {
 '`modelsummary could not extract goodness-of-fit statistics from a model
 of class "%s". The package tried a sequence of 2 helper functions:
 
-broom::glance(model)
 performance::model_performance(model)
+broom::glance(model)
 
 One of these functions must return a one-row `data.frame`. The `modelsummary` website explains how to summarize unsupported models or add support for new models yourself:
 
@@ -122,12 +128,21 @@ get_gof_broom <- function(model, ...) {
 #' @keywords internal
 get_gof_parameters <- function(model, ...) {
 
-  # select appropriate metrics to compute
+  dots <- list(...)
+
+  # user explicitly supplies a "metrics" argument
   if ("metrics" %in% names(list(...))) {
-    out <- suppressWarnings(try(
-      performance::model_performance(model, ...)))
+    # "none" is a custom option here
+    if (isTRUE(dots$metrics == "none")) {
+      out <- NULL
+
+    } else {
+      out <- suppressMessages(suppressWarnings(try(
+        performance::model_performance(model, verbose = FALSE, ...))))
+    }
+
+  # defaults for stan models: exclude r2_adjusted because veeeery slow
   } else {
-    # stan models: r2_adjusted is veeeery slow
     if (inherits(model, "stanreg") ||
         inherits(model, "brmsfit") ||
         inherits(model, "stanmvreg") ||
@@ -135,23 +150,28 @@ get_gof_parameters <- function(model, ...) {
       # this is the list of "common" metrics in `performance`
       # documentation, but their code includes R2_adj, which produces
       # a two-row glance and gives us issues.
-      msg <- '`modelsummary` uses the `performance` package to extract goodness-of-fit statistics from models of this class. You can specify the statistics you wish to compute by supplying a `metrics` argument to `modelsummary`, which will then push it forward to `performance`: `modelsummary(mod,metrics=c("RMSE","R2")` Alternatively, you can use `metrics="all"`, but note that some statistics are expensive to compute. See `?performance::performance` for details.'
+      msg <- '`modelsummary` uses the `performance` package to extract goodness-of-fit statistics from models of this class. You can specify the statistics you wish to compute by supplying a `metrics` argument to `modelsummary`, which will then push it forward to `performance`. Acceptable values are: "all", "common", "none", or a character vector of metrics names. For example: `modelsummary(mod, metrics = c("RMSE", "R2")` Note that some metrics are computationally expensive. See `?performance::performance` for details.'
       warn_once(msg, "performance_gof_expensive")
-
       metrics <- c("RMSE", "LOOIC", "WAIC")
+
+    } else if (inherits(model, "fixest") && isTRUE(utils::packageVersion("insight") < "0.17.1.7")) {
+      metrics <- c("RMSE", "R2", "R2_adj")
+
     } else {
-      metrics <- "all"
+      metrics <- "common"
     }
-    out <- suppressWarnings(try(
-      performance::model_performance(model, metrics = metrics, ...)))
+    out <- suppressMessages(suppressWarnings(try(
+      performance::model_performance(model, verbose = FALSE, metrics = metrics, ...), silent = TRUE)))
   }
 
   # sanity
-  if (!inherits(out, "data.frame")) {
+  if (!inherits(out, "data.frame") && isTRUE(dots$metrics == "none")) {
     return("`performance::model_performance(model)` did not return a data.frame.")
   }
 
-  if (nrow(out) > 1) {
+  if (is.null(out)) return(out)
+
+  if (inherits(out, "data.frame") && nrow(out) > 1) {
     return("`performance::model_performance(model)` returned a data.frame with more than 1 row.")
   }
 
@@ -159,9 +179,11 @@ get_gof_parameters <- function(model, ...) {
   out <- insight::standardize_names(out, style = "broom")
 
   # nobs
-  mi <- insight::model_info(model)
-  if ("n_obs" %in% names(mi)) {
-    out$nobs <- mi$n_obs
+  if (inherits(out, "data.frame")) {
+    mi <- try(insight::model_info(model), silent = TRUE)
+    if (isTRUE("n_obs" %in% names(mi))) {
+      out$nobs <- mi$n_obs
+    }
   }
 
   return(out)

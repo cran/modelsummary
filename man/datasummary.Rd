@@ -41,7 +41,7 @@ more resources.}
 \item integer: the number of digits to keep after the period \code{format(round(x, fmt), nsmall=fmt)}
 \item character: passed to the \code{sprintf} function (e.g., '\%.3f' keeps 3 digits with trailing zero). See \code{?sprintf}
 \item function: returns a formatted character string.
-\item LaTeX output: To ensure proper typography, all numeric entries are enclosed in the \verb{\\num\{\}} command, which requires the \code{siunitx} package to be loaded in the LaTeX preamble. This behavior can be altered with global options. See the 'Details' section.
+\item NULL: does not format numbers, which allows users to include function in the "glue" strings in the \code{estimate} and \code{statistic} arguments.
 }}
 
 \item{title}{string}
@@ -94,6 +94,9 @@ character value per variable. The examples section of this documentation
 shows how to define custom summary functions. The package also ships with
 several shortcut summary functions: Min, Max, Mean, Median, Var, SD,
 NPercent, NUnique, Ncol, P0, P25, P50, P75, P100.
+See the Details and Examples sections below, and the vignettes on the
+\code{modelsummary} website: https://vincentarelbundock.github.io/modelsummary/ *
+\href{https://vincentarelbundock.github.io/modelsummary/articles/datasummary.html}{datasummary Vignette.}
 }
 \details{
 Visit the 'modelsummary' website for more usage examples:
@@ -137,10 +140,10 @@ the \code{options} function:
 \subsection{Model extraction functions}{
 
 \code{modelsummary} can use two sets of packages to extract information from
-statistical models: \code{broom} and the \code{easystats} family (\code{performance} and
-\code{parameters}). By default, it uses \code{broom} first and \code{easystats} as a
-fallback if \code{broom} fails. You can change the order of priorities
-or include goodness-of-fit extracted by \emph{both} packages by setting:
+statistical models: the \code{easystats} family (\code{performance} and \code{parameters})
+and \code{broom}. By default, it uses \code{easystats} first and then falls back on
+\code{broom} in ase of failure. You can change the order of priorities or include
+goodness-of-fit extracted by \emph{both} packages by setting:
 
 \code{options(modelsummary_get = "broom")}
 \code{options(modelsummary_get = "easystats")}

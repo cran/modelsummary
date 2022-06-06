@@ -45,7 +45,7 @@ column, the reported mean and standard errors will also be weighted.}
 \item integer: the number of digits to keep after the period \code{format(round(x, fmt), nsmall=fmt)}
 \item character: passed to the \code{sprintf} function (e.g., '\%.3f' keeps 3 digits with trailing zero). See \code{?sprintf}
 \item function: returns a formatted character string.
-\item LaTeX output: To ensure proper typography, all numeric entries are enclosed in the \verb{\\num\{\}} command, which requires the \code{siunitx} package to be loaded in the LaTeX preamble. This behavior can be altered with global options. See the 'Details' section.
+\item NULL: does not format numbers, which allows users to include function in the "glue" strings in the \code{estimate} and \code{statistic} arguments.
 }}
 
 \item{title}{string}
@@ -85,19 +85,21 @@ installed. If \code{data} includes columns named "blocks", "clusters", or
 \item{escape}{boolean TRUE escapes or substitutes LaTeX/HTML characters which could
 prevent the file from compiling/displaying. This setting does not affect captions or notes.}
 
-\item{...}{all other arguments are passed through to the extractor and
-table-making functions (by default \code{broom::tidy} and \code{kableExtra::kbl}, but
-this can be customized). This allows users to pass arguments directly to
-\code{modelsummary} in order to affect the behavior of other functions behind the
-scenes. For example,
+\item{...}{all other arguments are passed through to the
+table-making functions. This allows users to pass arguments directly to
+\code{datasummary} in order to affect the behavior of other functions behind
+the scenes, for instance:
 \itemize{
-\item \code{performance::model_performance(metrics="RMSE")} to select goodness-of-fit statistics to extract using the \code{performance} package (must have set \code{options(modelsummary_get="easystats")} first). This can be useful for some models when statistics take a long time to compute.
+\item \code{kableExtra::kbl(escape=FALSE)} to avoid escaping math characters in \code{kableExtra} tables.
 }}
 }
 \description{
 Creates balance tables with summary statistics for different subsets of the
 data (e.g., control and treatment groups). It can also be used to create
 summary tables for full data sets.
+See the Details and Examples sections below, and the vignettes on the
+\code{modelsummary} website: https://vincentarelbundock.github.io/modelsummary/ *
+\href{https://vincentarelbundock.github.io/modelsummary/articles/datasummary.html}{datasummary Vignette.}
 }
 \section{Global Options}{
 
@@ -129,10 +131,10 @@ the \code{options} function:
 \subsection{Model extraction functions}{
 
 \code{modelsummary} can use two sets of packages to extract information from
-statistical models: \code{broom} and the \code{easystats} family (\code{performance} and
-\code{parameters}). By default, it uses \code{broom} first and \code{easystats} as a
-fallback if \code{broom} fails. You can change the order of priorities
-or include goodness-of-fit extracted by \emph{both} packages by setting:
+statistical models: the \code{easystats} family (\code{performance} and \code{parameters})
+and \code{broom}. By default, it uses \code{easystats} first and then falls back on
+\code{broom} in ase of failure. You can change the order of priorities or include
+goodness-of-fit extracted by \emph{both} packages by setting:
 
 \code{options(modelsummary_get = "broom")}
 \code{options(modelsummary_get = "easystats")}

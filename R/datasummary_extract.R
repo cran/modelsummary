@@ -25,24 +25,20 @@ datasummary_extract <- function(tab,
 
   # header
   header <- as.matrix(tables::colLabels(tab))
-
+  stub_width <- ncol(mat) - ncol(header) # before taking the full large header
   for (i in 1:nrow(header)) {
-    header[i, ] <- carry_forward(header[i, , drop = TRUE])
+    header[i, ] <- carry_forward(as.vector(header[i,]))
   }
 
-  stub_width <- ncol(mat) - ncol(header)
-
-  pad_header <- matrix('',
-    nrow = nrow(header),
-    ncol = stub_width)
-  header <- cbind(pad_header, header)
+  tmp <- mat[1:nrow(header), , drop = FALSE]
+  tmp[1:nrow(header), (stub_width + 1):ncol(mat)] <- header
+  header <- tmp
 
   # main --- TODO: test if main has only one row
   main <- mat[(idx + 1):nrow(mat), , drop = FALSE]
   main <- data.frame(main)
 
   colnames(main) <- as.vector(mat[idx, ])
-
 
   # remove NAs, but not in stub or header
   for (i in (stub_width + 1):ncol(main)) {
@@ -71,46 +67,18 @@ datasummary_extract <- function(tab,
 
   # header matrices: remove rows with a single label
   header_sparse <- sparsify(header)
-  header_nocolnames_sparse <- sparsify(header_nocolnames)
 
-  # header vectors
-  header_sparse_flat <- apply(header_sparse, 2, paste, collapse = ' ')
-  header_nocolnames_sparse_flat <- apply(header_nocolnames_sparse, 2, paste, collapse = ' ')
-
-  # gt only supports one span level, so we use the flat vector WITHOUT colnames
-  h <- header_nocolnames_sparse_flat
-  lab <- base::setdiff(unique(h), '')
-  span <- list()
-  for (l in lab) {
-    if (trimws(l) != '') {
-      pos <- which(h == l)
-      span[[length(span) + 1]] <- list(label = l, position = pos)
-    }
-  }
-  attr(main, 'span_gt') <- span
-
-  # kableExtra supports several span levels, so we use the matrix
-  if (sparse_header) {
-    h <- header_nocolnames_sparse
+  # header flat with sep="||||"
+  if (nrow(header_sparse) > 1) {
+      cols <- apply(header_sparse, 2, paste, collapse = "||||")
+      # remove extraneous levels
+      cols <- gsub("^\\|*$", "", cols)
+      cols <- gsub("^\\|{4}", "", cols)
+      cols <- pad(cols)
   } else {
-    h <- header_nocolnames
+      cols <- unlist(header_sparse)
   }
-
-  if (nrow(h) > 0) { # are there any spans?
-    span <- list()
-    for (i in 1:nrow(h)) {
-      z <- ifelse(h[i, ] == "", " ", h[i, ]) # needed in factory_kableExtra
-      idx <- rle(z)
-      span[[i]] <- stats::setNames(idx$lengths, idx$values)
-    }
-  } else {
-    span <- NULL
-  }
-  attr(main, 'span_kableExtra') <- span
-
-  # attributes
-  attr(main, 'header_sparse_flat') <- header_sparse_flat
-
+  colnames(main) <- cols
 
   # return
   return(main)
@@ -122,9 +90,13 @@ carry_forward <- function(x, empty = '') {
     x <- trimws(x)
     if (length(x) > 1) {
         for (i in 2:length(x)) {
-        if (is.na(x[i])) {
-            x[i] <- x[i - 1]
-        }
+            # carry foward when header is NA, but not "" because that indicates
+            # a new higher level span
+            if (is.na(x[i])) {
+                if (!is.na(x[i - 1]) && !isTRUE(x[i - 1] == "")) {
+                    x[i] <- x[i - 1]
+                }
+            }
         }
     }
     x

@@ -19,7 +19,7 @@ get_estimates <- function(model, conf_level = .95, vcov = NULL, ...) {
     }
 
     # priority
-    get_priority <- getOption("modelsummary_get", default = "broom")
+    get_priority <- getOption("modelsummary_get", default = "easystats")
     checkmate::assert_choice(
       get_priority,
       choices = c("broom", "easystats", "parameters", "performance", "all"))
@@ -51,8 +51,8 @@ get_estimates <- function(model, conf_level = .95, vcov = NULL, ...) {
 of class "%s". The package tried a sequence of 2 helper functions to extract
 estimates:
 
-broom::tidy(model)
 parameters::parameters(model)
+broom::tidy(model)
 
 To draw a table, one of these commands must return a `data.frame` with a
 column named "term". The `modelsummary` website explains how to summarize
@@ -126,11 +126,14 @@ These errors messages were generated during extraction:
         ...)
 
       if (!is.null(so) && nrow(out) == nrow(so)) {
-        # keep only columns that do not appear in so
-        out <- out[, c('term', base::setdiff(colnames(out), colnames(so))), drop = FALSE]
+        # so overrides out, so we drop columns first
+        idx <- c("group", "term", "response")
+        good <- setdiff(colnames(out), colnames(so))
+        good <- intersect(colnames(out), c(good, idx))
+        out <- out[, good, drop = FALSE]
         # merge vcov and estimates
-        out <- merge(out, so, by = "term", sort = FALSE)
-
+        idx <- Reduce("intersect", list(colnames(out), colnames(so), idx)) 
+        out <- merge(out, so, by = idx, sort = FALSE)
       }
     }
 
@@ -169,10 +172,19 @@ get_estimates_broom <- function(model, conf_int, conf_level, ...) {
 }
 
 
-get_estimates_parameters <- function(model, conf_int, conf_level, effects = "all", ...) {
+get_estimates_parameters <- function(model,
+                                     conf_int,
+                                     conf_level,
+                                     effects = "all", ...) {
+
+    if (inherits(model, "marginaleffects") ||
+        inherits(model, "comparisons") ||
+        inherits(model, "marginalmeans")) {
+        return("`parameters` does not support marginaleffects yet.")
+    }
 
     f <- tidy_easystats <- function(x, ...) {
-        out <- parameters::parameters(x, ...)
+        out <- parameters::parameters(x, verbose = FALSE, ...)
         out <- parameters::standardize_names(out, style = "broom")
     }
 

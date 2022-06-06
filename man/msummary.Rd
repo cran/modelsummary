@@ -14,12 +14,12 @@ msummary(
   conf_level = 0.95,
   exponentiate = FALSE,
   stars = FALSE,
+  shape = term + statistic ~ model,
   coef_map = NULL,
   coef_omit = NULL,
   coef_rename = NULL,
   gof_map = NULL,
   gof_omit = NULL,
-  group = term ~ model,
   group_map = NULL,
   add_rows = NULL,
   align = NULL,
@@ -46,12 +46,14 @@ msummary(
 \item integer: the number of digits to keep after the period \code{format(round(x, fmt), nsmall=fmt)}
 \item character: passed to the \code{sprintf} function (e.g., '\%.3f' keeps 3 digits with trailing zero). See \code{?sprintf}
 \item function: returns a formatted character string.
+\item NULL: does not format numbers, which allows users to include function in the "glue" strings in the \code{estimate} and \code{statistic} arguments.
+\item A named list to format distinct elements of the table differently. Names correspond to column names produced by \code{get_estimates(model)} or \code{get_gof(model)}. Values are integers, characters, or functions, as described above. The \code{fmt} element is used as default for unspecified elements Ex: \code{fmt=list("estimate"=2, "std.error"=1, "r.squared"=4, "fmt"=3)}
 \item LaTeX output: To ensure proper typography, all numeric entries are enclosed in the \verb{\\num\{\}} command, which requires the \code{siunitx} package to be loaded in the LaTeX preamble. This behavior can be altered with global options. See the 'Details' section.
 }}
 
-\item{estimate}{string or \code{glue} string of the estimate to display (or a
-vector with one string per model). Valid entries include any column name of
-the data.frame produced by \code{get_estimates(model)}. Examples:
+\item{estimate}{a single string or a character vector of length equal to the
+number of models. Valid entries include any column name of
+the data.frame produced by \code{get_estimates(model)}, and strings with curly braces compatible with the \code{glue} package format. Examples:
 \itemize{
 \item \code{"estimate"}
 \item \code{"{estimate} ({std.error}){stars}"}
@@ -64,11 +66,13 @@ uncertainty statistics.
 \itemize{
 \item "conf.int", "std.error", "statistic", "p.value", "conf.low", "conf.high",
 or any column name produced by: \code{get_estimates(model)}
-\item \code{glue} package strings with braces, such as:
+\item \code{glue} package strings with braces, with or without R functions, such as:
 \itemize{
 \item \code{"{p.value} [{conf.low}, {conf.high}]"}
 \item \code{"Std.Error: {std.error}"}
+\item `"{exp(estimate) * std.error}"
 }
+\item Numbers are automatically rounded and converted to strings. To apply functions to their numeric values, as in the last \code{glue} example, users must set \code{fmt=NULL}.
 \item Parentheses are added automatically unless the string includes \code{glue} curly braces \code{{}}.
 }}
 
@@ -99,54 +103,67 @@ statistics are exponentiated, and the \code{std.error} is transformed to
 \item Note: a legend will not be inserted at the bottom of the table when the \code{estimate} or \code{statistic} arguments use "glue strings" with \code{{stars}}.
 }}
 
+\item{shape}{formula which determines the shape of the table. The left side
+determines what appears on rows, and the right side determines what appears
+on columns. The formula can include a group identifier to display related terms
+together, which can be useful for models with multivariate outcomes or
+grouped coefficients (See examples section below). This identifier must be
+one of the column names produced by: \code{get_estimates(model)}. If an
+incomplete formula is supplied (e.g., \code{~statistic}), \code{modelsummary} tries to
+complete it automatically. Potential \code{shape} values include:
+\itemize{
+\item \code{term + statistic ~ model}: default
+\item \code{term ~ model + statistic}: statistics in separate columns
+\item \code{model + statistic ~ term}: models in rows and terms in columns
+\item \code{term + response + statistic ~ model}:
+\item \code{term ~ response}
+}}
+
 \item{coef_map}{character vector. Subset, rename, and reorder coefficients.
 Coefficients omitted from this vector are omitted from the table. The order
-of the vector determines the order of the table.  \code{coef_map} can be a named
-or an unnamed character vector (see the Examples section below). If
-\code{coef_map} is a named vector, its values define the labels that must appear
-in the table, and its names identify the original term names stored in the
-model object: \code{c("hp:mpg"="HPxM/G")}.}
+of the vector determines the order of the table. \code{coef_map} can be a named
+or an unnamed character vector. If \code{coef_map} is a named vector, its values
+define the labels that must appear in the table, and its names identify the
+original term names stored in the model object: \code{c("hp:mpg"="HPxM/G")}. See
+Examples section below.}
 
-\item{coef_omit}{string regular expression. Omits all matching coefficients
-from the table using \code{grepl(perl=TRUE)}. This argument uses perl-compatible regular expressions, which allows expressions such as \verb{"Int|ABC" which omits coefficients matching either "Int" or "ABC", and }"^(?!.*Intercept)"` which omits every term except the intercept.}
+\item{coef_omit}{string regular expression (perl-compatible) used to determine which coefficients to omit from the table. A "negative lookahead" can be used to specify which coefficients to \emph{keep} in the table. Examples:
+\itemize{
+\item \code{"ei"}: omit coefficients matching the "ei" substring.
+\item \code{"^Volume$"}: omit the "Volume" coefficient.
+\item \code{"ei|rc"}: omit coefficients matching either the "ei" or the "rc" substrings.
+\item \code{"^(?!Vol)"}: keep coefficients starting with "Vol" (inverse match using a negative lookahead).
+\item \code{"^(?!.*ei)"}: keep coefficients matching the "ei" substring.
+\item \code{"^(?!.*ei|.*pt)"}: keep coefficients matching either the "ei" or the "pt" substrings.
+\item See the Examples section below for complete code.
+}}
 
-\item{coef_rename}{named character vector or function which returns a named
-vector. Values of the vector refer to the variable names that will appear
-in the table. Names refer to the original term names stored in the model
-object, e.g. c("hp:mpg"="hp X mpg") for an interaction term.
-If you provide a function to \code{coef_rename}, \code{modelsummary} will create a named
-vector for you by deriving the new variable names from the vector of original
-term names with your function.}
+\item{coef_rename}{named character vector or function
+\itemize{
+\item Named character vector: Values refer to the variable names that will appear in the table. Names refer to the original term names stored in the model object. Ex: c("hp:mpg"="hp X mpg")
+\item Function: Accepts a character vector of the model's term names and returns a named vector like the one described above. The \code{modelsummary} package supplies a \code{coef_rename()} function which can do common cleaning tasks: \code{modelsummary(model, coef_rename = coef_rename)}
+}}
 
 \item{gof_map}{rename, reorder, and omit goodness-of-fit statistics and other
 model information. This argument accepts 4 types of values:
 \itemize{
 \item NULL (default): the \code{modelsummary::gof_map} dictionary is used for formatting, and all unknown statistic are included.
+\item NA: excludes all statistics from the bottom part of the table.
 \item character vector such as \code{c("rmse", "nobs", "r.squared")}. Elements correspond to colnames in the data.frame produced by \code{get_gof(model)}. The default dictionary is used to format and rename statistics.
 \item data.frame with 3 columns named "raw", "clean", "fmt". Unknown statistics are omitted. See the 'Examples' section below.
 \item list of lists, each of which includes 3 elements named "raw", "clean", "fmt". Unknown statistics are omitted. See the 'Examples section below'.
 }}
 
-\item{gof_omit}{string regular expression. Omits all matching gof statistics from
-the table. This argument uses perl-compatible regular expressions (\code{grepl(perl=TRUE)}), which allows expressions such as \code{".*"} which omits everything, and \code{"^(?!R2|Num)"} which omits every term except those that start with "R2" or "Num".}
-
-\item{group}{transpose or group models and estimates (formula). The left
-side of the formula represents rows and the right side columns.
+\item{gof_omit}{string regular expression (perl-compatible) used to determine which statistics to omit from the bottom section of the table. A "negative lookahead" can be used to specify which statistics to \emph{keep} in the table. Examples:
 \itemize{
-\item Formula with two components called \code{term} and \code{model}.
-\itemize{
-\item \code{term ~ model}
-\item \code{model ~ term}
-}
-\item Formula with three components, including one of the column names in the data frame produced by \code{get_estimates(model)}. Examples:
-\itemize{
-\item \code{response + term ~ model}
-\item \code{term ~ model + y.level}
-}
+\item \code{"IC"}: omit statistics matching the "IC" substring.
+\item \code{"BIC|AIC"}: omit statistics matching the "AIC" or "BIC" substrings.
+\item \code{"^(?!.*IC)"}: keep statistics matching the "IC" substring.
 }}
 
 \item{group_map}{named or unnamed character vector. Subset, rename, and
-reorder coefficient groups specified in the \code{group} argument. See \code{coef_map}.}
+reorder coefficient groups specified a grouping variable specified in the
+\code{shape} argument formula. This argument behaves like \code{coef_map}.}
 
 \item{add_rows}{a data.frame (or tibble) with the same number of columns as
 your main table. By default, rows are appended to the bottom of the table.
@@ -180,7 +197,7 @@ this can be customized). This allows users to pass arguments directly to
 \code{modelsummary} in order to affect the behavior of other functions behind the
 scenes. For example,
 \itemize{
-\item \code{performance::model_performance(metrics="RMSE")} to select goodness-of-fit statistics to extract using the \code{performance} package (must have set \code{options(modelsummary_get="easystats")} first). This can be useful for some models when statistics take a long time to compute.
+\item \code{metrics="none"}, \code{metrics="all"}, or \code{metrics=c("R2", "RMSE")} to select the goodness-of-fit extracted by the \code{performance} package (must have set \code{options(modelsummary_get="easystats")} first). This can be useful for some models when statistics take a long time to compute. See \code{?performance::performance}
 }}
 }
 \value{
@@ -193,8 +210,13 @@ and it can produce tables in HTML, LaTeX, Word, Markdown, PDF, PowerPoint,
 Excel, RTF, JPG, or PNG. The appearance of the tables can be customized
 extensively by specifying the \code{output} argument, and by using functions from
 one of the supported table customization packages: \code{kableExtra}, \code{gt},
-\code{flextable}, \code{huxtable}. This function's behavior can be altered using
-global options (See the \emph{Details} section below.)
+\code{flextable}, \code{huxtable}. For more information, see the Details and Examples
+sections below, and the vignettes on the \code{modelsummary} website:
+https://vincentarelbundock.github.io/modelsummary/
+\itemize{
+\item \href{https://vincentarelbundock.github.io/modelsummary/articles/modelsummary.html}{The \code{modelsummary} Vignette includes dozens of examples of tables with extensive customizations.}
+\item \href{https://vincentarelbundock.github.io/modelsummary/articles/appearance.html}{The Appearance Vignette shows how to modify the look of tables.}
+}
 }
 \details{
 \subsection{\code{output}}{
@@ -271,10 +293,10 @@ the \code{options} function:
 \subsection{Model extraction functions}{
 
 \code{modelsummary} can use two sets of packages to extract information from
-statistical models: \code{broom} and the \code{easystats} family (\code{performance} and
-\code{parameters}). By default, it uses \code{broom} first and \code{easystats} as a
-fallback if \code{broom} fails. You can change the order of priorities
-or include goodness-of-fit extracted by \emph{both} packages by setting:
+statistical models: the \code{easystats} family (\code{performance} and \code{parameters})
+and \code{broom}. By default, it uses \code{easystats} first and then falls back on
+\code{broom} in ase of failure. You can change the order of priorities or include
+goodness-of-fit extracted by \emph{both} packages by setting:
 
 \code{options(modelsummary_get = "broom")}
 \code{options(modelsummary_get = "easystats")}
@@ -295,6 +317,17 @@ HTML tables:
 
 \code{options(modelsummary_format_numeric_html = "mathjax")}
 }
+}
+
+\section{Parallel computation}{
+
+
+It can take a long time to compute and extract summary statistics from certain models (e.g., Bayesian). In those cases, users can parallelize the process. Since parallelization occurs at the model level, no speedup is available for tables with a single model. To use parallel computation, all users have to do is load the \code{future.apply} package and call the \code{plan()} function. Example:
+
+\if{html}{\out{<div class="sourceCode r">}}\preformatted{library(future.apply)
+plan("multisession")
+modelsummary(model_list)
+}\if{html}{\out{</div>}}
 }
 
 \examples{
@@ -356,6 +389,27 @@ modelsummary(models, coef_rename = coef_rename)
 modelsummary(models, coef_map = c('Volume' = 'Large', 'Height' = 'Tall'))
 modelsummary(models, coef_map = c('Volume', 'Height'))
 
+# coef_omit: omit coefficients matching one substring
+modelsummary(models, coef_omit = "ei", omit = ".*")
+
+# coef_omit: omit a specific coefficient
+modelsummary(models, coef_omit = "^Volume$", gof_omit = ".*", output = "markdown")
+
+# coef_omit: omit coefficients matching either one of two substring
+modelsummary(models, coef_omit = "ei|rc", omit = ".*")
+
+# coef_omit: keep coefficients starting with a substring (using a negative lookahead)
+modelsummary(models, coef_omit = "^(?!Vol)", omit = ".*")
+
+# coef_omit: keep coefficients matching a substring
+modelsummary(models, coef_omit = "^(?!.*ei|.*pt)", omit = ".*")
+
+# shape
+library(nnet)
+multi <- multinom(factor(cyl) ~ mpg + hp, data = mtcars, trace = FALSE) 
+modelsummary(multi, shape = y.level ~ model)
+modelsummary(multi, shape = term ~ y.level)
+
 # title
 modelsummary(models, title = 'This is the title')
 
@@ -381,9 +435,9 @@ modelsummary(models, gof_map = gm)
 
 # gof_map: data.frame
 gm <- modelsummary::gof_map
-gof_custom$omit[gof_custom$raw == 'deviance'] <- FALSE
-gof_custom$fmt[gof_custom$raw == 'r.squared'] <- "\%.5f"
-modelsummary(models, gof_map = gof_custom)
+gm$omit[gm$raw == 'deviance'] <- FALSE
+gm$fmt[gm$raw == 'r.squared'] <- "\%.5f"
+modelsummary(models, gof_map = gm)
 
 # gof_map: list of lists
 f1 <- function(x) format(round(x, 3), big.mark=",")

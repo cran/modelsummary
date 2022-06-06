@@ -1,3 +1,6 @@
+requiet("sandwich")
+requiet("lmtest")
+
 url <- 'https://vincentarelbundock.github.io/Rdatasets/csv/HistData/Guerry.csv'
 dat <- read.csv(url)
 dat$Clergy <- ifelse(dat$Clergy > 40, 1, 0) # binary variable for logit model
@@ -9,10 +12,6 @@ models[['Poisson 2']] <- glm(Desertion ~ Crime_prop + Donations, dat, family = p
 models[['Logit 1']] <- glm(Clergy ~ Crime_prop + Infants, dat, family = binomial())
 
 test_that("warning for non-iid hardcoded vcov", {
-    # testthat::skip_if_not_installed("fixest")
-    testthat::skip_if_not_installed("lfe")
-    testthat::skip_if_not_installed("estimatr")
-
     requiet("lfe")
     requiet("estimatr")
 
@@ -88,7 +87,7 @@ test_that("character vector", {
   expect_identical(tab1, tab3)
   # bad input
   expect_error(modelsummary(models, vcov="bad", output="data.frame"))
-  # no standard error row when `vcov` is an unknown function
+  # no standard error or F-stata row when `vcov` is an unknown function
   expect_equal(nrow(tab1), nrow(tab4) + 1)
 })
 
@@ -109,9 +108,8 @@ test_that("clustered standard errors", {
 })
 
 test_that("fixest", {
-  skip_if_not_installed("fixest")
-  library(fixest)
-  mod_lm =         lm(hp ~ mpg + drat, mtcars)
+  requiet("fixest")
+  mod_lm = lm(hp ~ mpg + drat, mtcars)
   if (utils::packageVersion("fixest") >= "0.10.0") {
     mod_feols =   feols(hp ~ mpg + drat, mtcars, vcov = ~vs)
   } else {
@@ -134,8 +132,7 @@ test_that("fixest", {
 })
 
 test_that("lme4 and various warnings", {
-  skip_if_not_installed("lme4")
-  library(lme4)
+  requiet("lme4")
   models = list(
     lm(hp ~ mpg, mtcars),
     lmer(hp ~ mpg + (1|cyl), mtcars))
@@ -150,7 +147,7 @@ test_that("lme4 and various warnings", {
 
 
 test_that("robust character shortcuts", {
-  testthat::skip_if_not_installed("estimatr")
+  requiet("estimatr")
 
   mod = lm(hp ~ mpg, mtcars)
   mod_estimatr = estimatr::lm_robust(hp ~ mpg, mtcars)

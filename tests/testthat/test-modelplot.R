@@ -1,7 +1,4 @@
-# skip_on_cran()
-
 test_that("single model", {
-
   mod <- lm(hp ~ mpg + drat, data = mtcars)
   p <- modelplot(mod)
   vdiffr::expect_doppelganger("vanilla", p)
@@ -18,9 +15,8 @@ test_that("single model", {
   )
   p <- modelplot(mod,
     coef_map = c("drat" = "Rear axle ratio", "mpg" = "Miles / gallon"),
-    color = "green", shape = "square", background = params)
+    color = "green", background = params)
   vdiffr::expect_doppelganger("coef_map + color + shape + background", p)
-
 })
 
 test_that("multiple models", {
@@ -60,18 +56,27 @@ test_that("vcov", {
   testthat::skip_if_not_installed("sandwich")
   mod <- list(lm(hp ~ mpg + drat, data = mtcars),
               lm(hp ~ mpg + drat, data = mtcars))
+
   so <- list(vcov, sandwich::vcovHC)
-  p <- modelplot(mod, vcov=so, draw=FALSE)
-  known <- c(165.179327669237, 182.406373565931, -13.6502180401172, -15.0390897152001, -22.1832974370102, -28.1858724755655)
-  expect_equal(p$conf.low, known)
+  p1 <- modelplot(mod, vcov = so, draw = FALSE)
+  p2 <- modelplot(mod, vcov = "HC3", draw = FALSE)
+
+  known <- c(165.179327669237, 182.406373565931, -13.6502180401172,
+             -15.0390897152001, -22.1832974370102, -28.1858724755655)
+  expect_equal(p1$conf.low, known)
+
+  known <- c(182.406373565931, 182.406373565931, -15.0390897152001,
+             -15.0390897152001, -28.1858724755655, -28.1858724755655)
+
+  known <- c(182.406373565931, 182.406373565931, -15.0390897152001,
+             -15.0390897152001, -28.1858724755655, -28.1858724755655)
+  expect_equal(p2$conf.low, known)
 })
 
 
-# TODO: these tests are too minimalist
-
 test_that("single model without ci", {
   mod <- lm(hp ~ mpg + drat, data = mtcars)
-  expect_error(modelplot(mod, conf_level=NULL), NA)
+  expect_error(modelplot(mod, conf_level = NULL), NA)
 })
 
 test_that("multiple models without ci", {

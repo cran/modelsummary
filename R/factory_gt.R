@@ -13,7 +13,14 @@ factory_gt <- function(tab,
                        escape = TRUE,
                        ...) {
 
-  assert_dependency("gt")
+  insight::check_if_installed("gt", minimum_version = "0.5.0")
+
+  # compute spans
+  span_list <- get_span_gt(tab)
+  column_names <- attr(span_list, "column_names")
+  if (!is.null(column_names)) {
+    colnames(tab) <- column_names
+  }
 
   # create gt table object
   idx_col <- ncol(tab)
@@ -34,12 +41,12 @@ factory_gt <- function(tab,
     }
   }
 
-  # column span labels
-  span <- attr(tab, 'span_gt')
-
-  if (!is.null(span)) {
-    for (s in span) {
-      out <- gt::tab_spanner(out, label = s$label, columns = s$position)
+  if (length(span_list) > 0) {
+    for (s in span_list) {
+      out <- gt::tab_spanner(out,
+                             label = s$label,
+                             columns = s$columns,
+                             level = s$level)
     }
   }
 

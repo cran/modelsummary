@@ -2,11 +2,10 @@
 
 <!-- badges: start -->
 [![CRAN status](https://cranchecks.info/badges/flavor/release/modelsummary)](https://cran.r-project.org/web/checks/check_results_modelsummary.html)
-[![AppVeyor build status](https://ci.appveyor.com/api/projects/status/github/vincentarelbundock/modelsummary?branch=master&svg=true)](https://ci.appveyor.com/project/vincentarelbundock/modelsummary)
 [![R build status](https://github.com/vincentarelbundock/modelsummary/workflows/R-CMD-check/badge.svg)](https://github.com/vincentarelbundock/modelsummary/actions)
 [![codecov](https://codecov.io/gh/vincentarelbundock/modelsummary/branch/master/graph/badge.svg)](https://app.codecov.io/gh/vincentarelbundock/modelsummary)
-[![status](https://tinyverse.netlify.com/badge/modelsummary)](https://CRAN.R-project.org/package=modelsummary)
 [![](http://cranlogs.r-pkg.org/badges/grand-total/modelsummary?color=green)](https://cran.r-project.org/package=modelsummary)
+<!-- [![status](https://tinyverse.netlify.com/badge/modelsummary)](https://CRAN.R-project.org/package=modelsummary) -->
 <!-- badges: end -->
 
 `modelsummary` creates tables and plots to summarize statistical models and data in `R`. 
@@ -177,6 +176,7 @@ modelsummary(models, output = "table.docx")
 
 There are several excellent alternatives to draw model summary tables in `R`:
 
+  - [sjPlot](https://strengejacke.github.io/sjPlot/)
   - [gtsummary](https://www.danieldsjoberg.com/gtsummary/)
   - [texreg](https://cran.r-project.org/package=texreg)
   - [stargazer](https://cran.r-project.org/package=stargazer)

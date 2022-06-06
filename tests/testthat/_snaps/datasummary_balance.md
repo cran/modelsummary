@@ -9,7 +9,7 @@
       \toprule
       \multicolumn{1}{c}{ } & \multicolumn{2}{c}{no\_no (N=18)} & \multicolumn{2}{c}{yes\_yes (N=14)} & \multicolumn{2}{c}{ } \\
       \cmidrule(l{3pt}r{3pt}){2-3} \cmidrule(l{3pt}r{3pt}){4-5}
-        & Mean & Std. Dev. & Mean  & Std. Dev.  & Diff. in Means & Std. Error\\
+        & Mean & Std. Dev. & Mean & Std. Dev. & Diff. in Means & Std. Error\\
       \midrule
       mpg & 16.6 & 3.9 & 24.6 & 5.4 & 7.9 & 1.7\\
       cyl & 7.4 & 1.1 & 4.6 & 0.9 & -2.9 & 0.4\\
@@ -36,7 +36,7 @@
       \toprule
       \multicolumn{1}{c}{ } & \multicolumn{2}{c}{no_no (N=18)} & \multicolumn{2}{c}{yes_yes (N=14)} & \multicolumn{2}{c}{ } \\
       \cmidrule(l{3pt}r{3pt}){2-3} \cmidrule(l{3pt}r{3pt}){4-5}
-        & Mean & Std. Dev. & Mean  & Std. Dev.  & Diff. in Means & Std. Error\\
+        & Mean & Std. Dev. & Mean & Std. Dev. & Diff. in Means & Std. Error\\
       \midrule
       mpg & 16.6 & 3.9 & 24.6 & 5.4 & 7.9 & 1.7\\
       cyl & 7.4 & 1.1 & 4.6 & 0.9 & -2.9 & 0.4\\

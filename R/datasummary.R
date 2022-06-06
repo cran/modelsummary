@@ -6,6 +6,9 @@
 #' shows how to define custom summary functions. The package also ships with
 #' several shortcut summary functions: Min, Max, Mean, Median, Var, SD,
 #' NPercent, NUnique, Ncol, P0, P25, P50, P75, P100.
+#' See the Details and Examples sections below, and the vignettes on the
+#' `modelsummary` website: https://vincentarelbundock.github.io/modelsummary/ *
+#' [datasummary Vignette.](https://vincentarelbundock.github.io/modelsummary/articles/datasummary.html)
 #'
 #' @inheritParams modelsummary
 #' @import tables
@@ -15,6 +18,11 @@
 #' @param data A data.frame (or tibble)
 #' @param add_columns a data.frame (or tibble) with the same number of rows as
 #' your main table.
+#' @param fmt determines how to format numeric values
+#' * integer: the number of digits to keep after the period `format(round(x, fmt), nsmall=fmt)`
+#' * character: passed to the `sprintf` function (e.g., '%.3f' keeps 3 digits with trailing zero). See `?sprintf`
+#' * function: returns a formatted character string.
+#' * NULL: does not format numbers, which allows users to include function in the "glue" strings in the `estimate` and `statistic` arguments. 
 #' @param sparse_header TRUE or FALSE. TRUE eliminates column headers which
 #' have a unique label across all columns, except for the row immediately above
 #' the data. FALSE keeps all headers. The order in which terms are entered in
@@ -152,15 +160,14 @@ datasummary <- function(formula,
     }
   }
 
-  ## settings 
+  ## settings: don't overwrite settings on internal calls
   settings_init(settings = list(
      "function_called" = "datasummary"
   ))
+  sanitize_output(output)
 
   sanity_ds_data(formula = formula, data = data)
-  sanitize_output(output)
   sanitize_escape(escape)
-
 
   # convenience: transform logical and character to factor
   # are there use-cases for character variables?
@@ -214,9 +221,11 @@ datasummary <- function(formula,
 
   ## escape stub
   if (settings_equal("escape", TRUE)) {
-      for (i in 1:attr(dse, "stub_width")) {
+      sw <- attr(dse, "stub_width")
+      for (i in 1:sw) {
           dse[, i] <- escape_string(dse[, i])
       }
+      colnames(dse)[1:sw] <- escape_string(colnames(dse)[1:sw])
   }
 
   # build

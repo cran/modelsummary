@@ -5,14 +5,15 @@
 #' @noRd
 format_estimates <- function(
   est,
-  estimate   = "estimate",
-  statistic  = "std.error",
-  vcov       = NULL,
-  conf_level = .95,
-  fmt        = "%.3f",
-  stars      = FALSE,
-  group_name = NULL,
-  exponentiate = FALSE,
+  estimate,
+  statistic,
+  vcov,
+  conf_level,
+  fmt,
+  stars,
+  shape,
+  group_name,
+  exponentiate,
   ...) {
 
   # conf.int to glue
@@ -33,7 +34,12 @@ format_estimates <- function(
     sprintf("{%s}", estimate_glue))
 
   # statistics to glue
-  if (!is.null(vcov) &&     # don't add parentheses
+  if ("statistic" %in% shape$rhs) { # don't add parentheses
+     statistic_glue <- ifelse(
+      grepl("\\{", statistic_glue),
+      statistic_glue,
+      sprintf("{%s}", statistic_glue))
+  } else if (!is.null(vcov) &&     # don't add parentheses
       is.character(vcov) && # to manual strings
       length(vcov) > 1) {   # of length greater than 1 (i.e., robust shortcuts)
     statistic_glue <- ifelse(
@@ -99,16 +105,23 @@ format_estimates <- function(
   }
 
 
-  ## round all 
+  ## round all
   ## ensures that the reshape doesn't produce incompatible types
   ## exclude factors and characters, otherwise `rounding` will escape them
   ## which is premature since we then call coef_map
   for (n in colnames(est)) {
     if (!is.character(est[[n]]) && !is.factor(est[[n]])) {
-      est[[n]] <- rounding(est[[n]], fmt)
+      if (n %in% names(fmt)) {
+        fmt1 <- fmt[[n]]
+      } else {
+        fmt1 <- fmt[["fmt"]]
+      }
+      # keep as numeric foir glue functions
+      if (!is.null(fmt1)) {
+        est[[n]] <- rounding(est[[n]], fmt1)
+      }
     }
   }
-
 
   # extract estimates (there can be several)
   for (i in seq_along(estimate_glue)) {
@@ -163,6 +176,13 @@ https://vincentarelbundock.github.io/modelsummary', group_name),
   # sort then convert back to character
   est <- est[order(est$term, est$statistic), ]
   est$term <- as.character(est$term)
+
+  # statistics need informative names
+  idx <- as.numeric(factor(est$statistic))
+  # estimates are one per model, but all displayed on the same row, so we give
+  # the same identifier. statistics have different names because they need to
+  # be merged.
+  est$statistic <- c("estimate", statistic)[idx]
 
   # drop empty rows (important for broom.mixed which produces group
   # estimates without standard errors)

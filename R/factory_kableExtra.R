@@ -72,11 +72,21 @@ factory_kableExtra <- function(tab,
     arguments[["align"]] <- align
   }
 
+  # span: compute
+  span_list <- get_span_kableExtra(tab)
+  if (!is.null(span_list) && settings_equal("output_format", c("kableExtra", "html", "latex"))) {
+    column_names <- attr(span_list, "column_names")
+    if (!is.null(column_names)) {
+      colnames(tab) <- column_names
+    }
+  } else {
+      colnames(tab) <- gsub("\\|{4}", " / ", colnames(tab))
+  }
+
   # combine arguments
   arguments <- arguments[base::intersect(names(arguments), valid)]
   arguments <- c(list(tab), arguments)
   out <- do.call(kableExtra::kbl, arguments)
-
 
   ## footnote arguments
   valid <- c("footnote_as_chunk", "escape", "threeparttable", "fixed_small_size", "symbol_manual", "title_format")
@@ -102,7 +112,7 @@ factory_kableExtra <- function(tab,
       ## when using coef_map and stars in Rmarkdown PDF output
       for (n in notes) {
         ## otherwise stars_note breaks in PDF output under pdflatex
-        if (kable_format == "latex" && isTRUE(grepl(" < ", n))) {
+        if (isTRUE(kable_format == "latex") && isTRUE(grepl(" < ", n))) {
           n <- gsub(" < ", " $<$ ", n)
         }
         arguments[["general"]] <- n
@@ -118,15 +128,6 @@ factory_kableExtra <- function(tab,
     }
   }
 
-  span <- attr(tab, "span_kableExtra")
-  if (!is.null(span) && settings_equal("output_format", c("kableExtra", "latex", "html"))) {
-    # add_header_above not supported in markdown
-    span <- rev(span) # correct vertical order
-    for (s in span) {
-      out <- kableExtra::add_header_above(out, s, escape = escape)
-    }
-  }
-
   # theme
   theme_ms <- getOption("modelsummary_theme_kableExtra",
                         default = theme_ms_kableExtra)
@@ -134,7 +135,13 @@ factory_kableExtra <- function(tab,
                   output_format = settings_get("output_format"),
                   hrule = hrule)
 
-
+  # span: apply (not supported in markdown)
+  if (!is.null(span_list) && settings_equal("output_format", c("kableExtra", "latex", "html"))) {
+    for (i in 1:length(span_list)) {
+      out <- kableExtra::add_header_above(out, span_list[[i]], escape = escape)
+    }
+  }
+  
   # html & latex get a new class to use print.modelsummary_string
   if (settings_equal("output_format", c("latex", "latex_tabular", "html"))) {
     class(out) <- c("modelsummary_string", class(out))

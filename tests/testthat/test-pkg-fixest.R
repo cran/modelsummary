@@ -1,13 +1,34 @@
 skip_if(getRversion() < '3.6.6') # change in .Rng
+skip_if_not_installed("fixest", minimum_version = "0.10.5")
 requiet("fixest")
-skip_if_not_installed("fixest", minimum_version = "0.10.4")
+
+
+test_that("fixest built in SE label", {
+    mod <- feols(Euros ~ dist_km | Product + Destination + Origin, data = trade)
+    tab <- modelsummary(mod, "data.frame")
+    expect_true("by: Product" %in% tab[["Model 1"]])
+})
+
+
+test_that("multi: after 0.10.5", {
+  skip_if_not_installed("fixest", "0.10.5")
+  mod <- feols(mpg ~ hp, split = ~cyl, data = mtcars)
+  tab <- modelsummary(mod, "data.frame")
+  expect_true(all(c("cyl: 4", "cyl: 6", "cyl: 8") %in% colnames(tab)))
+
+  v <- c("mpg", "wt", "drat")
+  mod <- feols(.[v] ~ hp, data = mtcars)
+  tab <- modelsummary(mod, "data.frame")
+  expect_true(all(c("mpg", "wt", "drat") %in% colnames(tab)))
+})
+
 
 test_that("simple model", {
-  skip_if_not_installed("fixest", minimum_version = "0.10.5")# Issue #291 on fixest repo
   mod <- feols(Sepal.Length ~ Sepal.Width + Petal.Length | Species, iris)
   raw <- modelsummary(mod, "data.frame")
   expect_s3_class(raw, "data.frame")
-  expect_equal(dim(raw), c(14, 4))
+  expect_equal(ncol(raw), 4)
+  expect_true("by: Species" %in% raw[["Model 1"]])
 })
 
 
@@ -49,8 +70,7 @@ test_that("fixest std.error labels", {
 })
 
 
-test_that("regression: 
-          issue #450", {
+test_that("regression: issue #450", {
     requiet("sandwich")
     mod <- feols(mpg ~ wt, data = mtcars)
 

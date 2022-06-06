@@ -26,22 +26,28 @@ modelplot(
 
 \item{coef_map}{character vector. Subset, rename, and reorder coefficients.
 Coefficients omitted from this vector are omitted from the table. The order
-of the vector determines the order of the table.  \code{coef_map} can be a named
-or an unnamed character vector (see the Examples section below). If
-\code{coef_map} is a named vector, its values define the labels that must appear
-in the table, and its names identify the original term names stored in the
-model object: \code{c("hp:mpg"="HPxM/G")}.}
+of the vector determines the order of the table. \code{coef_map} can be a named
+or an unnamed character vector. If \code{coef_map} is a named vector, its values
+define the labels that must appear in the table, and its names identify the
+original term names stored in the model object: \code{c("hp:mpg"="HPxM/G")}. See
+Examples section below.}
 
-\item{coef_omit}{string regular expression. Omits all matching coefficients
-from the table using \code{grepl(perl=TRUE)}. This argument uses perl-compatible regular expressions, which allows expressions such as \verb{"Int|ABC" which omits coefficients matching either "Int" or "ABC", and }"^(?!.*Intercept)"` which omits every term except the intercept.}
+\item{coef_omit}{string regular expression (perl-compatible) used to determine which coefficients to omit from the table. A "negative lookahead" can be used to specify which coefficients to \emph{keep} in the table. Examples:
+\itemize{
+\item \code{"ei"}: omit coefficients matching the "ei" substring.
+\item \code{"^Volume$"}: omit the "Volume" coefficient.
+\item \code{"ei|rc"}: omit coefficients matching either the "ei" or the "rc" substrings.
+\item \code{"^(?!Vol)"}: keep coefficients starting with "Vol" (inverse match using a negative lookahead).
+\item \code{"^(?!.*ei)"}: keep coefficients matching the "ei" substring.
+\item \code{"^(?!.*ei|.*pt)"}: keep coefficients matching either the "ei" or the "pt" substrings.
+\item See the Examples section below for complete code.
+}}
 
-\item{coef_rename}{named character vector or function which returns a named
-vector. Values of the vector refer to the variable names that will appear
-in the table. Names refer to the original term names stored in the model
-object, e.g. c("hp:mpg"="hp X mpg") for an interaction term.
-If you provide a function to \code{coef_rename}, \code{modelsummary} will create a named
-vector for you by deriving the new variable names from the vector of original
-term names with your function.}
+\item{coef_rename}{named character vector or function
+\itemize{
+\item Named character vector: Values refer to the variable names that will appear in the table. Names refer to the original term names stored in the model object. Ex: c("hp:mpg"="hp X mpg")
+\item Function: Accepts a character vector of the model's term names and returns a named vector like the one described above. The \code{modelsummary} package supplies a \code{coef_rename()} function which can do common cleaning tasks: \code{modelsummary(model, coef_rename = coef_rename)}
+}}
 
 \item{vcov}{robust standard errors and other manual statistics. The \code{vcov}
 argument accepts six types of input (see the 'Details' and 'Examples'
@@ -82,11 +88,17 @@ this can be customized). This allows users to pass arguments directly to
 \code{modelsummary} in order to affect the behavior of other functions behind the
 scenes. For example,
 \itemize{
-\item \code{performance::model_performance(metrics="RMSE")} to select goodness-of-fit statistics to extract using the \code{performance} package (must have set \code{options(modelsummary_get="easystats")} first). This can be useful for some models when statistics take a long time to compute.
+\item \code{metrics="none"}, \code{metrics="all"}, or \code{metrics=c("R2", "RMSE")} to select the goodness-of-fit extracted by the \code{performance} package (must have set \code{options(modelsummary_get="easystats")} first). This can be useful for some models when statistics take a long time to compute. See \code{?performance::performance}
 }}
 }
 \description{
-Model Summary Plots with Estimates and Confidence Intervals
+Dot-Whisker plot of coefficient estimates with confidence intervals. For
+more information, see the Details and Examples sections below, and the
+vignettes on the \code{modelsummary} website:
+https://vincentarelbundock.github.io/modelsummary/
+\itemize{
+\item \href{https://vincentarelbundock.github.io/modelsummary/articles/modelplot.html}{modelplot Vignette.}
+}
 }
 \examples{
 \dontrun{

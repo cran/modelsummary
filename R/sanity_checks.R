@@ -125,8 +125,19 @@ sanitize_estimate <- function(estimate, number_of_models) {
 #' sanity_check
 #'
 #' @noRd
-sanity_statistic <- function(statistic) {
+sanitize_statistic <- function(statistic, shape) {
   checkmate::assert_character(statistic, null.ok = TRUE)
+  if ("statistic" %in% shape$rhs && "conf.int" %in% statistic) {
+    idx <- grep("conf.int", statistic)
+    statistic[idx] <- "conf.low"
+    # conf.int in last position
+    if (idx == length(statistic)) {
+      statistic <- c(statistic, "conf.high")
+    } else {
+      statistic <- c(statistic[1:idx], "conf.high", statistic[(idx + 1):length(statistic)])
+    }
+  }
+  return(statistic)
 }
 
 
@@ -165,16 +176,6 @@ sanity_coef <- function(coef_map, coef_rename, coef_omit) {
 
 
 
-#' sanity check
-#'
-#' @noRd
-sanity_fmt <- function(fmt) {
-  checkmate::assert(
-    checkmate::check_character(fmt, len = 1),
-    checkmate::check_numeric(fmt, len = 1, lower = 0),
-    checkmate::check_function(fmt)
-  )
-}
 
 
 #' sanity check

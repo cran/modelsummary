@@ -36,7 +36,7 @@ datasummary_skim(
 \item integer: the number of digits to keep after the period \code{format(round(x, fmt), nsmall=fmt)}
 \item character: passed to the \code{sprintf} function (e.g., '\%.3f' keeps 3 digits with trailing zero). See \code{?sprintf}
 \item function: returns a formatted character string.
-\item LaTeX output: To ensure proper typography, all numeric entries are enclosed in the \verb{\\num\{\}} command, which requires the \code{siunitx} package to be loaded in the LaTeX preamble. This behavior can be altered with global options. See the 'Details' section.
+\item NULL: does not format numbers, which allows users to include function in the "glue" strings in the \code{estimate} and \code{statistic} arguments.
 }}
 
 \item{histogram}{include a histogram (TRUE/FALSE). Supported for:
@@ -79,6 +79,9 @@ the scenes, for instance:
 }
 \description{
 This function was inspired by the excellent \code{skimr} package for R.
+See the Details and Examples sections below, and the vignettes on the
+\code{modelsummary} website: https://vincentarelbundock.github.io/modelsummary/ *
+\href{https://vincentarelbundock.github.io/modelsummary/articles/datasummary.html}{datasummary Vignette.}
 }
 \section{Global Options}{
 
@@ -110,10 +113,10 @@ the \code{options} function:
 \subsection{Model extraction functions}{
 
 \code{modelsummary} can use two sets of packages to extract information from
-statistical models: \code{broom} and the \code{easystats} family (\code{performance} and
-\code{parameters}). By default, it uses \code{broom} first and \code{easystats} as a
-fallback if \code{broom} fails. You can change the order of priorities
-or include goodness-of-fit extracted by \emph{both} packages by setting:
+statistical models: the \code{easystats} family (\code{performance} and \code{parameters})
+and \code{broom}. By default, it uses \code{easystats} first and then falls back on
+\code{broom} in ase of failure. You can change the order of priorities or include
+goodness-of-fit extracted by \emph{both} packages by setting:
 
 \code{options(modelsummary_get = "broom")}
 \code{options(modelsummary_get = "easystats")}

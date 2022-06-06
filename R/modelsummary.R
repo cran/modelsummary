@@ -16,13 +16,18 @@ globalVariables(c('.', 'term', 'part', 'estimate', 'conf.high', 'conf.low',
 #' Excel, RTF, JPG, or PNG. The appearance of the tables can be customized
 #' extensively by specifying the `output` argument, and by using functions from
 #' one of the supported table customization packages: `kableExtra`, `gt`,
-#' `flextable`, `huxtable`. This function's behavior can be altered using
-#' global options (See the _Details_ section below.)
+#' `flextable`, `huxtable`. For more information, see the Details and Examples
+#' sections below, and the vignettes on the `modelsummary` website:
+#' https://vincentarelbundock.github.io/modelsummary/
+#' * [The `modelsummary` Vignette includes dozens of examples of tables with extensive customizations.](https://vincentarelbundock.github.io/modelsummary/articles/modelsummary.html)
+#' * [The Appearance Vignette shows how to modify the look of tables.](https://vincentarelbundock.github.io/modelsummary/articles/appearance.html)
 #'
 #' @template modelsummary_details
 #'
 #' @template options
 #'
+#' @template modelsummary_parallel
+#' 
 #' @template modelsummary_examples
 #'
 #' @param models a model or (optionally named) list of models
@@ -36,6 +41,8 @@ globalVariables(c('.', 'term', 'part', 'estimate', 'conf.high', 'conf.low',
 #' * integer: the number of digits to keep after the period `format(round(x, fmt), nsmall=fmt)`
 #' * character: passed to the `sprintf` function (e.g., '%.3f' keeps 3 digits with trailing zero). See `?sprintf`
 #' * function: returns a formatted character string.
+#' * NULL: does not format numbers, which allows users to include function in the "glue" strings in the `estimate` and `statistic` arguments. 
+#' * A named list to format distinct elements of the table differently. Names correspond to column names produced by `get_estimates(model)` or `get_gof(model)`. Values are integers, characters, or functions, as described above. The `fmt` element is used as default for unspecified elements Ex: `fmt=list("estimate"=2, "std.error"=1, "r.squared"=4, "fmt"=3)`
 #' * LaTeX output: To ensure proper typography, all numeric entries are enclosed in the `\num{}` command, which requires the `siunitx` package to be loaded in the LaTeX preamble. This behavior can be altered with global options. See the 'Details' section.
 #' @param stars to indicate statistical significance
 #' * FALSE (default): no significance stars.
@@ -47,9 +54,11 @@ globalVariables(c('.', 'term', 'part', 'estimate', 'conf.high', 'conf.low',
 #' uncertainty statistics.
 #' * "conf.int", "std.error", "statistic", "p.value", "conf.low", "conf.high",
 #'    or any column name produced by: `get_estimates(model)`
-#' * `glue` package strings with braces, such as:
+#' * `glue` package strings with braces, with or without R functions, such as:
 #'   - `"{p.value} [{conf.low}, {conf.high}]"`
 #'   - `"Std.Error: {std.error}"`
+#'   - `"{exp(estimate) * std.error}"
+#' * Numbers are automatically rounded and converted to strings. To apply functions to their numeric values, as in the last `glue` example, users must set `fmt=NULL`.
 #' * Parentheses are added automatically unless the string includes `glue` curly braces `{}`.
 #' @param vcov robust standard errors and other manual statistics. The `vcov`
 #'   argument accepts six types of input (see the 'Details' and 'Examples'
@@ -67,47 +76,58 @@ globalVariables(c('.', 'term', 'part', 'estimate', 'conf.high', 'conf.low',
 #' `exp(estimate)*std.error`.
 #' @param coef_map character vector. Subset, rename, and reorder coefficients.
 #' Coefficients omitted from this vector are omitted from the table. The order
-#' of the vector determines the order of the table.  `coef_map` can be a named
-#' or an unnamed character vector (see the Examples section below). If
-#' `coef_map` is a named vector, its values define the labels that must appear
-#' in the table, and its names identify the original term names stored in the
-#' model object: `c("hp:mpg"="HPxM/G")`.
-#' @param coef_omit string regular expression. Omits all matching coefficients
-#' from the table using `grepl(perl=TRUE)`. This argument uses perl-compatible regular expressions, which allows expressions such as `"Int|ABC" which omits coefficients matching either "Int" or "ABC", and `"^(?!.*Intercept)"` which omits every term except the intercept.
-#' @param coef_rename named character vector or function which returns a named
-#' vector. Values of the vector refer to the variable names that will appear
-#' in the table. Names refer to the original term names stored in the model
-#' object, e.g. c("hp:mpg"="hp X mpg") for an interaction term.
-#' If you provide a function to `coef_rename`, `modelsummary` will create a named
-#' vector for you by deriving the new variable names from the vector of original
-#' term names with your function.
+#' of the vector determines the order of the table. `coef_map` can be a named
+#' or an unnamed character vector. If `coef_map` is a named vector, its values
+#' define the labels that must appear in the table, and its names identify the
+#' original term names stored in the model object: `c("hp:mpg"="HPxM/G")`. See
+#' Examples section below.
+#' @param coef_omit string regular expression (perl-compatible) used to determine which coefficients to omit from the table. A "negative lookahead" can be used to specify which coefficients to *keep* in the table. Examples:
+#' * `"ei"`: omit coefficients matching the "ei" substring.
+#' * `"^Volume$"`: omit the "Volume" coefficient.
+#' * `"ei|rc"`: omit coefficients matching either the "ei" or the "rc" substrings.
+#' * `"^(?!Vol)"`: keep coefficients starting with "Vol" (inverse match using a negative lookahead).
+#' * `"^(?!.*ei)"`: keep coefficients matching the "ei" substring.
+#' * `"^(?!.*ei|.*pt)"`: keep coefficients matching either the "ei" or the "pt" substrings.
+#' * See the Examples section below for complete code.
+#' @param coef_rename named character vector or function
+#' * Named character vector: Values refer to the variable names that will appear in the table. Names refer to the original term names stored in the model object. Ex: c("hp:mpg"="hp X mpg") 
+#' * Function: Accepts a character vector of the model's term names and returns a named vector like the one described above. The `modelsummary` package supplies a `coef_rename()` function which can do common cleaning tasks: `modelsummary(model, coef_rename = coef_rename)`
 #' @param gof_map rename, reorder, and omit goodness-of-fit statistics and other
 #'   model information. This argument accepts 4 types of values:
 #' * NULL (default): the `modelsummary::gof_map` dictionary is used for formatting, and all unknown statistic are included.
+#' * NA: excludes all statistics from the bottom part of the table.
 #' * character vector such as `c("rmse", "nobs", "r.squared")`. Elements correspond to colnames in the data.frame produced by `get_gof(model)`. The default dictionary is used to format and rename statistics.
 #' * data.frame with 3 columns named "raw", "clean", "fmt". Unknown statistics are omitted. See the 'Examples' section below.
 #' * list of lists, each of which includes 3 elements named "raw", "clean", "fmt". Unknown statistics are omitted. See the 'Examples section below'.
-#' @param gof_omit string regular expression. Omits all matching gof statistics from
-#' the table. This argument uses perl-compatible regular expressions (`grepl(perl=TRUE)`), which allows expressions such as `".*"` which omits everything, and `"^(?!R2|Num)"` which omits every term except those that start with "R2" or "Num".
-#' @param group transpose or group models and estimates (formula). The left
-#' side of the formula represents rows and the right side columns.
-#' * Formula with two components called `term` and `model`.
-#'   - `term ~ model`
-#'   - `model ~ term`
-#' * Formula with three components, including one of the column names in the data frame produced by `get_estimates(model)`. Examples:
-#'   - `response + term ~ model`
-#'   - `term ~ model + y.level`
+#' @param gof_omit string regular expression (perl-compatible) used to determine which statistics to omit from the bottom section of the table. A "negative lookahead" can be used to specify which statistics to *keep* in the table. Examples:
+#' * `"IC"`: omit statistics matching the "IC" substring.
+#' * `"BIC|AIC"`: omit statistics matching the "AIC" or "BIC" substrings.
+#' * `"^(?!.*IC)"`: keep statistics matching the "IC" substring. 
 #' @param group_map named or unnamed character vector. Subset, rename, and
-#' reorder coefficient groups specified in the `group` argument. See `coef_map`.
+#' reorder coefficient groups specified a grouping variable specified in the
+#' `shape` argument formula. This argument behaves like `coef_map`.
+#' @param shape formula which determines the shape of the table. The left side
+#' determines what appears on rows, and the right side determines what appears
+#' on columns. The formula can include a group identifier to display related terms
+#' together, which can be useful for models with multivariate outcomes or
+#' grouped coefficients (See examples section below). This identifier must be
+#' one of the column names produced by: `get_estimates(model)`. If an
+#' incomplete formula is supplied (e.g., `~statistic`), `modelsummary` tries to
+#' complete it automatically. Potential `shape` values include:
+#' * `term + statistic ~ model`: default
+#' * `term ~ model + statistic`: statistics in separate columns
+#' * `model + statistic ~ term`: models in rows and terms in columns
+#' * `term + response + statistic ~ model`: 
+#' * `term ~ response`
 #' @param add_rows a data.frame (or tibble) with the same number of columns as
 #' your main table. By default, rows are appended to the bottom of the table.
 #' You can define a "position" attribute of integers to set the row positions.
 #' See Examples section below.
 #' @param title string
 #' @param notes list or vector of notes to append to the bottom of the table.
-#' @param estimate string or `glue` string of the estimate to display (or a
-#' vector with one string per model). Valid entries include any column name of
-#' the data.frame produced by `get_estimates(model)`. Examples:
+#' @param estimate a single string or a character vector of length equal to the
+#' number of models. Valid entries include any column name of
+#' the data.frame produced by `get_estimates(model)`, and strings with curly braces compatible with the `glue` package format. Examples:
 #' * `"estimate"`
 #' * `"{estimate} ({std.error}){stars}"`
 #' * `"{estimate} [{conf.low}, {conf.high}]"`
@@ -127,7 +147,7 @@ globalVariables(c('.', 'term', 'part', 'estimate', 'conf.high', 'conf.low',
 #' this can be customized). This allows users to pass arguments directly to
 #' `modelsummary` in order to affect the behavior of other functions behind the
 #' scenes. For example,
-#' * `performance::model_performance(metrics="RMSE")` to select goodness-of-fit statistics to extract using the `performance` package (must have set `options(modelsummary_get="easystats")` first). This can be useful for some models when statistics take a long time to compute.
+#' * `metrics="none"`, `metrics="all"`, or `metrics=c("R2", "RMSE")` to select the goodness-of-fit extracted by the `performance` package (must have set `options(modelsummary_get="easystats")` first). This can be useful for some models when statistics take a long time to compute. See `?performance::performance`
 #' @return a regression table in a format determined by the `output` argument.
 #' @importFrom generics glance tidy
 #' @export
@@ -141,12 +161,12 @@ modelsummary <- function(
   conf_level  = 0.95,
   exponentiate = FALSE,
   stars       = FALSE,
+  shape       = term + statistic ~ model,
   coef_map    = NULL,
   coef_omit   = NULL,
   coef_rename = NULL,
   gof_map     = NULL,
   gof_omit    = NULL,
-  group       = term ~ model,
   group_map   = NULL,
   add_rows    = NULL,
   align       = NULL,
@@ -160,6 +180,20 @@ modelsummary <- function(
      "function_called" = "modelsummary"
   ))
 
+  # bug: deprecated `group` argument gets partial matched
+  scall <- sys.call()
+  if (all(c("group", "shape") %in% names(scall))) {
+    stop("The `group` argument is deprecated. Please use `shape` instead.", call. = FALSE)
+  # both group and group_map -> group is pushed to ...
+  } else if ("group" %in% names(scall) && "group_map" %in% names(scall)) {
+    shape <- list(...)[["group"]]
+  # only group -> partial match assigns to group_map
+  } else if ("group" %in% names(scall) && !"group_map" %in% names(scall)) {
+    shape <- group_map
+    group_map <- NULL
+  }
+
+
   ## sanity functions validate variables/settings
   ## sanitize functions validate & modify & initialize
   checkmate::assert_string(gof_omit, null.ok = TRUE)
@@ -171,14 +205,14 @@ modelsummary <- function(
   number_of_models <- max(length(models), length(vcov))
   estimate <- sanitize_estimate(estimate, number_of_models)
   exponentiate <- sanitize_exponentiate(exponentiate, number_of_models)
-  group <- sanitize_group(group)
+  shape <- sanitize_shape(shape)
+  statistic <- sanitize_statistic(statistic, shape) # after shape
   gof_map <- sanitize_gof_map(gof_map)
+  fmt <- sanitize_fmt(fmt, calling_function = "modelsummary")
   sanity_group_map(group_map)
-  sanity_statistic(statistic)
   sanity_conf_level(conf_level)
   sanity_coef(coef_map, coef_rename, coef_omit)
   sanity_stars(stars)
-  sanity_fmt(fmt)
   sanity_align(align, estimate = estimate, statistic = statistic, stars = stars)
 
   # confidence intervals are expensive
@@ -204,6 +238,7 @@ modelsummary <- function(
   msl <- get_list_of_modelsummary_lists(models = models,
                                         conf_level = conf_level,
                                         vcov = vcov,
+                                        gof_map = gof_map, # check if we can skip all gof computation
                                         ...)
   names(msl) <- model_names
 
@@ -232,12 +267,13 @@ modelsummary <- function(
       vcov       = vcov[[i]],
       conf_level = conf_level,
       stars      = stars,
-      group_name = group$group_name,
+      shape      = shape,
+      group_name = shape$group_name,
       exponentiate = exponentiate[[i]],
       ...)
 
     # before merging to collapse
-    tmp <- map_omit_rename_estimates(
+    tmp <- map_estimates(
         tmp,
         coef_rename = coef_rename,
         coef_map = coef_map,
@@ -252,12 +288,35 @@ modelsummary <- function(
 
   term_order <- unique(unlist(lapply(est, function(x) x$term)))
   group_order <- unique(unlist(lapply(est, function(x) x$group)))
+  statistic_order <- unique(unlist(lapply(est, function(x) x$statistic)))
 
   f <- function(x, y) merge(x, y, all = TRUE, sort = FALSE,
                             by = c("group", "term", "statistic"))
   est <- Reduce(f, est)
 
-  est <- group_reshape(est, group$lhs, group$rhs, group$group_name)
+  # warn that `shape` might be needed
+  if (is.null(shape$group_name)) {
+    idx <- paste(est$term, est$statistic)
+    if (anyDuplicated(idx) > 0) {
+      candidate_groups <- sapply(msl, function(x) colnames(x[["tidy"]]))
+      candidate_groups <- unlist(candidate_groups)
+      candidate_groups <- setdiff(
+        candidate_groups,
+        c("term", "estimate", "std.error", "conf.level", "conf.low", "conf.high",
+          "statistic", "df.error", "p.value"))
+      if (length(candidate_groups) > 0) {
+        candidate_groups <- sprintf("Candidate group identifiers include: %s.",
+                                    paste(candidate_groups, collapse = ", "))
+      } else{
+        candidate_groups <- ""
+      }
+      msg <- sprintf("There are duplicate term names in the table. The `shape` argument of the `modelsummary` function can be used to print related terms together, and to label them appropriately. You can find the group identifier to use in the `shape` argument by calling `get_estimates()` on one of your models. %s See `?modelsummary` for details.", candidate_groups)
+
+      warning(msg, call. = FALSE)
+    }
+  }
+
+  est <- shape_estimates(est, shape, conf_level = conf_level)
 
   # distinguish between estimates and gof (first column for tests)
   est$part <- "estimates"
@@ -273,38 +332,32 @@ modelsummary <- function(
         if (isTRUE(escape)) {
             term_order <- escape_string(term_order)
         }
-        est$term <- factor(est$term, unique(term_order))
-    } else {
-        est$term <- factor(est$term, unique(term_order))
     }
+    est$term <- factor(est$term, unique(term_order))
 
-    if (!is.null(group_map)) {
-        group_order <- group_map
-        est$group <- factor(est$term, group_order)
-    } else {
-        est$group <- factor(est$group, unique(est$group))
+    if ("group" %in% colnames(est)) {
+      if (!is.null(group_map)) {
+          est$group <- factor(est$group, group_map)
+      } else {
+          est$group <- factor(est$group, unique(est$group))
+      }
     }
 
   } else if ("model" %in% colnames(est)) {
     est$model <- factor(est$model, model_names)
   }
 
+  # not statistic column when group=term~model+statistic
+  if ("statistic" %in% colnames(est)) {
+    est$statistic <- factor(est$statistic, statistic_order)
+  }
+
   est <- est[do.call(order, as.list(est)), ]
 
   # character for binding
-  for (col in c("term", "group", "model")) {
+  for (col in c("term", "group", "model", "statistic")) {
     if (col %in% colnames(est)) {
       est[[col]] <- as.character(est[[col]])
-    }
-  }
-
-  # make sure there are no duplicate estimate names *within* a single model.
-  # this cannot be in input sanity checks. idx paste allows multiple statistics.
-  if (is.null(group$group_name) && "term" %in% group$lhs) {
-    idx <- paste(est$term, est$statistic)
-    if (anyDuplicated(idx) > 1) {
-      warning('The table includes duplicate term names. This can happen when `coef_map` or `coef_rename` are misused. This can also happen when a model produces "grouped" terms, such as in multinomial logit or gamlss models. You may want to call `get_estimates(model)` to see how estimates are labelled internally, and use the `group` argument of the `modelsummary` function.',
-              call. = FALSE)
     }
   }
 
@@ -327,17 +380,11 @@ modelsummary <- function(
   f <- function(x, y) merge(x, y, all = TRUE, sort = FALSE, by = "term")
   gof <- Reduce(f, gof)
 
-  gof <- map_omit_gof(gof, gof_omit, gof_map)
+  gof <- map_gof(gof, gof_omit, gof_map)
+
 
   # combine estimates and gof
-  if (is.data.frame(gof) &&
-      nrow(gof) > 0 &&
-      all(colnames(gof) %in% colnames(est))) {
-    tab <- bind_rows(est, gof)
-  } else {
-    tab <- est
-  }
-
+  tab <- bind_est_gof(est, gof)
 
   ##################
   #  output table  #
@@ -388,32 +435,34 @@ modelsummary <- function(
     tab <- redundant_labels(tab, "group")
     tab <- redundant_labels(tab, "term")
 
-    # after label redundancy
+    # after label redundancy, before align
     tab$statistic <- tab$part <- NULL
+
 
     # HACK: arbitrary spaces to avoid name conflict
     if ("term" %in% colnames(tab)) colnames(tab)[colnames(tab) == "term"]   <- "       "
     if ("model" %in% colnames(tab)) colnames(tab)[colnames(tab) == "model"] <- "         "
+    if ("group" %in% colnames(tab)) colnames(tab)[colnames(tab) == "model"] <- "          "
+  }
 
+  if (length(unique(tab$group)) == 1) {
+    tab$group <- NULL
   }
 
   # only show group label if it is a row-property (lhs of the group formula)
-  tmp <- setdiff(group$lhs, c("model", "term"))
+  tmp <- setdiff(shape$lhs, c("model", "term"))
   if (length(tmp) == 0) {
     tab$group <- NULL
   } else if (!settings_equal("output_format", "dataframe")) {
     colnames(tab)[colnames(tab) == "group"] <- "        "
   }
 
+
   # align
   if (is.null(align)) {
-    if (!is.null(group) && length(group$lhs) == 2) {
-      align <- paste0("ll", strrep("c", ncol(tab) - 2))
-    } else {
-      align <- paste0("l", strrep("c", ncol(tab) - 1))
-    }
+    n_stub <- sum(grepl("^ *$", colnames(tab)))
+    align <- paste0(strrep("l", n_stub), strrep("c", ncol(tab) - n_stub))
   }
-
 
   # HACK: remove "empty" confidence intervals or standard errors and omit empty rows
   for (i in seq_along(tab)) {
@@ -425,7 +474,6 @@ modelsummary <- function(
   }
   idx <- apply(tab, 1, function(x) any(x != ""))
   tab <- tab[idx, ]
-
 
 
   ## build table
@@ -456,330 +504,7 @@ modelsummary <- function(
 }
 
 
-
-#' rename and reorder estimates from a *single* model
-#' (before merging to collapse)
-#'
-#' @keywords internal
-map_omit_rename_estimates <- function(estimates,
-                                      coef_rename,
-                                      coef_map,
-                                      coef_omit,
-                                      group_map) {
-
-
-
-    ## coef_omit
-    if (!is.null(coef_omit)) {
-        idx <- !grepl(coef_omit, estimates$term, perl = TRUE)
-        estimates <- estimates[idx, , drop = FALSE]
-    }
-
-    # coef_rename
-    if (!is.null(coef_rename)) {
-        if (is.character(coef_rename)) {
-            dict <- coef_rename
-        } else if (is.function(coef_rename)) {
-            dict <- stats::setNames(coef_rename(estimates$term), estimates$term)
-        }
-        estimates$term <- replace_dict(estimates$term, dict)
-    }
-
-    # coef_map
-    if (!is.null(coef_map)) {
-        if (is.null(names(coef_map))) {
-            coef_map <- stats::setNames(coef_map, coef_map)
-        }
-        idx <- estimates$term %in% names(coef_map)
-        if (!any(idx)) {
-            stop("At least one of the term names in each model must appear in `coef_map`.")
-        }
-        estimates <- estimates[idx, , drop = FALSE]
-        estimates$term <- replace_dict(estimates$term, coef_map)
-    }
-
-    # group_map
-    if (!is.null(group_map)) {
-        if (is.null(names(group_map))) {
-            group_map <- stats::setNames(group_map, group_map)
-        }
-        estimates <- estimates[estimates$group %in% names(group_map), , drop = FALSE]
-        estimates$group <- replace_dict(estimates$group, group_map)
-    }
-
-
-    ## escape if needed
-    ## (must be done after rename/map, otherwise all rows are dropped)
-    if (settings_equal("escape", TRUE)) {
-        for (i in c("group", "term", "model")) {
-            if (i %in% colnames(estimates)) {
-                estimates[[i]] <- escape_string(estimates[[i]])
-            }
-        }
-    }
-
-    return(estimates)
-}
-
-
-#' Internal function to subset, rename and re-order gof statistics
-#'
-#' @keywords internal
-map_omit_gof <- function(gof, gof_omit, gof_map) {
-
-  if (is.null(gof) ||
-      is.data.frame(gof) && nrow(gof) == 0) {
-    return(gof)
-  }
-
-  # row identifier as first column
-  gof$part <- "gof"
-  gof <- gof[, unique(c("part", "term", names(gof)))]
-
-  # gof_omit
-  if (!is.null(gof_omit)) {
-    idx <- !grepl(gof_omit, gof$term, perl = TRUE)
-    gof <- gof[idx, , drop = FALSE]
-  }
-
-  # map
-  gm_raw <- sapply(gof_map, function(x) x$raw)
-  gm_clean <- sapply(gof_map, function(x) x$clean)
-  gm_omit <- try(sapply(gof_map, function(x) x$omit), silent = TRUE)
-
-  if (is.logical(gm_omit)) {
-    if (isTRUE(attr(gof_map, "whitelist"))) {
-      gof <- gof[gof$term %in% gm_clean[gm_omit == FALSE], , drop = FALSE]
-    } else {
-      gof <- gof[!gof$term %in% gm_clean[gm_omit == TRUE], , drop = FALSE]
-    }
-  } else {
-    if (isTRUE(attr(gof_map, "whitelist"))) {
-      gof <- gof[gof$term %in% gm_clean, , drop = FALSE]
-    }
-  }
-
-  tmp <- gm_clean[match(gof$term, gm_raw)]
-  tmp[is.na(tmp)] <- gof$term[is.na(tmp)]
-  gof$term <- tmp
-  idx <- match(gof$term, gm_clean)
-  # hack to keep unmatched gof at the end of the table
-  # important for unknown glance_custom entries
-  idx[is.na(idx)] <- 1e6 + 1:sum(is.na(idx))
-  gof <- gof[order(idx, gof$term), ]
-
-  # important for modelsummary_get = "all"
-  gof <- unique(gof)
-
-  return(gof)
-}
-
-
-#' internal function to reshape grouped estimates
-#'
-#' @importFrom stats reshape
-#' @keywords internal
-#' @noRd
-group_reshape <- function(estimates, lhs, rhs, group_name) {
-
-    lhs[lhs == group_name] <- "group"
-    rhs[rhs == group_name] <- "group"
-
-    # term ~ model (default)
-    if (is.null(lhs) ||
-        (length(lhs) == 1 && lhs == "term" &&
-         length(rhs) == 1 && rhs == "model")) {
-      return(estimates)
-
-    # model ~ term
-    } else if (length(lhs) == 1 && lhs == "model" && length(rhs) == 1 && rhs == "term") {
-      ## out <- tidyr::pivot_longer(estimates,
-      ##                            cols = -c("group", "term", "statistic"),
-      ##                            names_to = "model")
-      ## out <- tidyr::pivot_wider(out, names_from = "term")
-      out <- reshape(
-        estimates,
-        varying = setdiff(colnames(estimates), c("group", "term", "statistic")),
-        idvar = c("group", "term", "statistic"),
-        times = setdiff(colnames(estimates), c("group", "term", "statistic")),
-        v.names = "value",
-        timevar = "model",
-        direction = "long")
-      out <- reshape(
-        out,
-        timevar = "term",
-        idvar = c("group", "statistic", "model"),
-        direction = "wide")
-      colnames(out) <- gsub("^value\\.", "", colnames(out))
-      row.names(out) <- NULL
-
-      # order matters for sorting
-      out <- out[, unique(c("group", "model", "statistic", colnames(out)))]
-
-    ## term + group ~ model
-    } else if (all(c("term", "group") %in% lhs)) {
-        idx <- unique(c(lhs, colnames(estimates)))
-        out <- estimates[, idx, drop = FALSE]
-
-    } else if (all(c("term", "model") %in% lhs)) {
-        ## out <- tidyr::pivot_longer(
-        ##     estimates,
-        ##     cols = !tidyselect::any_of(c("part", "group", "term", "statistic")),
-        ##     names_to = "model")
-        ## out <- tidyr::pivot_wider(
-        ##     out,
-        ##     names_from = "group",
-        ##     values_from = "value",
-        ##     values_fill = "")
-        out <- estimates
-        out <- reshape(
-          out,
-          varying = setdiff(colnames(estimates), c("part", "group", "term", "statistic")),
-          idvar = c("group", "term", "statistic"),
-          times = setdiff(colnames(estimates), c("part", "group", "term", "statistic")),
-          v.names = "value",
-          timevar = "model",
-          direction = "long")
-        out <- reshape(
-          out,
-          timevar = "group",
-          idvar = setdiff(colnames(out), c("group", "value")),
-          direction = "wide")
-        row.names(out) <- NULL
-        colnames(out) <- gsub("^value\\.", "", colnames(out))
-
-        idx <- unique(c(lhs, colnames(out)))
-        out <- out[, idx, drop = FALSE]
-
-    ## term ~ group + model
-    } else if (all(c("group", "model") %in% rhs)) {
-
-        out <- estimates
-
-        ## out <- tidyr::pivot_longer(
-        ##   out,
-        ##   cols = !tidyselect::any_of(c("part", "group", "term", "statistic")),
-        ##   names_to = "model")
-        ## out <- tidyr::pivot_wider(out,
-        ##                           names_from = "idx_col",
-        ##                           values_from = "value",
-        ##                           values_fill = "")
-        out <- reshape(
-          out,
-          varying = setdiff(colnames(estimates), c("part", "group", "term", "statistic")),
-          idvar = c("group", "term", "statistic"),
-          times = setdiff(colnames(estimates), c("part", "group", "term", "statistic")),
-          v.names = "value",
-          timevar = "model",
-          direction = "long")
-
-        ## preserve order of columns (rhs variables are ordered factors)
-        row.names(out) <- NULL
-        out[[rhs[1]]] <- factor(out[[rhs[1]]], unique(out[[rhs[1]]]))
-        out[[rhs[2]]] <- factor(out[[rhs[2]]], unique(out[[rhs[2]]]))
-        out <- out[order(out[[rhs[1]]], out[[rhs[2]]]),]
-
-        out$idx_col <- paste(out[[rhs[1]]], "/", out[[rhs[2]]])
-        out$model <- out$group <- NULL
-        out <- reshape(
-          out,
-          timevar = "idx_col",
-          idvar = setdiff(colnames(out), c("idx_col", "value")),
-          direction = "wide")
-        row.names(out) <- NULL
-        colnames(out) <- gsub("^value\\.", "", colnames(out))
-
-    ## model ~ term + group
-    } else if (all(c("term", "group") %in% rhs)) {
-      ## out <- tidyr::pivot_longer(estimates,
-      ##                            cols = -c("group", "term", "statistic"),
-      ##                            names_to = "model")
-      ## out <- tidyr::pivot_wider(out, names_from = rhs, names_sep = " / ")
-      out <- estimates
-      out[[rhs[1]]] <- factor(out[[rhs[1]]], unique(out[[rhs[1]]]))
-      out[[rhs[2]]] <- factor(out[[rhs[2]]], unique(out[[rhs[2]]]))
-
-      out <- reshape(
-        out,
-        varying = setdiff(colnames(estimates), c(rhs, "statistic")),
-        idvar = c(rhs, "statistic"),
-        times = setdiff(colnames(estimates), c(rhs, "statistic")),
-        v.names = "value",
-        timevar = "model",
-        direction = "long")
-
-      row.names(out) <- NULL
-
-      ## preserve order of columns (rhs variables are ordered factors)
-      out <- out[order(out[[rhs[1]]], out[[rhs[2]]]),]
-
-      out$rhs <- paste(out[[rhs[1]]], out[[rhs[2]]], sep = " / ")
-      out[[rhs[1]]] <- out[[rhs[2]]] <- NULL
-
-      out <- reshape(
-        out,
-        timevar = "rhs",
-        idvar = setdiff(colnames(out), c("rhs", "value")),
-        direction = "wide")
-      row.names(out) <- NULL
-      colnames(out) <- gsub("^value\\.", "", colnames(out))
-
-    ## group ~ model + term
-    } else if (length(lhs) == 1 && "group" %in% lhs) {
-
-      out <- estimates
-      out <- reshape(
-         out,
-         varying = setdiff(colnames(estimates), c("part", "group", "term", "statistic")),
-         idvar = c("group", "term", "statistic"),
-         times = setdiff(colnames(estimates), c("part", "group", "term", "statistic")),
-         v.names = "value",
-         timevar = "model",
-         direction = "long")
-
-      # avoid duplicate row error
-      row.names(out) <- NULL
-
-      ## preserve order of columns (rhs variables are ordered factors)
-      out[[lhs]] <- factor(out[[lhs]], levels = unique(out[[lhs]]))
-
-      out <- out[order(out[[rhs[1]]], out[[rhs[2]]]),]
-      out$idx_col <- paste(out[[rhs[1]]], "/", out[[rhs[2]]])
-      out[[rhs[1]]] <- out[[rhs[2]]] <- NULL
-      out <- reshape(out,
-                     timevar = "idx_col",
-                     idvar = setdiff(colnames(out), c("idx_col", "value")),
-                     direction = "wide")
-      row.names(out) <- NULL
-      colnames(out) <- gsub("^value\\.", "", colnames(out))
-
-      out <- out[order(out[[lhs]]), ]
-
-    }
-
-    out[out == "NA"] <- ""
-    out[is.na(out)] <- ""
-
-    # empty columns
-    idx <- sapply(out, function(x) !all(x == ""))
-    out <- out[, idx, drop = FALSE]
-
-    # empty rows
-    idx <- setdiff(colnames(out), c("part", "term", "statistic", "model"))
-    tmp <- out[, idx, drop = FALSE]
-    idx <- apply(tmp, 1, function(x) !all(x == ""))
-    out <- out[idx, ]
-
-    # make sure there is a group column for merging in `modelsummary`
-    if (!"group" %in% colnames(out)) {
-      out$group <- "group"
-    }
-
-    return(out)
-}
-
-
-get_list_of_modelsummary_lists <- function(models, conf_level, vcov, ...) {
+get_list_of_modelsummary_lists <- function(models, conf_level, vcov, gof_map, ...) {
 
     number_of_models <- max(length(models), length(vcov))
 
@@ -810,21 +535,34 @@ get_list_of_modelsummary_lists <- function(models, conf_level, vcov, ...) {
                 call. = FALSE)
     }
 
-    # extract
-    out <- list()
-
-    for (i in 1:number_of_models) {
+    inner_loop <- function(i) {
         # recycling when 1 model and many vcov
         j <- ifelse(length(models) == 1, 1, i)
 
-        gla <- get_gof(models[[j]], vcov_type[[i]], ...)
+        # don't waste time if we are going to exclude all gof anyway
+        gla <- get_gof(models[[j]], vcov_type[[i]], gof_map = gof_map, ...)
+
         tid <- get_estimates(models[[j]], conf_level = conf_level, vcov = vcov[[i]], ...)
 
-        out[[i]] <- list("tidy" = tid, "glance" = gla)
-        class(out[[i]]) <- "modelsummary_list"
+        out <- list("tidy" = tid, "glance" = gla)
+        class(out) <- "modelsummary_list"
+        return(out)
     }
 
-    return(out)
+    # parallel
+    if (isTRUE(check_dependency("future.apply"))) {
+        parallel_flag <- !"sequential" %in% attr(future::plan(), "class") && number_of_models > 1
+    } else {
+        parallel_flag <- FALSE
+    }
+
+    if (isTRUE(parallel_flag)) {
+        out <- future.apply::future_lapply(seq_len(number_of_models), inner_loop)
+    } else {
+        out <- lapply(seq_len(number_of_models), inner_loop)
+    }
+
+   return(out)
 }
 
 

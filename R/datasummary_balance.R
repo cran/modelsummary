@@ -4,6 +4,10 @@
 #' Creates balance tables with summary statistics for different subsets of the
 #' data (e.g., control and treatment groups). It can also be used to create
 #' summary tables for full data sets.
+#' See the Details and Examples sections below, and the vignettes on the
+#' `modelsummary` website: https://vincentarelbundock.github.io/modelsummary/ *
+#' [datasummary Vignette.](https://vincentarelbundock.github.io/modelsummary/articles/datasummary.html)
+
 #'
 #' @param formula a one-sided formula with the "condition" or "column" variable
 #'   on the right-hand side. ~1 can be used to show summary statistics for the
@@ -18,8 +22,8 @@
 #'   "weights", this information will be taken into account automatically by
 #'   `estimatr::difference_in_means`.
 #' @param dinm_statistic string: "std.error" or "p.value"
-#' @inheritParams modelsummary
 #' @inheritParams datasummary
+#' @inheritParams modelsummary
 #' @template options
 #' @export
 #' @examples
@@ -119,6 +123,7 @@ datasummary_balance <- function(formula,
         tab_fac <- datasummary(formula = f_fac,
                                data = tmp1,
                                fmt = fmt,
+                               internal_call = TRUE,
                                output = "data.frame")
 
         ## datasummary(output="dataframe") changes the output format
@@ -164,6 +169,7 @@ datasummary_balance <- function(formula,
         tab_num <- datasummary(formula = f_num,
                                fmt = fmt,
                                data = data,
+                               internal_call = TRUE,
                                output = "data.frame")
 
         ## datasummary(output="dataframe") changes the output format
@@ -173,15 +179,18 @@ datasummary_balance <- function(formula,
     ## combine
     if (any_numeric && any_factor) {
         top <- tab_num
-        if (is.null(rhs)) {
-            attr(tab_fac, "header_bottom") <- colnames(tab_fac)
+        mid <- attr(get_span_kableExtra(tab_fac), "column_names")
+        if (is.null(mid)) {
+            mid <- colnames(tab_fac)
+        } else {
+            mid <- trimws(mid)
         }
-        mid <- stats::setNames(as.data.frame(as.list(attr(tab_fac, "header_bottom"))), colnames(top))
+        mid <- stats::setNames(as.data.frame(as.list(mid)), colnames(top))
         bot <- stats::setNames(tab_fac, colnames(top))
         tab <- bind_rows(top, mid, bot)
 
         ## restore attributes destroyed by bind_rows
-        idx <- grep("header|span|stub|align", names(attributes(tab_num)), value = TRUE)
+        idx <- grep("header|stub|align", names(attributes(tab_num)), value = TRUE)
         for (i in idx) {
             attr(tab, i) <- attr(tab_num, i)
         }
@@ -213,13 +222,6 @@ datasummary_balance <- function(formula,
         tab <- left_join(tab, tmp, by = " ")
 
         tab[is.na(tab)] <- ""
-
-        ## adjust headers for dinm
-        for (i in seq_along(attr(tab, "span_kableExtra"))) {
-            attr(tab, "span_kableExtra")[[i]] <- c(attr(tab, "span_kableExtra")[[i]], c(" " = 2))
-        }
-        attr(tab, "header_bottom") <- c(attr(tab, "header_bottom"), colnames(tmp)[1:2])
-        attr(tab, "header_sparse_flat") <- c(attr(tab, "header_sparse_flat"), colnames(tmp)[1:2])
     }
 
     ## horizontal rule
@@ -233,13 +235,6 @@ datasummary_balance <- function(formula,
     if (is.null(align) && !is.null(attr(tab, "stub_width")) && is.null(add_columns)) {
         align <- paste0(strrep("l", attr(tab, "stub_width")),
                         strrep("r", ncol(tab) - attr(tab, "stub_width")))
-    }
-    ## If groups are used,
-    ## colnames should not include factor values if spanning headers are available
-    if (!is.null(rhs) &&
-        settings_equal("output_format", c("latex", "latex_tabular", "html", "gt", "kableExtra")) &&
-        settings_equal("output_factory", c("kableExtra", "gt"))) {
-        colnames(tab) <- attr(tab, "header_bottom")
     }
 
     ## escape stub
@@ -289,7 +284,7 @@ datasummary_balance <- function(formula,
 #' @noRd
 DinM <- function(lhs, rhs, data, fmt, statistic) {
 
-  assert_dependency("estimatr")
+  insight::check_if_installed("estimatr")
 
   if (!"clusters" %in% colnames(data)) {
       clusters <- NULL

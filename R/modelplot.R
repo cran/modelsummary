@@ -1,5 +1,11 @@
 #' Model Summary Plots with Estimates and Confidence Intervals
 #'
+#' Dot-Whisker plot of coefficient estimates with confidence intervals. For
+#' more information, see the Details and Examples sections below, and the
+#' vignettes on the `modelsummary` website:
+#' https://vincentarelbundock.github.io/modelsummary/
+#' * [modelplot Vignette.](https://vincentarelbundock.github.io/modelsummary/articles/modelplot.html)
+#'
 #' @inheritParams modelsummary
 #' @param draw TRUE returns a 'ggplot2' object, FALSE returns the data.frame
 #' used to draw the plot.
@@ -105,7 +111,7 @@ modelplot <- function(models,
   out <- modelsummary(
     output      = "dataframe",
     models      = models,
-    fmt         = "%.50f",
+    fmt         = NULL,
     estimate    = estimate,
     statistic   = NULL,
     conf_level  = conf_level,
@@ -170,13 +176,18 @@ modelplot <- function(models,
   if (!draw) {
     return(dat)
   } else {
-    assert_dependency("ggplot2")
+    insight::check_if_installed("ggplot2")
   }
 
-  p <- ggplot2::ggplot(dat) +
-    ggplot2::theme_minimal() +
-    ggplot2::theme(legend.title = ggplot2::element_blank())
+  p <- ggplot2::ggplot(dat)
 
+  # set a new theme only if the default is theme_grey(). this prevents user's
+  # theme_set() from being overwritten
+  if (identical(ggplot2::theme_get(), ggplot2::theme_grey())) {
+    p <- p + 
+         ggplot2::theme_minimal() +
+         ggplot2::theme(legend.title = ggplot2::element_blank())
+  }
 
   # background geoms
   if (is.list(background)) {
