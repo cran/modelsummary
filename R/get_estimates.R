@@ -35,10 +35,11 @@ get_estimates <- function(model, conf_level = .95, vcov = NULL, ...) {
 
     for (f in funs) {
         if (!inherits(out, "data.frame") || nrow(out) == 0) {
-            out <- f(model,
-                    conf_int = conf_int,
-                    conf_level = conf_level,
-                    ...)
+            out <- f(
+                model,
+                conf_int = conf_int,
+                conf_level = conf_level,
+                ...)
             if (is.character(out)) {
                 warning_msg <- c(warning_msg, out)
             }
@@ -175,12 +176,16 @@ get_estimates_broom <- function(model, conf_int, conf_level, ...) {
 get_estimates_parameters <- function(model,
                                      conf_int,
                                      conf_level,
-                                     effects = "all", ...) {
+                                     ...) {
 
-    if (inherits(model, "marginaleffects") ||
-        inherits(model, "comparisons") ||
-        inherits(model, "marginalmeans")) {
-        return("`parameters` does not support marginaleffects yet.")
+    dots <- list(...)
+
+    if (!"effects" %in% names(dots)) dots[["effects"]] <- "all"
+
+    # bayesian diagnostics are expensive
+    if (inherits(model, "brmsfit") || inherits(model, "stanreg")) {
+        if (!"test" %in% names(dots)) dots <- c(dots, list("test" = NULL))
+        if (!"diagnostic" %in% names(dots)) dots <- c(dots, list("diagnostic" = NULL))
     }
 
     f <- tidy_easystats <- function(x, ...) {
@@ -189,13 +194,35 @@ get_estimates_parameters <- function(model,
     }
 
     if (isTRUE(conf_int)) {
+        args <- list(
+            model,
+            ci = conf_level)
+        args <- c(args, dots)
         out <- suppressMessages(suppressWarnings(try(
-            f(model, ci = conf_level, effects = effects, ...),
+            do.call("f", args),
             silent = TRUE)))
+
     } else {
+        args <- list(model)
+        args <- c(args, dots)
         out <- suppressMessages(suppressWarnings(try(
-            f(model, effects = effects, ...),
+            do.call("f", args),
             silent = TRUE)))
+    }
+
+    # cleaner term names for mixed-effects models
+    mi <- suppressWarnings(try(insight::model_info(model), silent = TRUE))
+    if (isTRUE(mi$is_mixed) && isTRUE("group" %in% colnames(out))) {
+        idx <- out$term != "SD (Observations)" &
+               out$group != "" &
+               !grepl(":", out$term) &
+               grepl("\\)$", out$term)
+        out$term <- ifelse(
+            idx,
+            sprintf("%s: %s)", gsub("\\)$", "", out$term), out$group),
+            out$term)
+        # otherwise gets converted to x
+        out$term <- gsub(":", "", out$term)
     }
 
     if (!inherits(out, "data.frame") || nrow(out) < 1) {
@@ -204,6 +231,11 @@ get_estimates_parameters <- function(model,
 
     if (!"term" %in% colnames(out)) {
         return("`parameters::parameters(model)` did not return a data.frame with a `term` column.")
+    }
+
+    # important to merge lm() and lme4::lmer() for example.
+    if (!"group" %in% colnames(out)) {
+        out[["group"]] <- ""
     }
 
     return(out)

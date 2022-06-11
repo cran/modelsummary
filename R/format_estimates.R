@@ -70,7 +70,8 @@ format_estimates <- function(
       stars <- TRUE
     }
     if (!'p.value' %in% colnames(est)) {
-      stop('To use the `stars` argument, the `tidy` function must produce a column called "p.value"')
+      stop('To use the `stars` argument, the `tidy` function must produce a column called "p.value"',
+           call. = FALSE)
     }
     est$stars <- make_stars(est$p.value, stars)
     est$stars[is.na(est$stars)] <- ""
@@ -85,7 +86,7 @@ format_estimates <- function(
   statistic_nonglue[statistic_nonglue == "conf.int"] <- "conf.low"
   for (s in statistic_nonglue) {
     if (!s %in% colnames(est)) {
-      stop(sprintf("`%s` is not available. The `estimate` and `statistic` arguments must correspond to column names in the output of this command: `get_estimates(model)`", s))
+      stop(sprintf("`%s` is not available. The `estimate` and `statistic` arguments must correspond to column names in the output of this command: `get_estimates(model)`", s), call. = FALSE)
     }
   }
 
@@ -128,11 +129,15 @@ format_estimates <- function(
     s <- estimate_glue[i]
     # At this point, NAs are "". `glue_data(.na=NULL)` works with NAs
     tmp <- est
-    tmp[tmp == ""] <- NA
-    if ("stars" %in% colnames(tmp)) {
-      tmp$stars[is.na(tmp$stars)] <- "" # otherwise NAs propagate when stars = FALSE in user-level call
-    }
-    tmp <- glue::glue_data(tmp, s, .na = NULL)
+    tmp <- glue::glue_data(tmp, s, .na = " ")
+
+    # remove common patterns of missing data, but we can't catch everything
+    # since strings are user-arbitrary...
+    tmp <- gsub("\\s*\\[[\\s|,]*\\]", "", tmp, perl = TRUE) # [, ] or ()
+    tmp <- gsub("\\s*\\([\\s|,]*\\)", "", tmp, perl = TRUE) # (, ) or ()
+    tmp[tmp == gsub("\\{.*\\}", "", s)] <- "" # glue without {} means we failed
+    tmp <- trimws(tmp)
+
     tmp[is.na(tmp)] <- ""
     est[[paste0("modelsummary_tmp", i)]] <- as.character(tmp)
     # avoid empty parentheses for NAs
@@ -142,20 +147,20 @@ format_estimates <- function(
 
   if (!is.null(group_name) && group_name %in% colnames(est)) {
     est[["group"]] <- est[[group_name]]
+
   } else if (!is.null(group_name)) {
     est[["group"]] <- ""
     warning(sprintf('Group name "%s" was not found in the extracted data. The "group" argument must be a column name in the data.frame produced by `get_estimates(model)`.  If you wish to combine models with and without grouped estimates, you will find examples on the modelsummary website:
 https://vincentarelbundock.github.io/modelsummary', group_name),
             call. = FALSE)
-  } else {
+
+  } else if (!"group" %in% colnames(est)) {
     # cannot be NA because we need to merge
     est[["group"]] <- ""
   }
 
-
   # subset columns
-  cols <- c('group', 'term',
-            paste0('modelsummary_tmp', seq_along(estimate_glue)))
+  cols <- c('group', 'term', paste0('modelsummary_tmp', seq_along(estimate_glue)))
   cols <- intersect(cols, colnames(est))
   est <- est[, cols, drop = FALSE]
 

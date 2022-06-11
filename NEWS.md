@@ -1,3 +1,8 @@
+# modelsummary 0.11.1
+
+* Better printout for term names in mixed-effects models
+* {brms} and {stanreg} models now extracted with `diagnostic=NULL` and `test=NULL` by default for speed.
+
 # modelsummary 0.11.0
 
 Breaking changes:

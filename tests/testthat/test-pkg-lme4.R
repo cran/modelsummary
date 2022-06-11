@@ -1,16 +1,79 @@
 requiet("lme4")
 
-test_that("first call raises a warning about `performance` metrics.", {
-    mod <- lmer(mpg ~ hp + (1 | gear), data = mtcars)
-    expect_warning(modelsummary(mod))
+
+test_that("Issue #494 comment", {
+    suppressMessages({
+    models <- list(
+        lme4::lmer(Sepal.Width ~ Petal.Length + (1|Species), data = iris),
+        lme4::lmer(Sepal.Width ~ Petal.Length + (1 + Petal.Length |Species), data = iris),
+        lme4::lmer(Sepal.Width ~ Petal.Length + Petal.Width + (1 + Petal.Length |Species), data = iris))
+    })
+    tab1 <- modelsummary(
+        models[[3]],
+        estimate = "{estimate} [{conf.low}, {conf.high}]",
+        statistic = NULL,
+        gof_map = NA,
+        output = "dataframe")
+    tab2 <- suppressMessages(data.frame(parameters::parameters(models[[3]], effects = "all")))
+    expect_equal(nrow(tab1), nrow(tab2))
 })
+
+
+test_that("Issue #496: multiple models keeps random/fixed grouped together", {
+    suppressMessages({
+    models <- list(
+        lm(Sepal.Width ~ Petal.Length, data = iris),
+        lmer(Sepal.Width ~ Petal.Length + (1|Species), data = iris),
+        lmer(Sepal.Width ~ Petal.Length + (1 + Petal.Length |Species), data = iris),
+        lmer(Sepal.Width ~ Petal.Length + Petal.Width + (1 + Petal.Length |Species), data = iris))
+    })
+    tab <- modelsummary(
+        models,
+        output = "data.frame",
+        statistic = NULL)
+    expect_equal(
+        tab$term[1:7],
+        c("(Intercept)", "Petal.Length", "Petal.Width", "SD (Intercept Species)",
+        "SD (Petal.Length Species)", "Cor (Intercept~Petal.Length Species)", "SD (Observations)"))
+})
+
+
+test_that("Issue #494: glue-related partial breakage", {
+    mod <- lmer(Sepal.Width ~ Petal.Length + (1|Species), data = iris)
+    tab <- modelsummary(
+        mod,
+        output = "dataframe",
+        estimate = "{estimate} [{conf.low}, {conf.high}] ({p.value})",
+        statistic = NULL,
+        gof_map = NA)
+    expect_equal(nrow(tab), 4) # a lot of rows used to be omitted
+})
+
+
+test_that("better lme4 printout", {
+    data(sleepstudy)
+    set.seed(12345)
+    sleepstudy$grp <- sample(1:5, size = 180, replace = TRUE)
+    mod <- lmer(
+      Reaction ~ (Days + 1 | grp ) + (1 | Subject),
+      data = sleepstudy)
+    expect_warning(tab <- msummary(mod, "dataframe"), NA)
+    expect_true("SD (Days grp)" %in% tab$term)
+
+    mod <- lmer(
+      Reaction ~ Days + (1 | grp ) + (1 + Days | Subject),
+      data = sleepstudy)
+    expect_warning(modelsummary(mod, "dataframe"), NA)
+})
+
 
 test_that('random effects variance components do not have standard errors and produce "empty"', {
     mod <- lmer(mpg ~ hp + (1 | gear), mtcars)
     tab <- modelsummary(mod, output = "data.frame", metrics = "RMSE")
-    known <- c("(Intercept)", "(Intercept)", "hp", "hp", "SD (Intercept)", "SD (Observations)", "Num.Obs.", "RMSE")
+    known <- c("(Intercept)", "(Intercept)", "hp", "hp", "SD (Intercept gear)", "SD (Observations)", "Num.Obs.", "RMSE")
     expect_equal(tab$term, known)
 })
+
 
 test_that("performance metrics", {
     N <- 1e4
@@ -29,6 +92,7 @@ test_that("performance metrics", {
     expect_true(all(c("RMSE", "BIC") %in% tab2$term))
 })
 
+
 test_that("lme4", {
   d <- as.data.frame(ChickWeight)
   colnames(d) <- c("y", "x", "subj", "tx")
@@ -45,8 +109,7 @@ test_that("lme4", {
 
 test_that("lme4 with 2 random effects", {
   mod <- lmer(mpg ~ hp + (1|am) + (1|cyl), data = mtcars)
-  expect_warning(modelsummary(mod, output = "data.frame", gof_omit = ".*"),
-                 regexp = "duplicate")
+  expect_warning(modelsummary(mod, output = "data.frame", gof_omit = ".*"), NA) # no longer raises warning
   tab <- suppressWarnings(modelsummary(mod, output = "data.frame", gof_omit = ".*"))
   expect_s3_class(tab, "data.frame")
   tab <- modelsummary(mod, output = "data.frame", gof_omit = ".*",

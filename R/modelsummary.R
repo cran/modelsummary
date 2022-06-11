@@ -142,12 +142,10 @@ globalVariables(c('.', 'term', 'part', 'estimate', 'conf.high', 'conf.low',
 #'   - `\newcolumntype{d}{S[input-symbols = ()]}`
 #' @param escape boolean TRUE escapes or substitutes LaTeX/HTML characters which could
 #' prevent the file from compiling/displaying. This setting does not affect captions or notes.
-#' @param ... all other arguments are passed through to the extractor and
-#' table-making functions (by default `broom::tidy` and `kableExtra::kbl`, but
-#' this can be customized). This allows users to pass arguments directly to
-#' `modelsummary` in order to affect the behavior of other functions behind the
-#' scenes. For example,
-#' * `metrics="none"`, `metrics="all"`, or `metrics=c("R2", "RMSE")` to select the goodness-of-fit extracted by the `performance` package (must have set `options(modelsummary_get="easystats")` first). This can be useful for some models when statistics take a long time to compute. See `?performance::performance`
+#' @param ... all other arguments are passed through to three functions. See the documentation of these functions for lists of available arguments.
+#' + [parameters::model_parameters] extracts parameter estimates.
+#' + [performance::model_performance] extracts goodness-of-fit statistics.
+#' + [kableExtra::kbl] or [gt::gt] draw tables, depending on the value of the `output` argument.
 #' @return a regression table in a format determined by the `output` argument.
 #' @importFrom generics glance tidy
 #' @export
@@ -192,7 +190,6 @@ modelsummary <- function(
     shape <- group_map
     group_map <- NULL
   }
-
 
   ## sanity functions validate variables/settings
   ## sanitize functions validate & modify & initialize
@@ -296,6 +293,7 @@ modelsummary <- function(
 
   # warn that `shape` might be needed
   if (is.null(shape$group_name)) {
+    # est[["group"]] <- NULL
     idx <- paste(est$term, est$statistic)
     if (anyDuplicated(idx) > 0) {
       candidate_groups <- sapply(msl, function(x) colnames(x[["tidy"]]))
@@ -353,6 +351,11 @@ modelsummary <- function(
   }
 
   est <- est[do.call(order, as.list(est)), ]
+
+  # we kept the group column until here for sorting of mixed-effects by group
+  if (is.null(shape$group_name)) {
+    est[["group"]] <- NULL
+  }
 
   # character for binding
   for (col in c("term", "group", "model", "statistic")) {
