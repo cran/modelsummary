@@ -89,10 +89,12 @@ affect the behavior of other functions behind the scenes.}
 character value per variable. The examples section of this documentation
 shows how to define custom summary functions. The package also ships with
 several shortcut summary functions: Min, Max, Mean, Median, Var, SD,
-NPercent, NUnique, Ncol, P0, P25, P50, P75, P100.
-See the Details and Examples sections below, and the vignettes on the
-\code{modelsummary} website: https://vincentarelbundock.github.io/modelsummary/ *
-\href{https://vincentarelbundock.github.io/modelsummary/articles/datasummary.html}{datasummary Vignette.}
+NPercent, NUnique, Ncol, P0, P25, P50, P75, P100. See the Details and
+Examples sections below, and the vignettes on the \code{modelsummary} website:
+\itemize{
+\item https://vincentarelbundock.github.io/modelsummary/
+\item https://vincentarelbundock.github.io/modelsummary/articles/datasummary.html
+}
 }
 \details{
 Visit the 'modelsummary' website for more usage examples:
@@ -138,7 +140,7 @@ the \code{options} function:
 \code{modelsummary} can use two sets of packages to extract information from
 statistical models: the \code{easystats} family (\code{performance} and \code{parameters})
 and \code{broom}. By default, it uses \code{easystats} first and then falls back on
-\code{broom} in ase of failure. You can change the order of priorities or include
+\code{broom} in case of failure. You can change the order of priorities or include
 goodness-of-fit extracted by \emph{both} packages by setting:
 
 \code{options(modelsummary_get = "broom")}
@@ -254,5 +256,8 @@ attr(new_rows, 'position') <- c(1, 3)
 datasummary(mpg + hp ~ mean + sd, data = mtcars, add_rows = new_rows)
 }
 
+}
+\references{
+Arel-Bundock V (2022). “modelsummary: Data and Model Summaries in R.” \emph{Journal of Statistical Software}, \emph{103}(1), 1-23. \doi{10.18637/jss.v103.i01}.'
 }
 \keyword{internal}

@@ -22,6 +22,8 @@ globalVariables(c('.', 'term', 'part', 'estimate', 'conf.high', 'conf.low',
 #' * [The `modelsummary` Vignette includes dozens of examples of tables with extensive customizations.](https://vincentarelbundock.github.io/modelsummary/articles/modelsummary.html)
 #' * [The Appearance Vignette shows how to modify the look of tables.](https://vincentarelbundock.github.io/modelsummary/articles/appearance.html)
 #'
+#' @template citation
+#'
 #' @template modelsummary_details
 #'
 #' @template options
@@ -95,8 +97,8 @@ globalVariables(c('.', 'term', 'part', 'estimate', 'conf.high', 'conf.low',
 #' @param gof_map rename, reorder, and omit goodness-of-fit statistics and other
 #'   model information. This argument accepts 4 types of values:
 #' * NULL (default): the `modelsummary::gof_map` dictionary is used for formatting, and all unknown statistic are included.
+#' * character vector: "all", "none", or a vector of statistics such as `c("rmse", "nobs", "r.squared")`. Elements correspond to colnames in the data.frame produced by `get_gof(model)`. The `modelsummary::gof_map`default dictionary is used to format and rename statistics.
 #' * NA: excludes all statistics from the bottom part of the table.
-#' * character vector such as `c("rmse", "nobs", "r.squared")`. Elements correspond to colnames in the data.frame produced by `get_gof(model)`. The default dictionary is used to format and rename statistics.
 #' * data.frame with 3 columns named "raw", "clean", "fmt". Unknown statistics are omitted. See the 'Examples' section below.
 #' * list of lists, each of which includes 3 elements named "raw", "clean", "fmt". Unknown statistics are omitted. See the 'Examples section below'.
 #' @param gof_omit string regular expression (perl-compatible) used to determine which statistics to omit from the bottom section of the table. A "negative lookahead" can be used to specify which statistics to *keep* in the table. Examples:

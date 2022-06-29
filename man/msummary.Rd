@@ -148,8 +148,8 @@ Examples section below.}
 model information. This argument accepts 4 types of values:
 \itemize{
 \item NULL (default): the \code{modelsummary::gof_map} dictionary is used for formatting, and all unknown statistic are included.
+\item character vector: "all", "none", or a vector of statistics such as \code{c("rmse", "nobs", "r.squared")}. Elements correspond to colnames in the data.frame produced by \code{get_gof(model)}. The \code{modelsummary::gof_map}default dictionary is used to format and rename statistics.
 \item NA: excludes all statistics from the bottom part of the table.
-\item character vector such as \code{c("rmse", "nobs", "r.squared")}. Elements correspond to colnames in the data.frame produced by \code{get_gof(model)}. The default dictionary is used to format and rename statistics.
 \item data.frame with 3 columns named "raw", "clean", "fmt". Unknown statistics are omitted. See the 'Examples' section below.
 \item list of lists, each of which includes 3 elements named "raw", "clean", "fmt". Unknown statistics are omitted. See the 'Examples section below'.
 }}
@@ -293,7 +293,7 @@ the \code{options} function:
 \code{modelsummary} can use two sets of packages to extract information from
 statistical models: the \code{easystats} family (\code{performance} and \code{parameters})
 and \code{broom}. By default, it uses \code{easystats} first and then falls back on
-\code{broom} in ase of failure. You can change the order of priorities or include
+\code{broom} in case of failure. You can change the order of priorities or include
 goodness-of-fit extracted by \emph{both} packages by setting:
 
 \code{options(modelsummary_get = "broom")}
@@ -449,5 +449,8 @@ modelsummary(models,
 
 }
 
+}
+\references{
+Arel-Bundock V (2022). “modelsummary: Data and Model Summaries in R.” \emph{Journal of Statistical Software}, \emph{103}(1), 1-23. \doi{10.18637/jss.v103.i01}.'
 }
 \keyword{internal}

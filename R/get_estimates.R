@@ -18,6 +18,10 @@ get_estimates <- function(model, conf_level = .95, vcov = NULL, ...) {
         conf_int <- TRUE
     }
 
+    if (inherits(model, "modelsummary_list") && "tidy" %in% names(model)) {
+        return(model[["tidy"]])
+    }
+
     # priority
     get_priority <- getOption("modelsummary_get", default = "easystats")
     checkmate::assert_choice(
@@ -179,40 +183,65 @@ get_estimates_parameters <- function(model,
                                      ...) {
 
     dots <- list(...)
+    args <- c(list(model), dots)
+    args[["verbose"]] <- FALSE
 
-    if (!"effects" %in% names(dots)) dots[["effects"]] <- "all"
+    mi <- tryCatch(
+        suppressMessages(suppressWarnings(insight::model_info(model))),
+        error = function(e) NULL,
+        warning = function(e) NULL)
 
-    # bayesian diagnostics are expensive
-    if (inherits(model, "brmsfit") || inherits(model, "stanreg")) {
-        if (!"test" %in% names(dots)) dots <- c(dots, list("test" = NULL))
-        if (!"diagnostic" %in% names(dots)) dots <- c(dots, list("diagnostic" = NULL))
+    # extract everything by default
+    if (!"effects" %in% names(dots)) args[["effects"]] <- "all"
+
+    # confidence intervals
+    if (isTRUE(conf_int)) {
+        args[["ci"]] <- conf_level
+    } else if (!"ci" %in% names(dots)) { # faster
+        args <- c(args, list(ci = NULL))
     }
 
+    # bayes: diagnostics can be very expensive
+    if (isTRUE(mi[["is_bayesian"]])) {
+        if (!"test" %in% names(dots)) args <- c(args, list("test" = NULL))
+        if (!"diagnostic" %in% names(dots)) args <- c(args, list("diagnostic" = NULL))
+    }
+
+    # mixed-effects: ci_random can be very slow in some models
+    if (isTRUE(mi[["is_mixed"]]) &&
+        isTRUE(conf_int) &&
+        !"ci_random" %in% names(args) &&
+        utils::packageVersion("parameters") > "0.18.1.5") {
+        args[["ci_random"]] <- FALSE
+    }
+
+    # main call
     f <- tidy_easystats <- function(x, ...) {
-        out <- parameters::parameters(x, verbose = FALSE, ...)
+        out <- parameters::parameters(x, ...)
         out <- parameters::standardize_names(out, style = "broom")
     }
 
-    if (isTRUE(conf_int)) {
-        args <- list(
-            model,
-            ci = conf_level)
-        args <- c(args, dots)
-        out <- suppressMessages(suppressWarnings(try(
-            do.call("f", args),
-            silent = TRUE)))
+    out <- suppressMessages(suppressWarnings(try(
+        do.call("f", args),
+        silent = TRUE)))
 
-    } else {
-        args <- list(model)
-        args <- c(args, dots)
-        out <- suppressMessages(suppressWarnings(try(
-            do.call("f", args),
-            silent = TRUE)))
+    # errors and warnings: before processing the data frame term names
+    if (!inherits(out, "data.frame") || nrow(out) < 1) {
+        return("`parameters::parameters(model)` did not return a valid data.frame.")
     }
 
-    # cleaner term names for mixed-effects models
-    mi <- suppressWarnings(try(insight::model_info(model), silent = TRUE))
-    if (isTRUE(mi$is_mixed) && isTRUE("group" %in% colnames(out))) {
+    if (!"term" %in% colnames(out)) {
+        return("`parameters::parameters(model)` did not return a data.frame with a `term` column.")
+    }
+
+    # term names: lavaan
+    if (inherits(model, "lavaan") && all(c("to", "operator", "from") %in% colnames(out))) {
+        out$term <- paste(out$to, out$operator, out$from)
+        out$to <- out$operator <- out$from <- NULL
+    }
+
+    # term names: mixed-effects
+    if (isTRUE(mi[["is_mixed"]]) && isTRUE("group" %in% colnames(out))) {
         idx <- out$term != "SD (Observations)" &
                out$group != "" &
                !grepl(":", out$term) &
@@ -225,15 +254,7 @@ get_estimates_parameters <- function(model,
         out$term <- gsub(":", "", out$term)
     }
 
-    if (!inherits(out, "data.frame") || nrow(out) < 1) {
-        return("`parameters::parameters(model)` did not return a valid data.frame.")
-    }
-
-    if (!"term" %in% colnames(out)) {
-        return("`parameters::parameters(model)` did not return a data.frame with a `term` column.")
-    }
-
-    # important to merge lm() and lme4::lmer() for example.
+    # "group" column is required to merge lm() and lme4::lmer(), and other grouped and non-grouped models.
     if (!"group" %in% colnames(out)) {
         out[["group"]] <- ""
     }

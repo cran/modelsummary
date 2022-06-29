@@ -2,10 +2,10 @@
 #'
 #' The names of the variables displayed in the correlation table are the names
 #' of the columns in the `data`. You can rename those columns (with or without
-#' spaces) to produce a table of human-readable variables.
-#' See the Details and Examples sections below, and the vignettes on the
-#' `modelsummary` website: https://vincentarelbundock.github.io/modelsummary/ *
-#' [datasummary Vignette.](https://vincentarelbundock.github.io/modelsummary/articles/datasummary.html)
+#' spaces) to produce a table of human-readable variables. See the Details and
+#' Examples sections below, and the vignettes on the `modelsummary` website: 
+#' * https://vincentarelbundock.github.io/modelsummary/
+#' * https://vincentarelbundock.github.io/modelsummary/articles/datasummary.html
 #'
 #' @inheritParams datasummary
 #' @param method character or function
@@ -18,6 +18,7 @@
 #'     `datasummary_correlation_format` can often be useful for formatting the
 #'     output of custom correlation functions.
 #' }
+#' @template citation
 #' @template options
 #' @param ... other parameters are passed through to the table-making
 #'     packages.
