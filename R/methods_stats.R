@@ -39,6 +39,14 @@ glance_custom_internal.lm <- function(x, vcov_type = NULL, gof = NULL, ...) {
       }
   }
 
+  # log-likelihood (broken with `gam`, which inherits from `glm`)
+  if (!"gam" %in% class(x)) {
+      ll <- tryCatch(
+          insight::get_loglikelihood(x),
+          error = function(e) NULL)
+      out[["logLik"]] <- ll
+  }
+
   row.names(out) <- NULL
   return(out)
 }

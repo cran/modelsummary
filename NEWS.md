@@ -1,3 +1,12 @@
+# modelsummary 1.0.1
+
+* `shape` argument accepts interactions with the colon ":" character. This combines two columns into one, which can be useful to display terms and group names in a single column.
+* Parallelization using `parallel::mclapply`. See `?modelsummary` 
+* `modelsummary` no longer computes confidence intervals when not necessary, which can save some time. Also see: `conf_level=NULL`
+* Added log likelihood to GOF for lm and glm models.
+* Removed extraneous warnings
+* Bug fixes
+
 # modelsummary 1.0.0
 
 This first major release accompanies the publication of an article in the Journal of Statistical Software:

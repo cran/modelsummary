@@ -88,7 +88,9 @@ sections below):
 \item a named list of length(models) vectors with names equal to the names of your coefficient estimates. See 'Examples' section below. Warning: since this list of vectors can include arbitrary strings or numbers, \code{modelsummary} cannot automatically calculate p values. The \code{stars} argument may thus use incorrect significance thresholds when \code{vcov} is a list of vectors.
 }}
 
-\item{conf_level}{confidence level to use for confidence intervals}
+\item{conf_level}{numeric value between 0 and 1. confidence level to use for
+confidence intervals. Setting this argument to \code{NULL} does not extract
+confidence intervals, which can be faster for some models.}
 
 \item{exponentiate}{TRUE, FALSE, or logical vector of length equal to the
 number of models. If TRUE, the \code{estimate}, \code{conf.low}, and \code{conf.high}
@@ -108,14 +110,17 @@ determines what appears on rows, and the right side determines what appears
 on columns. The formula can include a group identifier to display related terms
 together, which can be useful for models with multivariate outcomes or
 grouped coefficients (See examples section below). This identifier must be
-one of the column names produced by: \code{get_estimates(model)}. If an
-incomplete formula is supplied (e.g., \code{~statistic}), \code{modelsummary} tries to
-complete it automatically. Potential \code{shape} values include:
+one of the column names produced by: \code{get_estimates(model)}. The group
+identifier can be combined with the term identifier in a single column by
+using the colon to represent an interaction. If an incomplete formula is
+supplied (e.g., \code{~statistic}), \code{modelsummary} tries to complete it
+automatically. Potential \code{shape} values include:
 \itemize{
 \item \code{term + statistic ~ model}: default
 \item \code{term ~ model + statistic}: statistics in separate columns
 \item \code{model + statistic ~ term}: models in rows and terms in columns
-\item \code{term + response + statistic ~ model}:
+\item \code{term + response + statistic ~ model}: term and group id in separate columns
+\item \code{term : response + statistic ~ model}: term and group id in a single column
 \item \code{term ~ response}
 }}
 
@@ -320,12 +325,27 @@ HTML tables:
 \section{Parallel computation}{
 
 
-It can take a long time to compute and extract summary statistics from certain models (e.g., Bayesian). In those cases, users can parallelize the process. Since parallelization occurs at the model level, no speedup is available for tables with a single model. To use parallel computation, all users have to do is load the \code{future.apply} package and call the \code{plan()} function. Example:
+It can take a long time to compute and extract summary statistics from
+certain models (e.g., Bayesian). In those cases, users can parallelize the
+process. Since parallelization occurs at the model level, no speedup is
+available for tables with a single model. Users on mac or linux can launch
+parallel computation using the built-in \code{parallel} package. All they need to
+do is supply a \code{mc.cores} argument which will be pushed forward to the
+\code{parallel::mclapply} function:
+
+\if{html}{\out{<div class="sourceCode r">}}\preformatted{modelsummary(model_list, mc.cores = 5)
+}\if{html}{\out{</div>}}
+
+All users can also use the \code{future.apply} package to parallelize model summaries.
+For example, to use 4 cores to extract results:
 
 \if{html}{\out{<div class="sourceCode r">}}\preformatted{library(future.apply)
-plan("multisession")
+plan(multicore, workers = 4)
 modelsummary(model_list)
 }\if{html}{\out{</div>}}
+
+Note that the "multicore" plan only parallelizes under mac or linux. Windows
+users can use \verb{plan(multisession)' instead. However, note that the first time }modelsummary()\verb{is called under multisession can be a fair bit longer, because of extra costs in passing data to and loading required packages on to workers. Subsequent calls to}modelsummary()` will often be much faster.
 }
 
 \examples{
@@ -402,11 +422,18 @@ modelsummary(models, coef_omit = "^(?!Vol)", omit = ".*")
 # coef_omit: keep coefficients matching a substring
 modelsummary(models, coef_omit = "^(?!.*ei|.*pt)", omit = ".*")
 
-# shape
+# shape: multinomial model
 library(nnet)
 multi <- multinom(factor(cyl) ~ mpg + hp, data = mtcars, trace = FALSE) 
-modelsummary(multi, shape = y.level ~ model)
-modelsummary(multi, shape = term ~ y.level)
+
+# term names and group ids in rows, models in columns
+modelsummary(multi, shape = response ~ model)
+
+# term names and group ids in rows in a single column
+modelsummary(multi, shape = term : response ~ model)
+
+# term names in rows and group ids in columns
+modelsummary(multi, shape = term ~ response:model)
 
 # title
 modelsummary(models, title = 'This is the title')

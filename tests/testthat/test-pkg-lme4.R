@@ -2,7 +2,6 @@ requiet("lme4")
 
 
 test_that("Issue #505", {
-    skip("TODO: test when parameters is released")
     skip_if_not_installed("parameters", minimum_version = "0.18.1.7")
     mod <- lme4::lmer(Sepal.Width ~ Petal.Length + (1 | Species), data = iris)
     expect_error(modelsummary(mod), NA)
@@ -24,12 +23,12 @@ test_that("Issue #501", {
 
 
 test_that("Issue #494 comment", {
-    suppressMessages({
-    models <- list(
+    skip_if_not_installed("parameters", minimum_version = "0.18.1.7")
+    models <- hush(list(
         lme4::lmer(Sepal.Width ~ Petal.Length + (1|Species), data = iris),
         lme4::lmer(Sepal.Width ~ Petal.Length + (1 + Petal.Length |Species), data = iris),
-        lme4::lmer(Sepal.Width ~ Petal.Length + Petal.Width + (1 + Petal.Length |Species), data = iris))
-    })
+        lme4::lmer(Sepal.Width ~ Petal.Length + Petal.Width + (1 + Petal.Length |Species), data = iris)
+    ))
     tab1 <- modelsummary(
         models[[3]],
         estimate = "{estimate} [{conf.low}, {conf.high}]",
@@ -42,13 +41,12 @@ test_that("Issue #494 comment", {
 
 
 test_that("Issue #496: multiple models keeps random/fixed grouped together", {
-    suppressMessages({
-    models <- list(
+    models <- hush(list(
         lm(Sepal.Width ~ Petal.Length, data = iris),
         lmer(Sepal.Width ~ Petal.Length + (1|Species), data = iris),
         lmer(Sepal.Width ~ Petal.Length + (1 + Petal.Length |Species), data = iris),
-        lmer(Sepal.Width ~ Petal.Length + Petal.Width + (1 + Petal.Length |Species), data = iris))
-    })
+        lmer(Sepal.Width ~ Petal.Length + Petal.Width + (1 + Petal.Length | Species), data = iris)
+    ))
     tab <- modelsummary(
         models,
         output = "data.frame",
@@ -61,6 +59,7 @@ test_that("Issue #496: multiple models keeps random/fixed grouped together", {
 
 
 test_that("Issue #494: glue-related partial breakage", {
+    skip_if_not_installed("parameters", minimum_version = "0.18.1.7")
     mod <- lmer(Sepal.Width ~ Petal.Length + (1|Species), data = iris)
     tab <- modelsummary(
         mod,
@@ -82,9 +81,9 @@ test_that("better lme4 printout", {
     expect_warning(tab <- msummary(mod, "dataframe"), NA)
     expect_true("SD (Days grp)" %in% tab$term)
 
-    mod <- lmer(
+    mod <- modelsummary::hush(lmer(
       Reaction ~ Days + (1 | grp ) + (1 + Days | Subject),
-      data = sleepstudy)
+      data = sleepstudy))
     expect_warning(modelsummary(mod, "dataframe"), NA)
 })
 
@@ -97,6 +96,22 @@ test_that('random effects variance components do not have standard errors and pr
 })
 
 
+test_that("random component CI not supported on older versions of parameters", {
+    N <- 1e4
+    dat <- data.frame(
+      x = rnorm(N),
+      y = rnorm(N),
+      k = factor(sample(1:50, N, replace = TRUE)),
+      m = factor(sample(1:1000, N, replace = TRUE)))
+    mod <- suppressMessages(lmer(y ~ x + (1 | k) + (1 | m), data = dat))
+    if (packageVersion("parameters") <= "0.18.1") {
+        expect_error(modelsummary(mod, statistic = "conf.int"), regexp = "development")
+    } else {
+        expect_error(modelsummary(mod, statistic = "conf.int"), NA)
+    }
+})
+
+
 test_that("performance metrics", {
     N <- 1e4
     dat <- data.frame(
@@ -105,14 +120,20 @@ test_that("performance metrics", {
       k = factor(sample(1:50, N, replace = TRUE)),
       m = factor(sample(1:1000, N, replace = TRUE)))
     mod <- suppressMessages(lmer(y ~ x + (1 | k) + (1 | m), data = dat))
-
-    modelsummary(mod, group = term + group ~ model)
-    tab1 <- modelsummary(mod, output = "data.frame", group = term + group ~ model)
-    tab2 <- modelsummary(mod, output = "data.frame", group = term + group ~ model, metrics = c("RMSE", "BIC"))
+    tab1 <- modelsummary(mod,
+        output = "data.frame",
+        group = term + group ~ model)
+    tab2 <- modelsummary(
+        mod,
+        output = "data.frame",
+        group = term + group ~ model,
+        metrics = c("RMSE", "BIC"))
     expect_true("RMSE" %in% tab1$term)
     expect_false("R2" %in% tab1$term)
     expect_true(all(c("RMSE", "BIC") %in% tab2$term))
 })
+
+
 
 
 test_that("lme4", {

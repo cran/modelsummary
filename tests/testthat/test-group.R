@@ -15,7 +15,7 @@ test_that("gof merge on partial column match", {
     options(modelsummary_factory_default = "data.frame")
     mod <- lm(mpg ~ hp + factor(cyl), data = mtcars)
     tab <- modelsummary(list(mod, mod), group = ~ model + statistic)
-    expect_equal(dim(tab), c(11, 6))
+    expect_equal(dim(tab), c(12, 6))
     expect_true("gof" %in% tab$part)
 })
 
@@ -247,14 +247,13 @@ test_that("grouped coefficients: gamlss", {
 
 })
 
-
 test_that("model names are preserved", {
     requiet("gamlss")
     dat <- rgamma(100, shape=1, scale=10)
     models <- list()
     models[["GA"]] <- gamlss(dat ~ 1, family = GA, trace = FALSE)
     models[["GA 2"]] <- gamlss(dat ~ 1, family = GA, trace = FALSE)
-    tab <- modelsummary(models, output = "data.frame", group = component + term ~ model)
+    tab <- modelsummary(models, output = "data.frame", shape = component + term ~ model)
     expect_true(all(c("GA", "GA 2") %in% colnames(tab)))
 })
 

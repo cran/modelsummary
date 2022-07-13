@@ -1,4 +1,12 @@
 
+test_that("Issue 507: extraneous error about not supported", {
+    mod <- lm(mpg ~ hp + factor(cyl), mtcars)
+    ml <- modelsummary(mod, output = "modelsummary_list")
+    msg <- capture.output({tab <- modelsummary(ml, output = "data.frame")})
+    expect_equal(length(msg), 0)
+})
+
+
 test_that('output="modelsummary_list" and back to data.frame', {
     mod <- list(
         lm(mpg ~ hp, mtcars),
@@ -8,7 +16,7 @@ test_that('output="modelsummary_list" and back to data.frame', {
     expect_true(class(tab) == "list")
     tab <- modelsummary(tab, "data.frame")
     expect_s3_class(tab, "data.frame")
-    expect_equal(dim(tab), c(13, 5))
+    expect_equal(dim(tab), c(14, 5))
 })
 
 

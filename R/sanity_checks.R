@@ -122,23 +122,6 @@ sanitize_estimate <- function(estimate, number_of_models) {
 }
 
 
-#' sanity_check
-#'
-#' @noRd
-sanitize_statistic <- function(statistic, shape) {
-  checkmate::assert_character(statistic, null.ok = TRUE)
-  if ("statistic" %in% shape$rhs && "conf.int" %in% statistic) {
-    idx <- grep("conf.int", statistic)
-    statistic[idx] <- "conf.low"
-    # conf.int in last position
-    if (idx == length(statistic)) {
-      statistic <- c(statistic, "conf.high")
-    } else {
-      statistic <- c(statistic[1:idx], "conf.high", statistic[(idx + 1):length(statistic)])
-    }
-  }
-  return(statistic)
-}
 
 
 #' sanity check
@@ -177,24 +160,6 @@ sanity_coef <- function(coef_map, coef_rename, coef_omit) {
 
 
 
-
-#' sanity check
-#'
-#' @noRd
-sanity_conf_level_modelplot <- function(conf_level) {
-  flag <- checkmate::check_number(conf_level, lower = 0, upper = .999999999999, null.ok = TRUE)
-  if (!isTRUE(flag)) {
-    stop("The `conf_level` argument must be a number between 0 and 1. Type `?modelplot` for details. This error is sometimes raised when users supply multiple models to `modelplot` but forget to wrap them in a list. This works: `modelplot(list(model1, model2))`. This does *not* work: `modelplot(model1, model2)`")
-  }
-}
-
-
-#' sanity check
-#'
-#' @noRd
-sanity_conf_level <- function(conf_level) {
-  checkmate::assert_number(conf_level, lower = 0, upper = .999999999999, null.ok = TRUE)
-}
 
 
 #' sanity check
@@ -314,7 +279,11 @@ sanity_ds_data <- function(formula, data) {
   is_labelled <- any(sapply(data, inherits, "haven_labelled"))
   is_all <- any(grepl("^All\\(", as.character(formula)))
   if (is_all && is_labelled) {
-    msg <- "It is not safe to use labelled data with the `datasummary()` family of functions. We recommend that you convert labelled variables to standard vectors using `as.vector()` or `as.numeric()` before calling a `datasummary_*()` function."
+    msg <- format_msg(
+    "It is not safe to use labelled data with the `datasummary()` family of
+    functions. We recommend that you convert labelled variables to standard vectors
+    using `as.vector()` or `as.numeric()` before calling a `datasummary_*()`
+    function.")
     warn_once(msg, id = "datasummary_all_labelled")
   }
 }
@@ -330,11 +299,15 @@ sanity_ds_nesting_factor <- function(formula, data) {
   termlabs <- labels(stats::terms(formula))
   warn <- any(sapply(idx, function(x) any(grepl(x, termlabs))))
   if (warn) {
-    warning('You are trying to create a nested table by applying the * operator to a character or a logical variable. It is usually a good idea to convert such variables to a factor before calling datasummary: dat$y<-as.factor(dat$y). Alternatively, you could wrap your categorical variable inside Factor() in the datasummary call itself: datasummary(x ~ Factor(y) * z, data)\n',
-            call. = FALSE)
+    msg <- format_msg(
+    'You are trying to create a nested table by applying the * operator to a
+    character or a logical variable. It is usually a good idea to convert such
+    variables to a factor before calling datasummary: dat$y<-as.factor(dat$y).
+    Alternatively, you could wrap your categorical variable inside Factor() in
+    the datasummary call itself: datasummary(x ~ Factor(y) * z, data)')
+    warning(msg, call. = FALSE)
   }
 }
-
 
 #' sanity check: datasummary_balance
 #'
