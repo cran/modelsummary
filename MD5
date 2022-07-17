@@ -1,6 +1,6 @@
-8d6b40b0665b3ba3db42c92a0975b528 *DESCRIPTION
+5c4c3d797713052e938e4bf1639361b0 *DESCRIPTION
 29a81ffca737c21335f09cdf3a7281fa *NAMESPACE
-0c20e5c6974ea9ea41bb85017c3bd24e *NEWS.md
+b1c74a7576c353e7d97550552537bacd *NEWS.md
 7374b558c0f64eda49be08c6e99d2d79 *R/bind_est_gof.R
 f4a51edb09891b4cf6b59a88261e13b5 *R/coef_rename.R
 b464bf396230d3cf8537adacc3c215cd *R/convenience.R
@@ -23,12 +23,12 @@ b9f010e96f717ac6e0f8c39de50ab787 *R/factory_flextable.R
 3170f608a65322da3c6789c05a38a866 *R/format_estimates.R
 71a45aa6f95a0ae8242c8b83809cf462 *R/format_gof.R
 5762c2b98ba331190a971ac9e27fc352 *R/format_msg.R
-1343a078d5a032180a9de7e96b38a65f *R/get_estimates.R
+6ed1ee205e03d1fc8146b2b09d2b8f68 *R/get_estimates.R
 2edaefcd2d575507d640519bd87c2ce5 *R/get_gof.R
 28b7a58bb9f5669994f9cc7ae62dd975 *R/get_vcov.R
 6705d336964d6cd1d57f96933b11b3f3 *R/glance_custom.R
 7926a90b83b81d032b7c79c9247fc10e *R/gof_map.R
-1719352f30cc5503deb92d74a5276026 *R/hush.R
+da3fd932043035e3cefe7da0f07c277b *R/hush.R
 a185de8790bfb4589b63d09233b31cb7 *R/map_estimates.R
 468af55e721a7b7a8e7d1d3b8609de6a *R/map_gof.R
 210c4ee17f7b14f60d3742fdad56d7ad *R/methods_did.R
@@ -66,7 +66,7 @@ c240fd33dba9bdbcdb5cd48f0a9bacb4 *R/utils_replace.R
 da58b5f5c32689edd9056a17de9547f6 *R/utils_stats.R
 acdde2e12e094c8b140acfcd3f2a82ca *R/utils_warn.R
 183430603bf88cc31f023b6a066bfa61 *README.md
-9ffb59772aad61af7fdc025f7259b9ed *build/modelsummary.pdf
+32fb37aac3bc9619d4c89effd0758ebf *build/modelsummary.pdf
 961be08b8208328a268c89db4b0f2215 *inst/CITATION
 97474ea76dc1613dab695b5321dd27e3 *inst/WORDLIST
 a675e2ff55990a5a8f05761267ba96f7 *man/All.Rd
@@ -273,7 +273,7 @@ d0534f084bf2991af8e24ee1e1b7c88d *tests/testthat/test-modelsummary_wide.R
 2f31dc3252a74d2a94c3da244a7e84d8 *tests/testthat/test-pkg-brms.R
 a87fdec5f81cc386e67218b67a29e656 *tests/testthat/test-pkg-fixest.R
 0031de1a6c74f31785cf952e844c7861 *tests/testthat/test-pkg-lavaan.R
-8ad629a592bf719c1fce00028a13a5ae *tests/testthat/test-pkg-lme4.R
+0591048b45624c2940fc84e6de498e96 *tests/testthat/test-pkg-lme4.R
 d501e98baea176ddf8d3ca94725332cb *tests/testthat/test-pkg-marginaleffects.R
 3f5aa7d995110219c9e627d2d703605a *tests/testthat/test-pkg-stats.R
 20163af261f84464f7f8c489c0b8572d *tests/testthat/test-rmarkdown.R
