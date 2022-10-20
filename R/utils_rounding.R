@@ -7,13 +7,25 @@
 #'
 #' @return a rounded number as character
 #' @noRd
-rounding <- function(x, fmt = '%.3f', ...) {
+rounding <- function(x, fmt = '%.3f', pval = FALSE, ...) {
 
     ## NA should return empty
     idx_na <- is.na(x)
 
-    ## character, factor, logical
+    # p values
+    if (is.numeric(fmt) && isTRUE(pval)) {
+        pdigits <- -max(fmt, 3)
+        x <- format.pval(
+            x,
+            digits = 1,
+            nsmall = fmt,
+            eps = 10^pdigits,
+            scientific = FALSE)
+    }
+
+    # input: character, factor, logical
     if (is.factor(x) || is.logical(x) || is.character(x)) {
+
         out <- as.character(x)
 
         ## escape
@@ -27,23 +39,35 @@ rounding <- function(x, fmt = '%.3f', ...) {
             out <- sprintf("{%s}", out)
         }
 
-                                        # numeric
+    # input: numeric
     } else {
+
         if (is.character(fmt)) {
             out <- sprintf(fmt, x, ...)
+
         } else if (is.numeric(fmt)) {
-                                        # R >4.1.0 will make 0 invalid in format()
+            # R >4.1.0 will make 0 invalid in format()
             if (fmt == 0) {
                 out <- sprintf("%.0f", x)
+
             } else {
-                out <- trimws(format(round(x, fmt), nsmall = fmt, ...))
+                # apply `format()` individually to each cell, otherwise if one
+                # entry requires a lot of digits, then all the entries will be
+                # padded to match.  scientific = 4 means that this converts to
+                # scientific if the fixed version is 4 characters longer than
+                # the scientific.
+                fun <- function(x) {
+                    format(x, digits = 1, nsmall = fmt, trim = TRUE, scientific = 4, ...)
+                }
+                out <- sapply(x, fun)
             }
+
         } else if (is.function(fmt)) {
             out <- fmt(x)
+
         } else {
             out <- x
         }
-
 
     # Remove weird numbers before wrapping in siunitx
     out <- gsub('^NA$|^NaN$|^-Inf$|^Inf$', '', out)
@@ -51,7 +75,7 @@ rounding <- function(x, fmt = '%.3f', ...) {
     ## LaTeX siunitx \num{}
     if (settings_equal("output_format", c("latex", "latex_tabular"))) {
         if (!isTRUE(settings_get("siunitx_scolumns"))) {
-            if (settings_equal("format_numeric_latex", "siunitx")) {
+            if (settings_equal("format_numeric_latex", "siunitx") && !settings_equal("dcolumn_stars_mbox", TRUE)) {
                 out <- sprintf("\\num{%s}", out)
             } else if (settings_equal("format_numeric_latex", c("dollars", "mathmode"))) {
                 out <- sprintf("$%s$", out)
@@ -61,15 +85,17 @@ rounding <- function(x, fmt = '%.3f', ...) {
 
     ## HTML: convert hyphen-minus to minus
     if (settings_equal("output_format", c("html", "kableExtra"))) {
-        if (settings_equal("format_numeric_html", "minus")) {
+        # in hebrew or chinese locales, the html minus signs does not appear and it underlines the whole number.
+        # https://github.com/vincentarelbundock/modelsummary/issues/552
+        if (settings_equal("modelsummary_format_numeric_html", "minus") && settings_equal("known_locale", TRUE)) {
             out <- gsub("\\-", "\u2212", out)
-        } else if (settings_equal("format_numeric_html", c("mathjax", "dollars"))) {
+        } else if (settings_equal("modelsummary_format_numeric_html", c("mathjax", "dollars"))) {
             out <- sprintf("$%s$", out)
         }
     }
   }
 
-  ## NA should return empty
+  # NA should return empty
   out[idx_na] <- ""
 
   return(out)

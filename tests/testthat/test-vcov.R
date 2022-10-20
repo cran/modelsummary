@@ -4,6 +4,7 @@ requiet("lmtest")
 url <- 'https://vincentarelbundock.github.io/Rdatasets/csv/HistData/Guerry.csv'
 dat <- read.csv(url)
 dat$Clergy <- ifelse(dat$Clergy > 40, 1, 0) # binary variable for logit model
+dat <- dat[!is.na(dat$Region),]
 models <- list()
 models[['OLS 1']] <- lm(Literacy ~ Crime_prop + Infants, dat)
 models[['Poisson 1']] <- glm(Literacy ~ Crime_prop + Donations, dat, family = poisson())
@@ -11,30 +12,34 @@ models[['OLS 2']] <- lm(Desertion ~ Crime_prop + Infants, dat)
 models[['Poisson 2']] <- glm(Desertion ~ Crime_prop + Donations, dat, family = poisson())
 models[['Logit 1']] <- glm(Clergy ~ Crime_prop + Infants, dat, family = binomial())
 
-test_that("warning for non-iid hardcoded vcov", {
-    requiet("lfe")
-    requiet("estimatr")
 
-    mod <- felm(hp ~ mpg + drat | 0 | 0 | vs, mtcars)
-    expect_warning(modelsummary(mod, vcov = "iid", output = "data.frame"), regexp = "IID")
-
-    mod <- lm_robust(hp ~ mpg + drat, mtcars)
-    expect_warning(modelsummary(mod, vcov = "iid", output = "data.frame"), regexp = "IID")
-
-    mod <- felm(hp ~ mpg + drat | cyl, mtcars)
-    expect_warning(modelsummary(mod, vcov = "iid", output = "data.frame"), regexp = "IID")
-
-    mod <- felm(hp ~ mpg | cyl ~ gear, data = mtcars)
-
-    # sandwich does not work with lfe::felm
-    expect_error(modelsummary(mod, vcov = list(NULL, "robust"), output = "data.frame"))
-
-    # # assume user knows that they are doing
-    # modelsummary(mod, vcov = list('Robust' = mod$robustvcv), output = "data.frame")
-    #
-    # # no explicit vcov names, so we raise the warning
-    # expect_warning(modelsummary(mod, vcov = list(NULL, "classical", vcov(mod, se = "hetero")), output = "data.frame"),
-    #                regexp = "IID")
+test_that("manual sandwich", {
+    # HC1
+    for (m in models) {
+        tab <- modelsummary(m,
+            output = "dataframe",
+            vcov = "stata",
+            estimate = "std.error",
+            fmt = NULL,
+            statistic = NULL,
+            gof_map = NA)
+        tab <- as.numeric(tab[["Model 1"]])
+        man <- sqrt(diag(sandwich::vcovHC(m, type = "HC1")))
+        expect_equal(tab, man, ignore_attr = TRUE)
+    }
+    # HC4
+    for (m in models) {
+        tab <- modelsummary(m,
+            output = "dataframe",
+            vcov = "HC4",
+            estimate = "std.error",
+            fmt = NULL,
+            statistic = NULL,
+            gof_map = NA)
+        tab <- as.numeric(tab[["Model 1"]])
+        man <- sqrt(diag(sandwich::vcovHC(m, type = "HC4")))
+        expect_equal(tab, man, ignore_attr = TRUE)
+    }
 })
 
 
@@ -50,7 +55,6 @@ test_that("user-supplied vcov_type in gof section", {
 
 
 test_that("sandwich arguments in ellipsis", {
-  library(sandwich)
   data(PetersenCL)
   mod <- lm(y ~ x, PetersenCL)
   tab <- modelsummary(mod,
@@ -79,101 +83,75 @@ test_that("multi vcov with model recycling", {
 
 
 test_that("character vector", {
-  tab1 = modelsummary(models, vcov="robust", output="data.frame")
-  tab2 = modelsummary(models, vcov=rep("robust", 5), output="data.frame")
-  tab3 = modelsummary(models, vcov=list("robust", "robust", "robust", "robust", "robust"), output="data.frame")
-  tab4 = modelsummary(models, vcov=sandwich::vcovHC, output="data.frame")
+  tab1 = modelsummary(models, vcov = "robust", output = "data.frame")
+  tab2 = modelsummary(models, vcov = rep("robust", 5), output = "data.frame")
+  tab3 = modelsummary(models, vcov = list("robust", "robust", "robust", "robust", "robust"), output = "data.frame")
+  tab4 = modelsummary(models, vcov = sandwich::vcovHC, output = "data.frame")
   expect_identical(tab1, tab2)
   expect_identical(tab1, tab3)
   # bad input
-  expect_error(modelsummary(models, vcov="bad", output="data.frame"))
-  # no standard error or F-stata row when `vcov` is an unknown function
-  expect_equal(nrow(tab1), nrow(tab4) + 1)
+  expect_error(modelsummary(models, vcov = "bad", output = "data.frame"))
 })
 
 
 test_that("clustered standard errors", {
-  # checked manually against fixest clusters
-  # testthat::skip_if_not_installed("fixest")
-  # se = fixest::feols(f, mtcars) %>%
-  #      fixest::se(cluster=~cyl)
-  f = hp ~ mpg + drat + vs
-  mod = lm(f, mtcars)
-  tmp = modelsummary(mod,
-    gof_omit=".*",
-    vcov=~cyl,
-    output="dataframe")
-  truth = c("247.053", "(73.564)", "-7.138", "(3.162)", "18.064", "(40.237)", "-50.124", "(13.268)")
-  expect_equal(truth, tmp[[4]])
+    # checked manually against fixest clusters
+    # testthat::skip_if_not_installed("fixest")
+    # se = fixest::feols(f, mtcars) %>%
+    #      fixest::se(cluster=~cyl)
+    f = hp ~ mpg + drat + vs
+    mod = lm(f, mtcars)
+    tmp = modelsummary(mod,
+        gof_omit = ".*",
+        vcov = ~cyl,
+        output = "dataframe")
+    truth = c("247.053", "(73.564)", "-7.138", "(3.162)", "18.064", "(40.237)", "-50.124", "(13.268)")
+    expect_equal(truth, tmp[[4]])
 })
 
-test_that("fixest", {
-  requiet("fixest")
-  mod_lm = lm(hp ~ mpg + drat, mtcars)
-  if (utils::packageVersion("fixest") >= "0.10.0") {
-    mod_feols =   feols(hp ~ mpg + drat, mtcars, vcov = ~vs)
-  } else {
-    mod_feols =   feols(hp ~ mpg + drat, mtcars, cluster = ~vs)
-  }
-  models = list('lm' = mod_lm, 'feols' = mod_feols)
-
-  # no longer true since lm produces RMSE but not fixest
-  # tab = msummary(models, vcov = 'iid', gof_omit = 'R2|IC|Log|F', output = "data.frame")
-  # expect_equal(tab$lm, tab$feols)
-
-  tab = msummary(models, vcov = 'HC1', gof_omit = 'R2|IC|Log|F', output = 'data.frame')
-  expect_equal(tab$lm, tab$feols)
-
-  tab = msummary(models, vcov = ~ vs, gof_omit = 'R2|IC|Log|F', output = "data.frame")
-  expect_equal(tab$lm, tab$feols)
-
-  tab = msummary(models, vcov = ~ cyl, gof_omit = 'R2|IC|Log|F', output = 'data.frame')
-  expect_equal(tab$lm, tab$feols)
-})
 
 test_that("lme4 and various warnings", {
-  requiet("lme4")
-  models = list(
-    lm(hp ~ mpg, mtcars),
-    lmer(hp ~ mpg + (1|cyl), mtcars))
-  tab = modelsummary(models, output="dataframe", vcov=list("robust", "classical"))
-  expect_s3_class(tab, "data.frame")
-  expect_equal(ncol(tab), 5)
-  expect_error(modelsummary(models, output="dataframe", vcov="robust"), regexp = "Unable to extract")
-  expect_warning(modelsummary(models, output="dataframe", vcov="classical"), NA)
-  expect_warning(modelsummary(models, output="dataframe", vcov=list("robust", "classical")), NA)
-  expect_warning(modelsummary(models[[2]], vcov=stats::vcov), regexp="Only.*error.*adjusted")
+    requiet("lme4")
+    models = list(
+        lm(hp ~ mpg, mtcars),
+        lmer(hp ~ mpg + (1 | cyl), mtcars))
+    tab = modelsummary(models, output = "dataframe", vcov = list("robust", "classical"))
+    expect_s3_class(tab, "data.frame")
+    expect_equal(ncol(tab), 5)
+    expect_error(modelsummary(models, output = "dataframe", vcov = "robust"), regexp = "Unable to extract")
+    expect_warning(modelsummary(models, output = "dataframe", vcov = "classical"), NA)
+    expect_warning(modelsummary(models, output = "dataframe", vcov = list("robust", "classical")), NA)
+    expect_s3_class(modelsummary(models[[2]], output = "dataframe", vcov = stats::vcov), "data.frame")
 })
 
 
 test_that("robust character shortcuts", {
-  requiet("estimatr")
+    requiet("estimatr")
 
-  mod = lm(hp ~ mpg, mtcars)
-  mod_estimatr = estimatr::lm_robust(hp ~ mpg, mtcars)
-  x = modelsummary(mod, vcov="HC1", output="dataframe", gof_omit=".*")
-  y = modelsummary(mod, vcov="stata", output="dataframe", gof_omit=".*")
-  expect_equal(x[[4]], y[[4]])
+    mod = lm(hp ~ mpg, mtcars)
+    mod_estimatr = estimatr::lm_robust(hp ~ mpg, mtcars)
+    x = modelsummary(mod, vcov = "HC1", output = "dataframe", gof_omit = ".*")
+    y = modelsummary(mod, vcov = "stata", output = "dataframe", gof_omit = ".*")
+    expect_equal(x[[4]], y[[4]])
 
-  x = modelsummary(mod, vcov="HC3", output="dataframe", gof_omit=".*")
-  y = modelsummary(mod, vcov="robust", output="dataframe", gof_omit=".*")
-  expect_equal(x[[4]], y[[4]])
+    x = modelsummary(mod, vcov = "HC3", output = "dataframe", gof_omit = ".*")
+    y = modelsummary(mod, vcov = "robust", output = "dataframe", gof_omit = ".*")
+    expect_equal(x[[4]], y[[4]])
 
-  x = modelsummary(mod, vcov="classical", output="dataframe", gof_omit=".*")
-  y = modelsummary(mod, output="dataframe", gof_omit=".*")
-  expect_equal(x[[4]], y[[4]])
+    x = modelsummary(mod, vcov = "classical", output = "dataframe", gof_omit = ".*")
+    y = modelsummary(mod, output = "dataframe", gof_omit = ".*")
+    expect_equal(x[[4]], y[[4]])
 
-  x = modelsummary(mod, vcov="HC2", output="dataframe", gof_omit=".*")
-  y = modelsummary(mod_estimatr, output="dataframe", gof_omit=".*")
-  expect_equal(x[[4]], y[[4]])
+    x = modelsummary(mod, vcov = "HC2", output = "dataframe", gof_omit = ".*")
+    y = modelsummary(mod_estimatr, output = "dataframe", gof_omit = ".*")
+    expect_equal(x[[4]], y[[4]])
 })
-
 
 test_that("single model", {
   mod <- lm(hp ~ mpg + drat, mtcars)
-  x <- modelsummary(mod, vcov=vcov, output="data.frame")
-  y <- modelsummary(mod, vcov=vcov(mod), output="data.frame")
-  z <- modelsummary(mod, vcov=list(sqrt(diag(vcov(mod)))), output="data.frame")
+  x <- modelsummary(mod, vcov = vcov, output = "data.frame")
+  y <- modelsummary(mod, vcov = vcov(mod), output = "data.frame")
+  z <- modelsummary(mod, vcov = list(sqrt(diag(vcov(mod)))), output = "data.frame")
   expect_equal(x, y)
   expect_equal(y, z)
 })
@@ -186,7 +164,7 @@ test_that("sublist (sandwich vignette)", {
     output="data.frame",
     vcov = list(vcov))
   expect_s3_class(tab, "data.frame")
-  expect_equal(dim(tab), c(13, 4))
+  expect_equal(dim(tab), c(14, 4))
 })
 
 # reference tables
@@ -254,10 +232,12 @@ test_that("bad formula", {
   expect_error(modelsummary(models, vcov = ~bad))
 })
 
+
 test_that("vector must be named", {
   vec <- as.numeric(1:3)
   expect_error(modelsummary(models[[1]], estimate = c("estimate", "std.error"), vcov = vec))
 })
+
 
 test_that("vcov content", {
   expect_equal(results[["one sandwich"]], reference[["one sandwich"]], ignore_attr = TRUE)
@@ -267,7 +247,90 @@ test_that("vcov content", {
   expect_equal(results[["hardcoded arbitrary"]], reference[["hardcoded arbitrary"]], ignore_attr = TRUE)
 })
 
+
 test_that("useless: function but no ci needed", {
   expect_error(modelsummary(models, vcov=vcov, conf_level=NULL), NA)
+})
+
+
+test_that("sanity checks", {
+    expect_error(modelsummary(models, vcov = "panel-corrected"), regexp = "cluster")
+})
+
+
+test_that("lme4", {
+    requiet("lme4")
+    requiet("clubSandwich")
+    mod <- lmer(mpg ~ hp + drat + (1 | gear), data = mtcars)
+    tab <- modelsummary(mod, vcov = "CR0", output = "data.frame")
+    expect_s3_class(tab, "data.frame")
+})
+
+
+test_that("fixest", {
+  requiet("fixest")
+  mod_lm = lm(hp ~ mpg + drat, mtcars)
+  if (utils::packageVersion("fixest") >= "0.10.0") {
+    mod_feols =   feols(hp ~ mpg + drat, mtcars, vcov = ~vs)
+  } else {
+    mod_feols =   feols(hp ~ mpg + drat, mtcars, cluster = ~vs)
+  }
+  models = list('lm' = mod_lm, 'feols' = mod_feols)
+
+  # no longer true since lm produces RMSE but not fixest
+  # tab = msummary(models, vcov = 'iid', gof_omit = 'R2|IC|Log|F', output = "data.frame")
+  # expect_equal(tab$lm, tab$feols)
+
+  tab = msummary(models, vcov = 'HC1', gof_omit = 'R2|IC|Log|F', output = 'data.frame')
+  expect_equal(tab$lm, tab$feols)
+
+  tab = msummary(models, vcov = ~ vs, gof_omit = 'R2|IC|Log|F', output = "data.frame")
+  expect_equal(tab$lm, tab$feols)
+
+  tab = msummary(models, vcov = ~ cyl, gof_omit = 'R2|IC|Log|F', output = 'data.frame')
+  expect_equal(tab$lm, tab$feols)
+})
+
+
+test_that("warning for non-iid hardcoded vcov", {
+    requiet("lfe")
+    requiet("estimatr")
+
+    mod <- felm(hp ~ mpg + drat | 0 | 0 | vs, mtcars)
+    expect_warning(modelsummary(mod, vcov = "iid", output = "data.frame"), regexp = "IID")
+
+    mod <- lm_robust(hp ~ mpg + drat, mtcars)
+    expect_warning(modelsummary(mod, vcov = "iid", output = "data.frame"), regexp = "IID")
+
+    mod <- felm(hp ~ mpg + drat | cyl, mtcars)
+    expect_warning(modelsummary(mod, vcov = "iid", output = "data.frame"), regexp = "IID")
+
+    mod <- felm(hp ~ mpg | cyl ~ gear, data = mtcars)
+
+    # sandwich does not work with lfe::felm
+    expect_error(modelsummary(mod, vcov = list(NULL, "robust"), output = "data.frame"))
+
+    # # assume user knows that they are doing
+    # modelsummary(mod, vcov = list('Robust' = mod$robustvcv), output = "data.frame")
+    #
+    # # no explicit vcov names, so we raise the warning
+    # expect_warning(modelsummary(mod, vcov = list(NULL, "classical", vcov(mod, se = "hetero")), output = "data.frame"),
+    #                regexp = "IID")
+})
+
+
+
+test_that("hardcoded numerical", {
+    mod <- lm(mpg ~ hp + drat, mtcars)
+    tab <- modelsummary(mod,
+        gof_map = NA,
+        estimate = "std.error",
+        statistic = NULL,
+        output = "data.frame",
+        vcov = c(
+            "(Intercept)" = 9,
+            "drat" = 3,
+            "hp" = 2))
+    expect_equal(tab[["Model 1"]], c("9.000", "2.000", "3.000"))
 })
 

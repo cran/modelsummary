@@ -1,3 +1,27 @@
+# modelsummary 1.1.0
+
+Breaking change:
+
+* Requires `siunitx` version 3.0.25 LaTeX package.
+* The `title` argument now respects the `escape` argument for all `kableExtra` output formats. This can break tables in which users manually escaped titles.
+
+New features:
+
+* "d" is accepted for decimal-alignment in the `align` argument for all `output` formats. `modelsummary(mod, align = "ld")`
+* New `update_modelsummary()` function makes it easy to install the dev versions of `modelsummary` and its dependencies (mostly useful for Vincent and people who report bugs).
+* Rounding: display at least one significant digit by default.
+* Automatic renaming of `haven` labels in `modelsummary()`, `datasummary()`, `datasummary_skim()`
+* Allow `output = "filename.csv"`
+* Allow `output = "filename.xlsx"`
+* `add_columns` argument supported in `modelsummary()`
+* `datasummary_balance` supports the `stars` argument.
+* Allow stars and confidence intervals with `align = "d"` column.
+
+Bug fixes:
+
+* In some locales, the HTML minus sign created problems in the output. We only use it in "known" locales.
+* Many minor bug fixes
+
 # modelsummary 1.0.2
 
 * Minor release to fix CRAN failure

@@ -69,20 +69,12 @@ sanity_model_names <- function(modelnames) {
 sanity_align <- function(align, estimate = NULL, statistic = NULL, stars = FALSE) {
     checkmate::assert_string(align, null.ok = TRUE)
     if (!is.null(align) && any(grepl("[^lcrd]", align))) {
-        stop('The `align` argument must be a character string which only includes the letters l, c, r, or d. Example: "lcdd"')
+        insight::format_error('The `align` argument must be a character string which only includes the letters l, c, r, or d. Example: "lcdd"')
     }
 
+    # the d-column siunitx LaTeX preamble doesn't play well with stars, so we need to wrap them in \\mbox{}
     if (any(grepl("d", align))) {
-        if (!settings_equal("output_factory", "kableExtra") ||
-            !settings_equal("output_format", c("latex", "latex_tabular")) ||
-            (!is.null(estimate) && any(grepl("\\{", estimate))) ||
-            (!is.null(estimate) && "conf.int" %in% estimate) ||
-            (!is.null(statistic) && any(grepl("\\{", statistic))) ||
-            (!is.null(statistic) && "conf.int" %in% statistic) ||
-            !isFALSE(stars)) {
-            stop('The "d" character is only supported in the `align` argument for LaTeX/PDF tables produced by the `kableExtra` package. It is not supported when the `estimate` or `statistic` arguments include glue strings or confidence intervals. It is only supported when the `stars` argument is `FALSE`. These constraints should be relaxed in the near future. See here to follow progress: https://github.com/vincentarelbundock/modelsummary/issues/354')
-        }
-        settings_set("siunitx_scolumns", TRUE)
+      settings_set("dcolumn_stars_mbox", TRUE)
     }
 }
 
@@ -137,7 +129,7 @@ sanity_coef <- function(coef_map, coef_rename, coef_omit) {
 
   checkmate::assert_string(coef_omit, null.ok = TRUE)
 
-  if (!is.null(coef_rename) & !is.null(coef_map)) {
+  if ((!isFALSE(coef_rename) && !is.null(coef_rename)) && !is.null(coef_map)) {
     stop("coef_map and coef_rename cannot be used together.")
   }
 
@@ -149,11 +141,12 @@ sanity_coef <- function(coef_map, coef_rename, coef_omit) {
     }
   }
 
-  if (is.character(coef_rename)) {
-    checkmate::assert_character(coef_rename, null.ok = TRUE, names = "unique")
-  } else {
-    checkmate::assert_function(coef_rename, null.ok = TRUE)
-  }
+  checkmate::assert(
+    checkmate::check_flag(coef_rename),
+    checkmate::check_character(coef_rename, names = "unique"),
+    checkmate::check_function(coef_rename, null.ok = TRUE),
+    combine = "or"
+  )
 }
 
 
@@ -190,6 +183,7 @@ sanity_factory <- function(factory_dict) {
   modelsummary_default <- getOption("modelsummary_factory_default", default = "kableExtra")
   checkmate::assert_true(modelsummary_default %in% c("gt", "kableExtra",
                                                      "flextable", "huxtable",
+                                                     "DT", 
                                                      "jupyter", "markdown",
                                                      "html", "data.frame",
                                                      "dataframe", "latex",
@@ -273,17 +267,14 @@ sanity_tidy <- function(tidy_output, tidy_custom, estimate, statistic, modelclas
 }
 
 
-sanity_ds_data <- function(formula, data) {
+sanity_ds_data <- function(formula, data, internal_call = FALSE) {
   checkmate::assert_data_frame(data)
   # labelled data does not play well with All()
   is_labelled <- any(sapply(data, inherits, "haven_labelled"))
   is_all <- any(grepl("^All\\(", as.character(formula)))
-  if (is_all && is_labelled) {
+  if (is_all && is_labelled && !isTRUE(internal_call)) {
     msg <- format_msg(
-    "It is not safe to use labelled data with the `datasummary()` family of
-    functions. We recommend that you convert labelled variables to standard vectors
-    using `as.vector()` or `as.numeric()` before calling a `datasummary_*()`
-    function.")
+    "It is not safe to use labelled data with the `All()` command in a datasummary()` formula.")
     warn_once(msg, id = "datasummary_all_labelled")
   }
 }

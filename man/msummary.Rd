@@ -17,10 +17,11 @@ msummary(
   shape = term + statistic ~ model,
   coef_map = NULL,
   coef_omit = NULL,
-  coef_rename = NULL,
+  coef_rename = FALSE,
   gof_map = NULL,
   gof_omit = NULL,
   group_map = NULL,
+  add_columns = NULL,
   add_rows = NULL,
   align = NULL,
   notes = NULL,
@@ -35,7 +36,7 @@ msummary(
 \item{output}{filename or object type (character string)
 \itemize{
 \item Supported filename extensions: .docx, .html, .tex, .md, .txt, .png, .jpg.
-\item Supported object types: "default", "html", "markdown", "latex", "latex_tabular", "data.frame", "gt", "kableExtra", "huxtable", "flextable", "jupyter". The "modelsummary_list" value produces a lightweight object which can be saved and fed back to the \code{modelsummary} function.
+\item Supported object types: "default", "html", "markdown", "latex", "latex_tabular", "data.frame", "gt", "kableExtra", "huxtable", "flextable", "DT", "jupyter". The "modelsummary_list" value produces a lightweight object which can be saved and fed back to the \code{modelsummary} function.
 \item Warning: Users should not supply a file name to the \code{output} argument if they intend to customize the table with external packages. See the 'Details' section.
 \item LaTeX compilation requires the \code{booktabs} and \code{siunitx} packages, but \code{siunitx} can be disabled or replaced with global options. See the 'Details' section.
 \item The default output formats and table-making packages can be modified with global options. See the 'Details' section.
@@ -43,9 +44,9 @@ msummary(
 
 \item{fmt}{determines how to format numeric values
 \itemize{
-\item integer: the number of digits to keep after the period \code{format(round(x, fmt), nsmall=fmt)}
+\item integer: the number of digits to keep after the decimal: \code{format(x, digits = 1, nsmall = fmt, scientific = FALSE)}
+\item function: returns a formatted character string. For example, the \code{format()} function can be used in combination with the \code{fmt} argument for full control of number formatting: number of digits, number of digits after the decimal, scientific notation, etc. See the Examples section below.
 \item character: passed to the \code{sprintf} function (e.g., '\%.3f' keeps 3 digits with trailing zero). See \code{?sprintf}
-\item function: returns a formatted character string.
 \item NULL: does not format numbers, which allows users to include function in the "glue" strings in the \code{estimate} and \code{statistic} arguments.
 \item A named list to format distinct elements of the table differently. Names correspond to column names produced by \code{get_estimates(model)} or \code{get_gof(model)}. Values are integers, characters, or functions, as described above. The \code{fmt} element is used as default for unspecified elements Ex: \code{fmt=list("estimate"=2, "std.error"=1, "r.squared"=4, "fmt"=3)}
 \item LaTeX output: To ensure proper typography, all numeric entries are enclosed in the \verb{\\num\{\}} command, which requires the \code{siunitx} package to be loaded in the LaTeX preamble. This behavior can be altered with global options. See the 'Details' section.
@@ -143,8 +144,9 @@ Examples section below.}
 \item See the Examples section below for complete code.
 }}
 
-\item{coef_rename}{named character vector or function
+\item{coef_rename}{logical, named character, or function
 \itemize{
+\item Logical: TRUE renames variables based on the "label" attribute of each column. See the Example section below.
 \item Named character vector: Values refer to the variable names that will appear in the table. Names refer to the original term names stored in the model object. Ex: c("hp:mpg"="hp X mpg")
 \item Function: Accepts a character vector of the model's term names and returns a named vector like the one described above. The \code{modelsummary} package supplies a \code{coef_rename()} function which can do common cleaning tasks: \code{modelsummary(model, coef_rename = coef_rename)}
 }}
@@ -170,6 +172,11 @@ model information. This argument accepts 4 types of values:
 reorder coefficient groups specified a grouping variable specified in the
 \code{shape} argument formula. This argument behaves like \code{coef_map}.}
 
+\item{add_columns}{a data.frame (or tibble) with the same number of rows as
+#' your main table. By default, rows are appended to the bottom of the table.
+You can define a "position" attribute of integers to set the columns positions.
+See Examples section below.}
+
 \item{add_rows}{a data.frame (or tibble) with the same number of columns as
 your main table. By default, rows are appended to the bottom of the table.
 You can define a "position" attribute of integers to set the row positions.
@@ -181,11 +188,11 @@ the table (e.g., \code{align = "lcc"}).  Valid characters: l, c, r, d.
 \item "l": left-aligned column
 \item "c": centered column
 \item "r": right-aligned column
-\item "d": dot-aligned column. Only supported for LaTeX/PDF tables produced by \code{kableExtra}. These commands must appear in the LaTeX preamble (they are added automatically when compiling Rmarkdown documents to PDF):
+\item "d": dot-aligned column. For LaTeX/PDF output, this option requires at least version 3.0.25 of the siunitx LaTeX package. These commands must appear in the LaTeX preamble (they are added automatically when compiling Rmarkdown documents to PDF):
 \itemize{
 \item \verb{\\usepackage\{booktabs\}}
 \item \verb{\\usepackage\{siunitx\}}
-\item \verb{\\newcolumntype\{d\}\{S[input-symbols = ()]\}}
+\item \verb{\\newcolumntype\{d\}\{S[ input-open-uncertainty=, input-close-uncertainty=, parse-numbers = false, table-align-text-pre=false, table-align-text-post=false ]\}}
 }
 }}
 
@@ -198,8 +205,14 @@ prevent the file from compiling/displaying. This setting does not affect caption
 
 \item{...}{all other arguments are passed through to three functions. See the documentation of these functions for lists of available arguments.
 \itemize{
-\item \link[parameters:model_parameters]{parameters::model_parameters} extracts parameter estimates.
-\item \link[performance:model_performance]{performance::model_performance} extracts goodness-of-fit statistics.
+\item \link[parameters:model_parameters]{parameters::model_parameters} extracts parameter estimates. Available arguments depend on model type, but include:
+\itemize{
+\item \code{standardize}, \code{centrality}, \code{dispersion}, \code{test}, \code{ci_method}, \code{prior}, \code{diagnostic}, \code{rope_range}, \code{power}, \code{cluster}, etc.
+}
+\item \link[performance:model_performance]{performance::model_performance} extracts goodness-of-fit statistics. Available arguments depend on model type, but include:
+\itemize{
+\item \code{metrics}, \code{estimator}, etc.
+}
 \item \link[kableExtra:kbl]{kableExtra::kbl} or \link[gt:gt]{gt::gt} draw tables, depending on the value of the \code{output} argument.
 }}
 }
@@ -213,7 +226,7 @@ and it can produce tables in HTML, LaTeX, Word, Markdown, PDF, PowerPoint,
 Excel, RTF, JPG, or PNG. The appearance of the tables can be customized
 extensively by specifying the \code{output} argument, and by using functions from
 one of the supported table customization packages: \code{kableExtra}, \code{gt},
-\code{flextable}, \code{huxtable}. For more information, see the Details and Examples
+\code{flextable}, \code{huxtable}, \code{DT}. For more information, see the Details and Examples
 sections below, and the vignettes on the \code{modelsummary} website:
 https://vincentarelbundock.github.io/modelsummary/
 \itemize{
@@ -282,7 +295,7 @@ The behavior of \code{modelsummary} can be affected by setting global options:
 \subsection{Table-making packages}{
 
 \code{modelsummary} supports 4 table-making packages: \code{kableExtra}, \code{gt},
-\code{flextable}, and \code{huxtable}. Some of these packages have overlapping
+\code{flextable}, \code{huxtable}, and \code{DT}. Some of these packages have overlapping
 functionalities. For example, 3 of those packages can export to LaTeX. To
 change the default backend used for a specific file format, you can use
 the \code{options} function:
@@ -398,10 +411,28 @@ modelsummary(
   vcov = list("Stata Corp" = "stata",
               "Newey Lewis & the News" = "NeweyWest"))
 
+# fmt: function to keep 3 digits including at least 2 after the decimal
+m <- lm(mpg ~ I(hp * 1000) + drat, data = mtcars)
+f <- function(x) format(x, digits = 3, nsmall = 2, scientific = FALSE)
+modelsummary(m, fmt = f, gof_map = NA)
+
+# fmt: same as above but using scientific notation
+m <- lm(mpg ~ I(hp * 1000) + drat, data = mtcars)
+f <- function(x) format(x, digits = 3, nsmall = 2)
+modelsummary(m, fmt = f, gof_map = NA)
+
 # coef_rename
 modelsummary(models, coef_rename = c('Volume' = 'Large', 'Height' = 'Tall'))
 modelsummary(models, coef_rename = toupper)
 modelsummary(models, coef_rename = coef_rename)
+
+# coef_rename = TRUE for variable labels
+datlab <- mtcars
+datlab$cyl <- factor(datlab$cyl)
+attr(datlab$hp, "label") <- "Horsepower"
+attr(datlab$cyl, "label") <- "Cylinders"
+modlab <- lm(mpg ~ hp * drat + cyl, data = datlab)
+modelsummary(modlab, coef_rename = TRUE)
 
 # coef_map
 modelsummary(models, coef_map = c('Volume' = 'Large', 'Height' = 'Tall'))
@@ -411,7 +442,7 @@ modelsummary(models, coef_map = c('Volume', 'Height'))
 modelsummary(models, coef_omit = "ei", omit = ".*")
 
 # coef_omit: omit a specific coefficient
-modelsummary(models, coef_omit = "^Volume$", gof_omit = ".*", output = "markdown")
+modelsummary(models, coef_omit = "^Volume$", gof_omit = ".*")
 
 # coef_omit: omit coefficients matching either one of two substring
 modelsummary(models, coef_omit = "ei|rc", omit = ".*")

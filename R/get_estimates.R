@@ -10,7 +10,7 @@
 #' @param model a single model object
 #' 
 #' @export
-get_estimates <- function(model, conf_level = .95, vcov = NULL, shape = NULL, ...) {
+get_estimates <- function(model, conf_level = .95, vcov = NULL, shape = NULL, coef_rename = FALSE, ...) {
 
     if (is.null(conf_level)) {
         conf_int <- FALSE
@@ -21,6 +21,9 @@ get_estimates <- function(model, conf_level = .95, vcov = NULL, shape = NULL, ..
     if (inherits(model, "modelsummary_list") && "tidy" %in% names(model)) {
         return(model[["tidy"]])
     }
+
+    args <- append(list(model, "vcov" = vcov), list(...))
+    vcov <- do.call("get_vcov", args)
 
     # priority
     get_priority <- getOption("modelsummary_get", default = "easystats")
@@ -39,10 +42,17 @@ get_estimates <- function(model, conf_level = .95, vcov = NULL, shape = NULL, ..
 
     for (f in funs) {
         if (!inherits(out, "data.frame") || nrow(out) == 0) {
+            if (is.matrix(vcov)) {
+                V <- vcov
+            } else {
+                V <- NULL
+            }
             out <- f(
                 model,
                 conf_int = conf_int,
                 conf_level = conf_level,
+                vcov = V,
+                coef_rename = coef_rename,
                 ...)
             if (is.character(out)) {
                 warning_msg <- c(warning_msg, out)
@@ -51,96 +61,55 @@ get_estimates <- function(model, conf_level = .95, vcov = NULL, shape = NULL, ..
     }
 
     if (!inherits(out, "data.frame")) {
-      stop(sprintf(
-        '`modelsummary could not extract the required information from a model
-of class "%s". The package tried a sequence of 2 helper functions to extract
-estimates:
-
-parameters::parameters(model)
-broom::tidy(model)
-
-To draw a table, one of these commands must return a `data.frame` with a
-column named "term". The `modelsummary` website explains how to summarize
-unsupported models or add support for new models yourself:
-
-https://vincentarelbundock.github.io/modelsummary/articles/modelsummary.html
-
-These errors messages were generated during extraction:
-%s',
-        class(model)[1], paste(warning_msg, collapse = "\n")
-      ))
+      msg <- c(
+        sprintf('`modelsummary could not extract the required information from a model of class "%s". The package tried a sequence of 2 helper functions to extract estimates:', class(model)[1]),
+        '',
+        'parameters::parameters(model)',
+        'broom::tidy(model)',
+        '',
+        'To draw a table, one of these commands must return a `data.frame` with a column named "term". The `modelsummary` website explains how to summarize unsupported models or add support for new models yourself: https://vincentarelbundock.github.io/modelsummary/articles/modelsummary.html',
+        '',
+        'These errors messages were generated during extraction:',
+        '', '')
+      msg <- insight::format_message(msg)
+      msg <- paste0(msg, paste(warning_msg, collapse = "\n"))
+      stop(msg, call. = FALSE)
     }
+
+    override <- function(old, new, columns) {
+        columns <- setdiff(columns, c("term", shape$group_name))
+        if (!inherits(new, "data.frame") || nrow(new) == 0 || !"term" %in% colnames(new)) {
+            return(old)
+        }
+        if (is.null(shape$group_name)) {
+            def <- old[["term"]]
+            cus <- new[["term"]]
+        } else {
+            def <- paste(old[["term"]], old[[shape$group_name]])
+            cus <- paste(new[["term"]], new[[shape$group_name]])
+        }
+        idx <- match(def, cus)
+        if (all(is.na(idx))) {
+            warning(insight::format_message("Term name mismatch. Make sure all `tidy_custom` method returns a data frame with proper and matching term names."),
+                    call. = FALSE)
+            return(old)
+        }
+        for (n in columns) {
+            old[[n]] <- ifelse(is.na(idx), old[[n]], new[[n]][idx])
+        }
+        return(old)
+    }
+
+    # override standard errors if `vcov` is a named vector
+    out <- override(old = out, new = vcov, columns = "std.error")
 
     # tidy_custom_internal (modelsummary customization avoids name conflict)
     out_custom <- tidy_custom_internal(model)
-    if (inherits(out_custom, "data.frame") && nrow(out_custom) > 0) {
-        if (!any(out_custom$term %in% out$term)) {
-            warning('Elements of the "term" column produced by `tidy_custom` must match model terms. `tidy_custom` was ignored.',
-                    call. = FALSE)
-        } else {
-            # R 3.6 doesn't deal well with factors
-            out_custom$term <- as.character(out_custom$term)
-            out$term <- as.character(out$term)
-            out_custom <- out_custom[out_custom$term %in% out$term, , drop = FALSE]
-            idx <- match(out_custom$term, out$term)
-            for (n in colnames(out_custom)) {
-                out[[n]][idx] <- out_custom[[n]]
-            }
-        }
-    }
+    out <- override(old = out, new = out_custom, columns = colnames(out_custom))
 
     # tidy_custom
     out_custom <- tidy_custom(model)
-    if (inherits(out_custom, "data.frame") && nrow(out_custom) > 0) {
-        if (!any(out_custom$term %in% out$term)) {
-            warning('Elements of the "term" column produced by `tidy_custom` must match model terms. `tidy_custom` was ignored.',
-                    call. = FALSE)
-        } else {
-            # R 3.6 doesn't deal well with factors
-            out_custom$term <- as.character(out_custom$term)
-            out$term <- as.character(out$term)
-            out_custom <- out_custom[out_custom$term %in% out$term, , drop = FALSE]
-            idx <- match(out_custom$term, out$term)
-            for (n in colnames(out_custom)) {
-                if (!n %in% colnames(out)) {
-                    out[[n]] <- NA
-                }
-                out[[n]][idx] <- out_custom[[n]]
-            }
-        }
-    }
-
-    # fixest mods
-    fixest_mod <- inherits(model, "fixest") || inherits(model, "fixest_multi")
-
-    # vcov override
-    flag1 <- !is.null(vcov)
-    flag2 <- isFALSE(all.equal(vcov, stats::vcov))
-    flag3 <- !is.character(vcov)
-    flag4 <- is.character(vcov) && length(vcov) == 1 &&
-      (!vcov %in% c("classical", "iid", "constant") || fixest_mod)
-    flag5 <- is.character(vcov) && length(vcov) > 1
-
-    if (flag1 && (flag2 || flag3 || flag4 || flag5)) {
-
-      # extract overridden estimates
-      so <- get_vcov(
-        model,
-        vcov = vcov,
-        conf_level = conf_level,
-        ...)
-
-      if (!is.null(so) && nrow(out) == nrow(so)) {
-        # so overrides out, so we drop columns first
-        idx <- c("group", "term", "response")
-        good <- setdiff(colnames(out), colnames(so))
-        good <- intersect(colnames(out), c(good, idx))
-        out <- out[, good, drop = FALSE]
-        # merge vcov and estimates
-        idx <- Reduce("intersect", list(colnames(out), colnames(so), idx)) 
-        out <- merge(out, so, by = idx, sort = FALSE)
-      }
-    }
+    out <- override(old = out, new = out_custom, columns = colnames(out_custom))
 
     # combine columns if requested in `shape` argument using an : interaction
     for (x in shape$combine) {
@@ -185,10 +154,12 @@ get_estimates_broom <- function(model, conf_int, conf_level, ...) {
 get_estimates_parameters <- function(model,
                                      conf_int,
                                      conf_level,
+                                     vcov,
+                                     coef_rename,
                                      ...) {
 
     dots <- list(...)
-    args <- c(list(model), dots)
+    args <- c(list("model" = model), dots)
     args[["verbose"]] <- FALSE
 
     mi <- tryCatch(
@@ -203,36 +174,55 @@ get_estimates_parameters <- function(model,
     if (isTRUE(conf_int)) {
         args[["ci"]] <- conf_level
     } else if (!"ci" %in% names(dots)) { # faster
-        args <- c(args, list(ci = NULL, ci_random = FALSE))
+        args <- c(args, list(ci = NULL))
+        args[["ci_random"]] <- FALSE # do not append to avoid duplicate arg
     }
 
     # bayes: diagnostics can be very expensive
     if (isTRUE(mi[["is_bayesian"]])) {
         if (!"test" %in% names(dots)) args <- c(args, list("test" = NULL))
         if (!"diagnostic" %in% names(dots)) args <- c(args, list("diagnostic" = NULL))
+        if (!"dispersion" %in% names(dots)) args <- c(args, list("dispersion" = TRUE))
     }
 
     # main call
-    fun <- tidy_easystats <- function(x, ...) {
-        out <- parameters::parameters(x, ...)
+    tidy_easystats <- function(...) {
+        dots <- list(...)
+        # bug in `parameters`
+        dots[["pretty_names"]] <- "labels"
+        inner <- parameters::parameters
+        out <- do.call("inner", dots)
         out <- parameters::standardize_names(out, style = "broom")
+        return(out)
     }
 
-    out <- hush(tryCatch(do.call("fun", args), error = function(e) NULL))
+    if (is.character(vcov) || is.matrix(vcov)) {
+      args[["vcov"]] <- vcov
+    }
+    out <- hush(tryCatch(do.call("tidy_easystats", args), error = function(e) NULL))
+
+    if (isTRUE(coef_rename)) {
+        labs <- attr(out, "pretty_labels")
+        labs <- gsub("\\*", "\u00d7", labs)
+        if (isTRUE(length(labs) == nrow(out))) {
+            out$term <- labs
+        }
+    }
 
     # errors and warnings: before processing the data frame term names
     if (!inherits(out, "data.frame") || nrow(out) < 1) {
         return("`parameters::parameters(model)` did not return a valid data.frame.")
     }
 
-    if (!"term" %in% colnames(out)) {
-        return("`parameters::parameters(model)` did not return a data.frame with a `term` column.")
-    }
-
     # term names: lavaan
+    # before check if there is a `term` name column
     if (inherits(model, "lavaan") && all(c("to", "operator", "from") %in% colnames(out))) {
         out$term <- paste(out$to, out$operator, out$from)
         out$to <- out$operator <- out$from <- NULL
+    }
+
+    if (!"term" %in% colnames(out)) {
+        return("`parameters::parameters(model)` did not return a data.frame with a `term` column.")
     }
 
     # term names: mixed-effects

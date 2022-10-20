@@ -53,7 +53,7 @@ test_that("fixest std.error labels", {
   expect_equal(tab[tab$term == "Std.Errors", "Model 1"], "by: vs")
   tab <- modelsummary(mod, vcov = list(NULL, "iid"), output = "data.frame")
   expect_equal(tab[tab$term == "Std.Errors", "Model 1"], "by: vs")
-  expect_equal(tab[tab$term == "Std.Errors", "Model 2"], "IID")
+  expect_equal(tab[tab$term == "Std.Errors", "Model 2"], "by: vs")
   # unnamed function includes no label
   tab1 <- modelsummary(mod,
                        vcov = vcov(mod, se = "standard"),
@@ -64,9 +64,9 @@ test_that("fixest std.error labels", {
   tab3 <- modelsummary(mod,
                        output = "data.frame",
                        vcov = list("test " = stats::vcov(mod, se = "standard")))
-  expect_false("Std.Errors" %in% tab1$term)
-  expect_false("Std.Errors" %in% tab2$term)
-  expect_true("Std.Errors" %in% tab3$term)
+  expect_true("Custom" %in% tab1[["Model 1"]])
+  expect_true("Custom" %in% tab2[["Model 1"]])
+  expect_true("test " %in% tab3[["Model 1"]])
 })
 
 
@@ -75,10 +75,32 @@ test_that("regression: issue #450", {
     mod <- feols(mpg ~ wt, data = mtcars)
 
     se1 <- sqrt(diag(vcovHC(mod, type = "HC3")))
-    se2 <- get_estimates(mod, vcov = "HC3")$std.error
-    expect_equal(se2, se1, ignore_attr = TRUE)
+    tab <- modelsummary(mod,
+        vcov = "HC3",
+        gof_map = NA,
+        fmt = 10,
+        estimate = "std.error",
+        statistic = NULL,
+        output = "dataframe")
+    expect_equal(as.numeric(tab[["Model 1"]]), se1, ignore_attr = TRUE)
 
     se1 <- sqrt(diag(vcovHC(mod, type = "HC1")))
     se2 <- get_estimates(mod, vcov = "HC1")$std.error
     expect_equal(se2, se1, ignore_attr = TRUE)
 })
+
+
+test_that("Issue #551", {
+    mod <- suppressMessages(feols(mpg ~ hp * i(cyl), data = mtcars))
+    cm <- c(
+      "cyl::6" = "Cylinders 6",
+      "cyl::8" = "Cylinders 8",
+      "hp:cyl::4" = "HP x Cylinders 4",
+      "hp:cyl::6" = "HP x Cylinders 6")
+    tab <- modelsummary(mod, coef_map = cm, output = "dataframe")
+    expect_true("HP x Cylinders 4" %in% tab$term)
+})
+
+
+
+

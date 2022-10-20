@@ -11,11 +11,11 @@ sanitize_output <- function(output) {
     stop("The `output` argument must be a string. Type `?modelsummary` for details. This error is sometimes raised when users supply multiple models to `modelsummary` but forget to wrap them in a list. This works: `modelsummary(list(model1, model2))`. This does *not* work: `modelsummary(model1, model2)`")
   }
 
-  object_types <- c('default', 'gt', 'kableExtra', 'flextable', 'huxtable',
+  object_types <- c('default', 'gt', 'kableExtra', 'flextable', 'huxtable', 'DT',
                     'html', 'jupyter', 'latex', 'latex_tabular', 'markdown',
                     'dataframe', 'data.frame', 'modelsummary_list')
   extension_types <- c('html', 'tex', 'md', 'txt', 'docx', 'pptx', 'rtf',
-                       'jpg', 'png')
+                       'jpg', 'png', 'csv', 'xlsx')
 
   checkmate::assert_string(output)
 
@@ -37,6 +37,8 @@ sanitize_output <- function(output) {
 
 
   extension_dict <- c(
+    "csv"  = "dataframe",
+    "xlsx"  = "dataframe",
     "md"   = "markdown",
     "Rmd"  = "markdown",
     "txt"  = "markdown",
@@ -74,6 +76,7 @@ sanitize_output <- function(output) {
     "flextable"      = "flextable",
     "gt"             = "gt",
     "huxtable"       = "huxtable",
+    "DT"             = "DT",
     "kableExtra"     = "kableExtra",
     "markdown"       = "kableExtra",
     "latex_tabular"  = "kableExtra",
@@ -163,7 +166,13 @@ sanitize_output <- function(output) {
 
 \\usepackage{booktabs}
 \\usepackage{siunitx}
-\\newcolumntype{d}{S[input-symbols = ()]}
+\\newcolumntype{d}{S[
+    input-open-uncertainty=,
+    input-close-uncertainty=,
+    parse-numbers = false,
+    table-align-text-pre=false,
+    table-align-text-post=false
+ ]}
 
 To disable `siunitx` and prevent `modelsummary` from wrapping numeric entries in `\\num{}`, call:
 

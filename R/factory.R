@@ -33,6 +33,8 @@ factory <- function(tab,
     factory_fun <- factory_flextable
   } else if (settings_equal("output_factory", "huxtable")) {
     factory_fun <- factory_huxtable
+  } else if (settings_equal("output_factory", "DT")) {
+    factory_fun <- factory_DT
   } else if (settings_equal("output_factory", "dataframe")) {
     factory_fun <- factory_dataframe
   }
@@ -159,6 +161,15 @@ factory <- function(tab,
     checkmate::assert_true(nchar(align) == ncol(tab))
   }
   align <- strsplit(align, "")[[1]]
+
+  # dot align with unicode spaces (latex has its own mechanism)
+  if (!settings_equal("output_format", "latex")) {
+    align_d <- grep("d", align)
+    for (i in align_d) {
+      tab[[i]] <- pad(tab[[i]], style = "character")
+    }
+    align[align == "d"] <- "c"
+  }
 
   ## build table
   out <- factory_fun(tab,

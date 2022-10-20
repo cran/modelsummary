@@ -2,22 +2,23 @@ requiet("gamlss")
 requiet("nnet")
 
 test_that("combine columns with :", {
+    skip_if_not_installed("parameters", minimum_version = "0.19.0.10")
     requiet("marginaleffects")
     mod <- lm(mpg ~ hp + factor(cyl), data = mtcars)
-    mfx <- marginaleffects(mod)
-    tab1 <- modelsummary(mfx, output = "dataframe", shape = term:contrast ~ model)
-    tab2 <- modelsummary(mfx, output = "dataframe", shape = term:contrast + statistic ~ model)
-    tab3 <- modelsummary(mfx, output = "dataframe", shape = term + contrast + statistic ~ model)
+    mfx <- suppressWarnings(marginaleffects(mod))
+    tab1 <- modelsummary(mfx, output = "dataframe", shape = term:comparison ~ model)
+    tab2 <- modelsummary(mfx, output = "dataframe", shape = term:comparison + statistic ~ model)
+    tab3 <- modelsummary(mfx, output = "dataframe", shape = term + comparison + statistic ~ model)
     tab4 <- modelsummary(
         mfx,
         output = "dataframe",
         coef_rename = function(x) gsub(" dY/dX", " (Slope)", x),
-        shape = term : contrast ~ model)
+        shape = term : comparison ~ model)
     expect_equal(tab1, tab2)
     expect_equal(nrow(tab1), nrow(tab3))
     expect_equal(ncol(tab1) + 1, ncol(tab3))
-    expect_error(modelsummary(mfx, shape = term * contrast + statistic ~ model), regexp = "character")
-    expect_error(modelsummary(mfx, output = "dataframe", shape = term:contrast + statistic ~ model), NA)
+    expect_error(modelsummary(mfx, shape = term * comparison + statistic ~ model), regexp = "character")
+    expect_error(modelsummary(mfx, output = "dataframe", shape = term:comparison + statistic ~ model), NA)
 })
 
 test_that("gof merge on partial column match", {
@@ -280,3 +281,18 @@ test_that("group_map reorder rename", {
     expect_equal(tab$group[1], "Zero")
 })
 
+
+
+
+test_that("Issue #531", {
+    mod <- lm(mpg ~ hp + factor(cyl), data = mtcars)
+    tab <- modelsummary(
+        mod,
+        output = "dataframe",
+        shape = term + model ~ statistic,
+        statistic = c("std.error", "{p.value}{stars}", "{estimate} ({statistic})"),
+        fmt = list(estimate = 3, p.value = 2))
+    expect_equal(
+        colnames(tab),
+        c("part", "term", "model", "Est.", "S.E.", "p", "Est.  (t)"))
+})

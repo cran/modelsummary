@@ -14,7 +14,8 @@
 #' @import tables
 #' @param formula A two-sided formula to describe the table: rows ~ columns.
 #' See the Examples section for a mini-tutorial and the Details section for
-#' more resources.
+#' more resources. Grouping/nesting variables can appear on both sides of the
+#' formula, but all summary functions must be on one side.
 #' @param data A data.frame (or tibble)
 #' @param add_columns a data.frame (or tibble) with the same number of rows as
 #' your main table.
@@ -30,7 +31,7 @@
 #' `x~mean*z` will print the `mean`-related header above the `z`-related
 #' header.`
 #' @param ... all other arguments are passed through to the table-making
-#' functions [kableExtra::kbl] or [gt::gt], depending on the `output` argument.
+#' functions [kableExtra::kbl], [gt::gt], [DT::datatable], etc. depending on the `output` argument.
 #' This allows users to pass arguments directly to `datasummary` in order to
 #' affect the behavior of other functions behind the scenes.
 #' @template citation
@@ -166,7 +167,7 @@ datasummary <- function(formula,
   ))
   sanitize_output(output)
 
-  sanity_ds_data(formula = formula, data = data)
+  sanity_ds_data(formula = formula, data = data, internal_call = list(...)[["internal_call"]])
   sanitize_escape(escape)
 
   # convenience: transform logical and character to factor
@@ -197,7 +198,8 @@ datasummary <- function(formula,
   # extract content
   dse <- datasummary_extract(tab,
     fmt = fmt,
-    sparse_header = sparse_header)
+    sparse_header = sparse_header,
+    data = data)
 
   # align stub l rest r
   stub_width <- attr(dse, 'stub_width')

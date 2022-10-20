@@ -4,7 +4,7 @@
 \alias{get_vcov}
 \title{Allow users to override uncertainty estimates}
 \usage{
-get_vcov(model, vcov = NULL, conf_level = NULL, ...)
+get_vcov(model, vcov = NULL, ...)
 }
 \arguments{
 \item{model}{object type with an available \code{tidy} method.}
@@ -21,14 +21,16 @@ sections below):
 \item a named list of length(models) vectors with names equal to the names of your coefficient estimates. See 'Examples' section below. Warning: since this list of vectors can include arbitrary strings or numbers, \code{modelsummary} cannot automatically calculate p values. The \code{stars} argument may thus use incorrect significance thresholds when \code{vcov} is a list of vectors.
 }}
 
-\item{conf_level}{numeric value between 0 and 1. confidence level to use for
-confidence intervals. Setting this argument to \code{NULL} does not extract
-confidence intervals, which can be faster for some models.}
-
 \item{...}{all other arguments are passed through to three functions. See the documentation of these functions for lists of available arguments.
 \itemize{
-\item \link[parameters:model_parameters]{parameters::model_parameters} extracts parameter estimates.
-\item \link[performance:model_performance]{performance::model_performance} extracts goodness-of-fit statistics.
+\item \link[parameters:model_parameters]{parameters::model_parameters} extracts parameter estimates. Available arguments depend on model type, but include:
+\itemize{
+\item \code{standardize}, \code{centrality}, \code{dispersion}, \code{test}, \code{ci_method}, \code{prior}, \code{diagnostic}, \code{rope_range}, \code{power}, \code{cluster}, etc.
+}
+\item \link[performance:model_performance]{performance::model_performance} extracts goodness-of-fit statistics. Available arguments depend on model type, but include:
+\itemize{
+\item \code{metrics}, \code{estimator}, etc.
+}
 \item \link[kableExtra:kbl]{kableExtra::kbl} or \link[gt:gt]{gt::gt} draw tables, depending on the value of the \code{output} argument.
 }}
 }

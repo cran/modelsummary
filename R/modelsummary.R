@@ -16,7 +16,7 @@ globalVariables(c('.', 'term', 'part', 'estimate', 'conf.high', 'conf.low',
 #' Excel, RTF, JPG, or PNG. The appearance of the tables can be customized
 #' extensively by specifying the `output` argument, and by using functions from
 #' one of the supported table customization packages: `kableExtra`, `gt`,
-#' `flextable`, `huxtable`. For more information, see the Details and Examples
+#' `flextable`, `huxtable`, `DT`. For more information, see the Details and Examples
 #' sections below, and the vignettes on the `modelsummary` website:
 #' https://vincentarelbundock.github.io/modelsummary/
 #' * [The `modelsummary` Vignette includes dozens of examples of tables with extensive customizations.](https://vincentarelbundock.github.io/modelsummary/articles/modelsummary.html)
@@ -35,14 +35,14 @@ globalVariables(c('.', 'term', 'part', 'estimate', 'conf.high', 'conf.low',
 #' @param models a model or (optionally named) list of models
 #' @param output filename or object type (character string)
 #' * Supported filename extensions: .docx, .html, .tex, .md, .txt, .png, .jpg.
-#' * Supported object types: "default", "html", "markdown", "latex", "latex_tabular", "data.frame", "gt", "kableExtra", "huxtable", "flextable", "jupyter". The "modelsummary_list" value produces a lightweight object which can be saved and fed back to the `modelsummary` function.
+#' * Supported object types: "default", "html", "markdown", "latex", "latex_tabular", "data.frame", "gt", "kableExtra", "huxtable", "flextable", "DT", "jupyter". The "modelsummary_list" value produces a lightweight object which can be saved and fed back to the `modelsummary` function.
 #' * Warning: Users should not supply a file name to the `output` argument if they intend to customize the table with external packages. See the 'Details' section.
 #' * LaTeX compilation requires the `booktabs` and `siunitx` packages, but `siunitx` can be disabled or replaced with global options. See the 'Details' section.
 #' * The default output formats and table-making packages can be modified with global options. See the 'Details' section.
 #' @param fmt determines how to format numeric values
-#' * integer: the number of digits to keep after the period `format(round(x, fmt), nsmall=fmt)`
+#' * integer: the number of digits to keep after the decimal: `format(x, digits = 1, nsmall = fmt, scientific = FALSE)`
+#' * function: returns a formatted character string. For example, the `format()` function can be used in combination with the `fmt` argument for full control of number formatting: number of digits, number of digits after the decimal, scientific notation, etc. See the Examples section below.
 #' * character: passed to the `sprintf` function (e.g., '%.3f' keeps 3 digits with trailing zero). See `?sprintf`
-#' * function: returns a formatted character string.
 #' * NULL: does not format numbers, which allows users to include function in the "glue" strings in the `estimate` and `statistic` arguments. 
 #' * A named list to format distinct elements of the table differently. Names correspond to column names produced by `get_estimates(model)` or `get_gof(model)`. Values are integers, characters, or functions, as described above. The `fmt` element is used as default for unspecified elements Ex: `fmt=list("estimate"=2, "std.error"=1, "r.squared"=4, "fmt"=3)`
 #' * LaTeX output: To ensure proper typography, all numeric entries are enclosed in the `\num{}` command, which requires the `siunitx` package to be loaded in the LaTeX preamble. This behavior can be altered with global options. See the 'Details' section.
@@ -93,7 +93,8 @@ globalVariables(c('.', 'term', 'part', 'estimate', 'conf.high', 'conf.low',
 #' * `"^(?!.*ei)"`: keep coefficients matching the "ei" substring.
 #' * `"^(?!.*ei|.*pt)"`: keep coefficients matching either the "ei" or the "pt" substrings.
 #' * See the Examples section below for complete code.
-#' @param coef_rename named character vector or function
+#' @param coef_rename logical, named character, or function
+#' * Logical: TRUE renames variables based on the "label" attribute of each column. See the Example section below.
 #' * Named character vector: Values refer to the variable names that will appear in the table. Names refer to the original term names stored in the model object. Ex: c("hp:mpg"="hp X mpg") 
 #' * Function: Accepts a character vector of the model's term names and returns a named vector like the one described above. The `modelsummary` package supplies a `coef_rename()` function which can do common cleaning tasks: `modelsummary(model, coef_rename = coef_rename)`
 #' @param gof_map rename, reorder, and omit goodness-of-fit statistics and other
@@ -126,6 +127,10 @@ globalVariables(c('.', 'term', 'part', 'estimate', 'conf.high', 'conf.low',
 #' * `term + response + statistic ~ model`: term and group id in separate columns
 #' * `term : response + statistic ~ model`: term and group id in a single column
 #' * `term ~ response`
+#' @param add_columns a data.frame (or tibble) with the same number of rows as
+#' #' your main table. By default, rows are appended to the bottom of the table.
+#' You can define a "position" attribute of integers to set the columns positions.
+#' See Examples section below.
 #' @param add_rows a data.frame (or tibble) with the same number of columns as
 #' your main table. By default, rows are appended to the bottom of the table.
 #' You can define a "position" attribute of integers to set the row positions.
@@ -143,15 +148,17 @@ globalVariables(c('.', 'term', 'part', 'estimate', 'conf.high', 'conf.low',
 #' * "l": left-aligned column
 #' * "c": centered column
 #' * "r": right-aligned column
-#' * "d": dot-aligned column. Only supported for LaTeX/PDF tables produced by `kableExtra`. These commands must appear in the LaTeX preamble (they are added automatically when compiling Rmarkdown documents to PDF):
+#' * "d": dot-aligned column. For LaTeX/PDF output, this option requires at least version 3.0.25 of the siunitx LaTeX package. These commands must appear in the LaTeX preamble (they are added automatically when compiling Rmarkdown documents to PDF):
 #'   - `\usepackage{booktabs}`
 #'   - `\usepackage{siunitx}`
-#'   - `\newcolumntype{d}{S[input-symbols = ()]}`
+#'   - `\newcolumntype{d}{S[ input-open-uncertainty=, input-close-uncertainty=, parse-numbers = false, table-align-text-pre=false, table-align-text-post=false ]}`
 #' @param escape boolean TRUE escapes or substitutes LaTeX/HTML characters which could
 #' prevent the file from compiling/displaying. This setting does not affect captions or notes.
 #' @param ... all other arguments are passed through to three functions. See the documentation of these functions for lists of available arguments.
-#' + [parameters::model_parameters] extracts parameter estimates.
-#' + [performance::model_performance] extracts goodness-of-fit statistics.
+#' + [parameters::model_parameters] extracts parameter estimates. Available arguments depend on model type, but include:
+#'     - `standardize`, `centrality`, `dispersion`, `test`, `ci_method`, `prior`, `diagnostic`, `rope_range`, `power`, `cluster`, etc. 
+#' + [performance::model_performance] extracts goodness-of-fit statistics. Available arguments depend on model type, but include:
+#'     - `metrics`, `estimator`, etc.
 #' + [kableExtra::kbl] or [gt::gt] draw tables, depending on the value of the `output` argument.
 #' @return a regression table in a format determined by the `output` argument.
 #' @importFrom generics glance tidy
@@ -169,10 +176,11 @@ modelsummary <- function(
   shape       = term + statistic ~ model,
   coef_map    = NULL,
   coef_omit   = NULL,
-  coef_rename = NULL,
+  coef_rename = FALSE,
   gof_map     = NULL,
   gof_omit    = NULL,
   group_map   = NULL,
+  add_columns = NULL,
   add_rows    = NULL,
   align       = NULL,
   notes       = NULL,
@@ -205,7 +213,7 @@ modelsummary <- function(
   sanitize_escape(escape)
   sanity_ellipsis(vcov, ...)        # before sanitize_vcov
   models <- sanitize_models(models) # before sanitize_vcov
-  vcov <- sanitize_vcov(vcov, length(models), ...)
+  vcov <- sanitize_vcov(vcov, models, ...)
   number_of_models <- max(length(models), length(vcov))
   estimate <- sanitize_estimate(estimate, number_of_models)
   exponentiate <- sanitize_exponentiate(exponentiate, number_of_models)
@@ -244,9 +252,9 @@ modelsummary <- function(
                                         vcov = vcov,
                                         gof_map = gof_map, # check if we can skip all gof computation
                                         shape = shape,
+                                        coef_rename = coef_rename,
                                         ...)
   names(msl) <- model_names
-
 
 
   if (settings_equal("output_format", "modelsummary_list")) {
@@ -408,7 +416,7 @@ modelsummary <- function(
 
   # interaction : becomes ×
   if (is.null(coef_map) &&
-      is.null(coef_rename) &&
+      isFALSE(coef_rename) &&
       "term" %in% colnames(tab) &&
       !settings_equal("output_format", "rtf")) {
     idx <- tab$part != 'gof'
@@ -439,6 +447,7 @@ modelsummary <- function(
     } else {
       notes <- c(stars_note, notes)
     }
+    notes <- escape_string(notes)
   }
 
   # data.frame output keeps redundant info
@@ -462,6 +471,7 @@ modelsummary <- function(
     tab$group <- NULL
   }
 
+
   # only show group label if it is a row-property (lhs of the group formula)
   tmp <- setdiff(shape$lhs, c("model", "term"))
   if (length(tmp) == 0) {
@@ -475,6 +485,9 @@ modelsummary <- function(
   if (is.null(align)) {
     n_stub <- sum(grepl("^ *$", colnames(tab)))
     align <- paste0(strrep("l", n_stub), strrep("c", ncol(tab) - n_stub))
+    if (isTRUE(checkmate::check_data_frame(add_columns))) {
+      align <- paste0(align, strrep("c", ncol(add_columns)))
+    }
   }
 
   # HACK: remove "empty" confidence intervals or standard errors and omit empty rows
@@ -483,7 +496,8 @@ modelsummary <- function(
     tab[[i]] <- gsub("\\(\\\\num\\{NA\\}\\)", "", tab[[i]])
     tab[[i]] <- gsub("\\[,\\s*\\]", "", tab[[i]])
     tab[[i]] <- gsub("\\[\\\\num\\{NA\\}, \\\\num\\{NA\\}\\]", "", tab[[i]])
-    tab[[i]] <- gsub("\\{\\}", "", tab[[i]])
+    # Issue #560 don't replace fe1^fe2 -> fe1\textasciicircum{}fe2 -> fe1\textasciicircumfe2
+    tab[[i]] <- gsub("^\\S*\\{\\}\\S*", "", tab[[i]])
   }
   idx <- apply(tab, 1, function(x) any(x != ""))
   tab <- tab[idx, ]
@@ -499,6 +513,8 @@ modelsummary <- function(
     output   = output,
     title    = title,
     add_rows = add_rows,
+    add_columns = add_columns,
+    escape = escape,
     ...
   )
 
@@ -517,36 +533,9 @@ modelsummary <- function(
 }
 
 
-get_list_of_modelsummary_lists <- function(models, conf_level, vcov, gof_map, shape, ...) {
+get_list_of_modelsummary_lists <- function(models, conf_level, vcov, gof_map, shape, coef_rename, ...) {
 
     number_of_models <- max(length(models), length(vcov))
-
-    vcov_type <- get_vcov_type(vcov)
-
-    vcov_names <- names(vcov)
-
-
-    # warning for models with hard-coded non-IID vcov
-    hardcoded <- c("lm_robust", "iv_robust", "felm")
-    flag_vcov <- NULL
-
-    for (i in 1:number_of_models) {
-        # trust users when they specify vcov names
-        if (is.null(vcov_names[[i]]) || vcov_names[[i]] == "") {
-            j <- ifelse(length(models) == 1, 1, i)
-            if (is.character(vcov_type[[i]]) &&
-                tolower(vcov_type[[i]]) %in% c("iid", "classical", "constant") &&
-                length(intersect(hardcoded, class(models[[j]])) > 0)) {
-                flag_vcov <- i
-            }
-        }
-    }
-
-    if (!is.null(flag_vcov)) {
-        j <- ifelse(length(models) == 1, 1, flag_vcov)
-        warning(sprintf('When the `vcov` argument is set to "iid", "classical", or "constant", `modelsummary` extracts the default variance-covariance matrix from the model object. For objects of class `%s`, the default vcov is not always IID. Please make sure that the standard error label matches the numeric results in the table. Note that the `vcov` argument accepts a named list for users who want to customize the standard error labels in their regression tables.', class(models[[j]])[1]),
-                call. = FALSE)
-    }
 
     inner_loop <- function(i) {
         # recycling when 1 model and many vcov
@@ -560,13 +549,14 @@ get_list_of_modelsummary_lists <- function(models, conf_level, vcov, gof_map, sh
         }
 
         # don't waste time if we are going to exclude all gof anyway
-        gla <- get_gof(models[[j]], vcov_type[[i]], gof_map = gof_map, ...)
+        gla <- get_gof(models[[j]], vcov_type = names(vcov)[i], gof_map = gof_map, ...)
 
         tid <- get_estimates(
             models[[j]],
             conf_level = conf_level,
             vcov = vcov[[i]],
             shape = shape,
+            coef_rename = coef_rename,
             ...)
 
         out <- list("tidy" = tid, "glance" = gla)
@@ -595,16 +585,19 @@ get_list_of_modelsummary_lists <- function(models, conf_level, vcov, gof_map, sh
 
 
 redundant_labels <- function(dat, column) {
-    if (!column %in% colnames(dat)) {
-        return(dat)
-    }
+  if (!column %in% colnames(dat)) {
+    return(dat)
+  }
+  # Issue #558: 1-row estimates table with no gof
+  if (nrow(dat) > 1) { 
     for (i in nrow(dat):2) {
-        if (dat$part[i] == "estimates" &&
+      if (dat$part[i] == "estimates" &&
         dat[[column]][i - 1] == dat[[column]][i]) {
         dat[[column]][i] <- ""
-        }
+      }
     }
-    return(dat)
+  }
+  return(dat)
 }
 
 #' `msummary()` is a shortcut to `modelsummary()`

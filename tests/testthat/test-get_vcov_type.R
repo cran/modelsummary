@@ -8,10 +8,9 @@ test_that("automatic standard errors labelling", {
     mod <- lm(hp ~ mpg, mtcars)
     vcov <- list("iid", "robust", "stata", ~cyl, ~vs + am, ~vs:am)
     tab <- modelsummary(mod, vcov = vcov, output = "dataframe")
-    expect_true("Std.Errors" %in% tab[[2]])
     expect_true("IID" %in% tab[[4]])
-    expect_true("Robust" %in% tab[[5]])
-    expect_true("Stata" %in% tab[[6]])
+    expect_true("HC3" %in% tab[[5]])
+    expect_true("HC1" %in% tab[[6]])
     expect_true("by: cyl" %in% tab[[7]])
     expect_true("by: vs & am" %in% tab[[8]])
     expect_true("by: vs & am" %in% tab[[9]])
@@ -19,16 +18,12 @@ test_that("automatic standard errors labelling", {
     tab <- modelsummary(mod, vcov = vcov, output = "dataframe")
     expect_true("Std.Errors" %in% tab[[2]])
     expect_true("IID" %in% tab[[4]])
-    expect_true("Robust" %in% tab[[5]])
+    expect_true("HC3" %in% tab[[5]])
 })
 
 
 test_that("consistent display of clustered SEs", {
-    if (utils::packageVersion("fixest") >= "0.10.0") {
-        mod_feols <- feols(mpg ~ wt, mtcars, vcov = ~ am + cyl)
-    } else {
-        mod_feols <- feols(mpg ~ wt, mtcars, cluster = ~ am + cyl)
-    }
+    mod_feols <- feols(mpg ~ wt, mtcars, vcov = ~ am + cyl)
     mod_felm <- felm(mpg ~ wt | 0 | 0 | am + cyl, mtcars, cmethod = "cgm2")
     gm <- modelsummary::gof_map
     gm <- gm[gm$clean == "Std.Errors", ]
@@ -42,11 +37,7 @@ test_that("consistent display of clustered SEs", {
 
 test_that("consistent gof std error display fixest/lfe/estimatr", {
   testthat::skip_if_not_installed(c("fixest", "lfe", "estimatr"))
-  if (packageVersion("fixest") >= "0.10.0") {
-    fixest_mod <- fixest::feols(hp ~ mpg + drat, mtcars, vcov = ~vs)
-  } else {
-    fixest_mod <- fixest::feols(hp ~ mpg + drat, mtcars, cluster = ~vs)
-  }
+  fixest_mod <- fixest::feols(hp ~ mpg + drat, mtcars, vcov = ~vs)
   mod <- list(
     "feols" = fixest_mod,
     "felm" = felm(hp ~ mpg + drat |0 | 0 | vs, mtcars),
