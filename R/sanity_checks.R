@@ -127,7 +127,10 @@ sanity_title <- function(title) checkmate::assert_character(title, len = 1, null
 #' @noRd
 sanity_coef <- function(coef_map, coef_rename, coef_omit) {
 
-  checkmate::assert_string(coef_omit, null.ok = TRUE)
+  checkmate::assert(
+    checkmate::check_string(coef_omit, null.ok = TRUE),
+    checkmate::check_numeric(coef_omit)
+  )
 
   if ((!isFALSE(coef_rename) && !is.null(coef_rename)) && !is.null(coef_map)) {
     stop("coef_map and coef_rename cannot be used together.")
@@ -143,8 +146,9 @@ sanity_coef <- function(coef_map, coef_rename, coef_omit) {
 
   checkmate::assert(
     checkmate::check_flag(coef_rename),
-    checkmate::check_character(coef_rename, names = "unique"),
     checkmate::check_function(coef_rename, null.ok = TRUE),
+    checkmate::check_character(coef_rename, names = "unique"),
+    checkmate::check_character(coef_rename, names = "unnamed"),
     combine = "or"
   )
 }
@@ -308,5 +312,20 @@ sanity_ds_right_handed_formula <- function(formula) {
   termlabels <- labels(stats::terms(formula))
   if (length(termlabels) > 1) {
     stop("The 'datasummary_table' function only accepts a single right-hand side variable of type factor, character, or logical. If you do not want to transform your variable in the original data, you can wrap it in a Factor() call: datasummary_balance(~Factor(x), data). the name of your variablePlease visit the `modelsummary` website to learn how to build your own, more complex, Table 1. It's easy, I promise! https://vincentarelbundock.github.io/modelsummary/datasummary.html")
+  }
+}
+
+
+#' sanity dots
+#' @noRd
+sanity_dots <- function(model, ...) {
+  dots <- list(...)
+
+  # R2 can be misleading when standardizing without an intercept
+  if (identical(dots[["standardize"]], "refit") && identical(class(model), "lm")) {
+    if (!"(Intercept)" %in% names(stats::coef(model))) {
+      msg <- "The goodness-of-fit statistics were calculated using the original model rather than the standardized model." 
+      insight::format_warning(msg)
+    }
   }
 }

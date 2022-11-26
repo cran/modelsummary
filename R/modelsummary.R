@@ -85,7 +85,9 @@ globalVariables(c('.', 'term', 'part', 'estimate', 'conf.high', 'conf.low',
 #' define the labels that must appear in the table, and its names identify the
 #' original term names stored in the model object: `c("hp:mpg"="HPxM/G")`. See
 #' Examples section below.
-#' @param coef_omit string regular expression (perl-compatible) used to determine which coefficients to omit from the table. A "negative lookahead" can be used to specify which coefficients to *keep* in the table. Examples:
+#' @param coef_omit integer vector or regular expression to identify which coefficients to omit (or keep) from the table. Positive integers determine which coefficients to omit. Negative integers determine which coefficients to keep. A regular expression can be used to omit coefficients, and perl-compatible "negative lookaheads" can be used to specify which coefficients to *keep* in the table. Examples:
+#' * c(2, 3, 5): omits the second, third, and fifth coefficients.
+#' * c(-2, -3, -5): negative values keep the second, third, and fifth coefficients.
 #' * `"ei"`: omit coefficients matching the "ei" substring.
 #' * `"^Volume$"`: omit the "Volume" coefficient.
 #' * `"ei|rc"`: omit coefficients matching either the "ei" or the "rc" substrings.
@@ -93,8 +95,9 @@ globalVariables(c('.', 'term', 'part', 'estimate', 'conf.high', 'conf.low',
 #' * `"^(?!.*ei)"`: keep coefficients matching the "ei" substring.
 #' * `"^(?!.*ei|.*pt)"`: keep coefficients matching either the "ei" or the "pt" substrings.
 #' * See the Examples section below for complete code.
-#' @param coef_rename logical, named character, or function
+#' @param coef_rename logical, named or unnamed character vector, or function
 #' * Logical: TRUE renames variables based on the "label" attribute of each column. See the Example section below.
+#' * Unnamed character vector of length equal to the number of coefficients in the final table, after `coef_omit` is applied.
 #' * Named character vector: Values refer to the variable names that will appear in the table. Names refer to the original term names stored in the model object. Ex: c("hp:mpg"="hp X mpg") 
 #' * Function: Accepts a character vector of the model's term names and returns a named vector like the one described above. The `modelsummary` package supplies a `coef_rename()` function which can do common cleaning tasks: `modelsummary(model, coef_rename = coef_rename)`
 #' @param gof_map rename, reorder, and omit goodness-of-fit statistics and other
@@ -212,7 +215,7 @@ modelsummary <- function(
   sanitize_output(output)           # early
   sanitize_escape(escape)
   sanity_ellipsis(vcov, ...)        # before sanitize_vcov
-  models <- sanitize_models(models) # before sanitize_vcov
+  models <- sanitize_models(models, ...) # before sanitize_vcov
   vcov <- sanitize_vcov(vcov, models, ...)
   number_of_models <- max(length(models), length(vcov))
   estimate <- sanitize_estimate(estimate, number_of_models)
@@ -332,6 +335,7 @@ modelsummary <- function(
     }
   }
 
+
   est <- shape_estimates(est, shape, conf_level = conf_level)
 
   # distinguish between estimates and gof (first column for tests)
@@ -369,6 +373,46 @@ modelsummary <- function(
   }
 
   est <- est[do.call(order, as.list(est)), ]
+
+  # coef_omit is numeric
+  if (is.numeric(coef_omit)) {
+    coef_omit <- unique(round(coef_omit))
+
+    if (length(unique(sign(coef_omit))) != 1) {
+      insight::format_error("All elements of `coef_omit` must have the same sign.")
+    }
+
+    if (!"term" %in% shape$lhs) {
+      msg <- "`term` must be on the left-hand side of the `shape` formula when `coef_omit` is a numeric vector."
+      insight::format_error(msg)
+    }
+
+    term_idx <- paste(est$group, est$term)
+    if (max(abs(coef_omit)) > length(unique(term_idx))) {
+      msg <- sprintf("There are %s unique terms, but `coef_omit` tried to omit more than that.", length(term_idx))
+      insight::format_error(msg)
+    }
+
+    idx <- !term_idx %in% unique(term_idx)[abs(coef_omit)]
+
+    if (any(coef_omit > 0)) {
+      est <- est[idx, , drop = FALSE]
+    } else {
+      est <- est[!idx, , drop = FALSE]
+    }
+  }
+
+  # coef_rename is an unnamed vector: by position in the final table, not before merging
+  if (isTRUE(checkmate::check_character(coef_rename, names = "unnamed"))) {
+    nterms <- length(unique(est$term))
+    if (length(coef_rename) != nterms) {
+      msg <- "`coef_rename` must be a named character vector or an unnamed vector of length %s"
+      insight::format_error(sprintf(msg, nterms))
+    }
+    dict <- stats::setNames(coef_rename, as.character(unique(est$term)))
+    tmp <- replace_dict(as.character(est$term), dict)
+    est$term <- factor(tmp, unique(tmp))
+  }
 
   # we kept the group column until here for sorting of mixed-effects by group
   if (is.null(shape$group_name)) {
