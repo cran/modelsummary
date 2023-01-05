@@ -115,8 +115,8 @@ datasummary_correlation <- function(data,
   ))
 
   # sanity checks
-  sanitize_output(output)
-  sanitize_escape(escape)
+  sanitize_output(output) # before sanitize_escape
+  sanitize_escape(escape) # after sanitize_output
   sanity_add_columns(add_columns)
 
   any_numeric <- any(sapply(data, is.numeric) == TRUE)
@@ -184,10 +184,8 @@ datasummary_correlation <- function(data,
       align <- paste0('l', strrep('r', ncols - 1))
   }
 
-  if (settings_equal("escape", TRUE)) {
-    out[, 1] <- escape_string(out[, 1])
-    colnames(out) <- escape_string(colnames(out))
-  }
+  out[, 1] <- escape_string(out[, 1])
+  colnames(out) <- escape_string(colnames(out))
 
   # labelled data
   dict <- get_variable_labels_data(data)
@@ -280,7 +278,8 @@ datasummary_correlation_format <- function(
   out <- data.frame(x, check.names = FALSE)
 
   for (i in seq_along(out)) {
-    out[[i]] <- rounding(out[[i]], fmt)
+    fmt <- sanitize_fmt(fmt)
+    out[[i]] <- fmt(out[[i]])
     if (leading_zero == FALSE) {
       out[[i]] <- gsub('0\\.', '\\.', out[[i]])
     }

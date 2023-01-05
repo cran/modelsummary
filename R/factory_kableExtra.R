@@ -6,6 +6,8 @@
 factory_kableExtra <- function(tab,
                                align = NULL,
                                hrule = NULL,
+                               hgroup = NULL,
+                               hindent = FALSE,
                                notes = NULL,
                                title = NULL,
                                escape = TRUE,
@@ -32,9 +34,7 @@ factory_kableExtra <- function(tab,
 
   # kableExtra::kbl and knitr::kable do not respect the `escape` argument for captions.
   # this will never be fixed upstream because of backward compatibility
-  if (isTRUE(escape)) {
-    title <- escape_string(title)
-  }
+  title <- escape_string(title)
 
   arguments <- c(
     list(...),
@@ -97,7 +97,16 @@ factory_kableExtra <- function(tab,
       colnames(tab) <- gsub("\\|{4}", " / ", colnames(tab))
   }
 
-  # combine arguments
+  # kableExtra sometimes converts (1), (2) to list items, which breaks formatting
+  # insert think white non-breaking space
+  if (settings_equal("output_format", c("html", "kableExtra"))) {
+      regex <- paste0(paste(1:12, collapse = "|"), "|", paste(utils::as.roman(1:12), collapse = "|"))
+      regex <- paste0("^\\(", regex, "\\)$")
+      idx <- grepl(regex, colnames(tab))
+      colnames(tab)[idx] <- paste0("&nbsp;", colnames(tab)[idx])
+  }
+
+  # create tables with combined arguments
   arguments <- arguments[base::intersect(names(arguments), valid)]
   arguments <- c(list(tab), arguments)
   out <- do.call(kableExtra::kbl, arguments)
@@ -122,17 +131,16 @@ factory_kableExtra <- function(tab,
     ## kableExtra::footnote does not support markdown
     ## kableExtra::add_footnote does not support longtable
     if (settings_equal("output_format", c("kableExtra", "html", "latex"))) {
+      if (isTRUE(kable_format == "latex") && any(grepl(" < ", notes))) {
+        notes <- gsub(" < ", " $<$ ", notes)
+      }
       ## threeparttable only works with 1 note. But it creates a weird bug
       ## when using coef_map and stars in Rmarkdown PDF output
-      for (n in notes) {
-        ## otherwise stars_note breaks in PDF output under pdflatex
-        if (isTRUE(kable_format == "latex") && isTRUE(grepl(" < ", n))) {
-          n <- gsub(" < ", " $<$ ", n)
-        }
-        arguments[["general"]] <- n
-        arguments[["general_title"]] <- ""
-        arguments[["kable_input"]] <- out
-        arguments[["escape"]] <- FALSE
+      arguments[["general"]] <- notes
+      arguments[["general_title"]] <- ""
+      arguments[["kable_input"]] <- out
+      arguments[["escape"]] <- FALSE
+      if (isTRUE(any(nchar(arguments$general) > 0))) {
         out <- do.call(kableExtra::footnote, arguments)
       }
     } else if (settings_equal("output_format", "markdown")) {
@@ -145,17 +153,22 @@ factory_kableExtra <- function(tab,
   # theme
   theme_ms <- getOption("modelsummary_theme_kableExtra",
                         default = theme_ms_kableExtra)
-  out <- theme_ms(out,
-                  output_format = settings_get("output_format"),
-                  hrule = hrule)
+  out <- theme_ms(
+    out,
+    output_format = settings_get("output_format"),
+    hrule = hrule,
+    hgroup = hgroup,
+    hindent = hindent,
+    ...)
 
   # span: apply (not supported in markdown)
   if (!is.null(span_list) && settings_equal("output_format", c("kableExtra", "latex", "html"))) {
     for (i in 1:length(span_list)) {
-      out <- kableExtra::add_header_above(out, span_list[[i]], escape = escape)
+      names(span_list[[i]]) <- gsub("&nbsp;", " ", names(span_list[[i]]))
+      out <- kableExtra::add_header_above(out, span_list[[i]], escape = TRUE)
     }
   }
-  
+
   # html & latex get a new class to use print.modelsummary_string
   if (settings_equal("output_format", c("latex", "latex_tabular", "html"))) {
     class(out) <- c("modelsummary_string", class(out))

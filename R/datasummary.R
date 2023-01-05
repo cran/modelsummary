@@ -19,11 +19,14 @@
 #' @param data A data.frame (or tibble)
 #' @param add_columns a data.frame (or tibble) with the same number of rows as
 #' your main table.
-#' @param fmt determines how to format numeric values
-#' * integer: the number of digits to keep after the period `format(round(x, fmt), nsmall=fmt)`
-#' * character: passed to the `sprintf` function (e.g., '%.3f' keeps 3 digits with trailing zero). See `?sprintf`
-#' * function: returns a formatted character string.
-#' * NULL: does not format numbers, which allows users to include function in the "glue" strings in the `estimate` and `statistic` arguments. 
+#' @param fmt how to format numeric values: integer, user-supplied function, or `modelsummary` function.
+#' * Integer: Number of decimal digits
+#' * User-supplied functions: 
+#'   - Any function which accepts a numeric vector and returns a character vector of the same length.
+#' * `modelsummary` functions:
+#'   - `fmt = fmt_significant(2)`: Two significant digits (at the term-level)
+#'   - `fmt = fmt_sprintf("%.3f")`: See `?sprintf`
+#'   - `fmt = fmt_identity()`: unformatted raw values
 #' @param sparse_header TRUE or FALSE. TRUE eliminates column headers which
 #' have a unique label across all columns, except for the row immediately above
 #' the data. FALSE keeps all headers. The order in which terms are entered in
@@ -165,10 +168,12 @@ datasummary <- function(formula,
   settings_init(settings = list(
      "function_called" = "datasummary"
   ))
-  sanitize_output(output)
+
+  sanitize_output(output) # before sanitize_escape
+  sanitize_escape(escape) # after sanitize_output
 
   sanity_ds_data(formula = formula, data = data, internal_call = list(...)[["internal_call"]])
-  sanitize_escape(escape)
+
 
   # convenience: transform logical and character to factor
   # are there use-cases for character variables?
@@ -222,13 +227,11 @@ datasummary <- function(formula,
   }
 
   ## escape stub
-  if (settings_equal("escape", TRUE)) {
-      sw <- attr(dse, "stub_width")
-      for (i in 1:sw) {
-          dse[, i] <- escape_string(dse[, i])
-      }
-      colnames(dse)[1:sw] <- escape_string(colnames(dse)[1:sw])
+  sw <- attr(dse, "stub_width")
+  for (i in 1:sw) {
+    dse[, i] <- escape_string(dse[, i])
   }
+  colnames(dse)[1:sw] <- escape_string(colnames(dse)[1:sw])
 
   # build
   out <- factory(dse,

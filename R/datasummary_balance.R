@@ -33,7 +33,7 @@
 datasummary_balance <- function(formula,
                                 data,
                                 output = "default",
-                                fmt = 1,
+                                fmt = fmt_decimal(digits = 1, pdigits = 3),
                                 title = NULL,
                                 notes = NULL,
                                 align = NULL,
@@ -53,8 +53,8 @@ datasummary_balance <- function(formula,
 
 
     ## sanity checks
-    sanitize_escape(escape)
-    sanitize_output(output)
+    sanitize_output(output) # before sanitize_escape
+    sanitize_escape(escape) # after sanitize_output
     sanity_ds_right_handed_formula(formula)
     sanity_stars(stars)
     checkmate::assert_formula(formula)
@@ -62,6 +62,7 @@ datasummary_balance <- function(formula,
     checkmate::assert_flag(dinm)
     checkmate::assert_choice(dinm_statistic, choices = c("std.error", "p.value"))
     data <- sanitize_datasummary_balance_data(formula, data)
+
 
     ## rhs condition variable
     rhs <- labels(stats::terms(formula))
@@ -253,11 +254,11 @@ datasummary_balance <- function(formula,
                         strrep("r", ncol(tab) - attr(tab, "stub_width")))
     }
 
-    ## escape stub
-    if (isTRUE(escape)) {
-        for (i in 1:attr(tab, "stub_width")) {
-            tab[[i]] <- escape_string(tab[[i]])
-        }
+    ## escape stub: re-sanitize because we called `datasummary()` a few times
+    sanitize_output(output) # before sanitize_escape
+    sanitize_escape(escape) # after sanitize_output
+    for (i in 1:attr(tab, "stub_width")) {
+      tab[[i]] <- escape_string(tab[[i]])
     }
 
     ## weights warning
@@ -322,7 +323,9 @@ DinM <- function(lhs, rhs, data, fmt, statistic, stars = TRUE, escape = TRUE) {
 
   out <- estimatr::tidy(out)
 
-  out[["estimate"]] <- rounding(out[["estimate"]], fmt)
+  rounding <- sanitize_fmt(fmt)
+
+  out[["estimate"]] <- rounding(out[["estimate"]])
 
   if (!isFALSE(stars) && "p.value" %in% colnames(out)) {
     out$estimate <- paste0(
@@ -331,12 +334,10 @@ DinM <- function(lhs, rhs, data, fmt, statistic, stars = TRUE, escape = TRUE) {
   }
 
   if (identical(statistic, "p.value")) {
-    out[[statistic]] <- rounding(out[[statistic]], fmt, pval = TRUE)
-    if (isTRUE(escape)) {
-      out[[statistic]] <- escape_string(out[[statistic]]) # <0.001 interpreted as html tag
-    }
+    out[[statistic]] <- rounding(out[[statistic]], pval = TRUE)
+    out[[statistic]] <- escape_string(out[[statistic]]) # <0.001 interpreted as html tag
   } else {
-    out[[statistic]] <- rounding(out[[statistic]], fmt)
+    out[[statistic]] <- rounding(out[[statistic]])
   }
 
   out <- out[, c("estimate", statistic), drop = FALSE]

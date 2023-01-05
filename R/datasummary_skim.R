@@ -56,8 +56,8 @@ datasummary_skim <- function(data,
   settings_init(settings = list(
      "function_called" = "datasummary_skim"
   ))
-  sanitize_output(output)
-  sanitize_escape(escape)
+  sanitize_output(output) # before sanitize_escape
+  sanitize_escape(escape) # after sanitize_output
 
 
   checkmate::assert_true(type %in% c("numeric", "categorical", "dataset"))
@@ -115,15 +115,16 @@ datasummary_skim_dataset <- function(
   is.binary <- function(x) {
     tryCatch(length(unique(stats::na.omit(x))) == 2, error = function(e) FALSE, silent = TRUE)
   }
+  rounding <- fmt_decimal(digits = 0)
   out <- c(
-    Rows = rounding(nrow(data), fmt = 0),
-    Columns = rounding(ncol(data), fmt = 0),
-    # `# Binary` = rounding(sum(sapply(data, is.binary)), 0),
-    `# Character` = rounding(sum(sapply(data, is.character)), 0),
-    `# Factor` = rounding(sum(sapply(data, is.factor)), 0),
-    `# Logical` = rounding(sum(sapply(data, is.logical)), 0),
-    `# Numeric` = rounding(sum(sapply(data, is.numeric)), 0),
-    `% Missing` = rounding(mean(is.na(data) * 100), 0)
+    Rows = rounding(nrow(data)),
+    Columns = rounding(ncol(data)),
+    # `# Binary` = rounding(sum(sapply(data, is.binary))),
+    `# Character` = rounding(sum(sapply(data, is.character))),
+    `# Factor` = rounding(sum(sapply(data, is.factor))),
+    `# Logical` = rounding(sum(sapply(data, is.logical))),
+    `# Numeric` = rounding(sum(sapply(data, is.numeric))),
+    `% Missing` = rounding(mean(is.na(data) * 100))
   )
   out <- data.frame(names(out), out)
   out <- out[out[[2]] != "0" | out[[1]] == "% Missing", ]
@@ -383,7 +384,7 @@ datasummary_skim_categorical <- function(
             call. = FALSE)
   }
 
-  pctformat <- function(x) rounding(x, fmt)
+  pctformat <- sanitize_fmt(fmt)
   f <- All(dat_new, numeric = FALSE, factor = TRUE, logical = TRUE, character = TRUE) ~
        (N = 1) * Format() + (`%` = Percent()) * Format(pctformat())
 

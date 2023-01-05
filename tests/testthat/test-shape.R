@@ -6,19 +6,19 @@ test_that("combine columns with :", {
     requiet("marginaleffects")
     mod <- lm(mpg ~ hp + factor(cyl), data = mtcars)
     mfx <- suppressWarnings(marginaleffects(mod))
-    tab1 <- modelsummary(mfx, output = "dataframe", shape = term:comparison ~ model)
-    tab2 <- modelsummary(mfx, output = "dataframe", shape = term:comparison + statistic ~ model)
-    tab3 <- modelsummary(mfx, output = "dataframe", shape = term + comparison + statistic ~ model)
+    tab1 <- modelsummary(mfx, output = "dataframe", shape = term:contrast ~ model)
+    tab2 <- modelsummary(mfx, output = "dataframe", shape = term:contrast + statistic ~ model)
+    tab3 <- modelsummary(mfx, output = "dataframe", shape = term + contrast + statistic ~ model)
     tab4 <- modelsummary(
         mfx,
         output = "dataframe",
         coef_rename = function(x) gsub(" dY/dX", " (Slope)", x),
-        shape = term : comparison ~ model)
+        shape = term : contrast ~ model)
     expect_equal(tab1, tab2)
     expect_equal(nrow(tab1), nrow(tab3))
     expect_equal(ncol(tab1) + 1, ncol(tab3))
-    expect_error(modelsummary(mfx, shape = term * comparison + statistic ~ model), regexp = "character")
-    expect_error(modelsummary(mfx, output = "dataframe", shape = term:comparison + statistic ~ model), NA)
+    expect_error(modelsummary(mfx, shape = term * contrast + statistic ~ model), regexp = "character")
+    expect_error(modelsummary(mfx, output = "dataframe", shape = term:contrast + statistic ~ model), NA)
 })
 
 test_that("gof merge on partial column match", {
@@ -27,6 +27,7 @@ test_that("gof merge on partial column match", {
     tab <- modelsummary(list(mod, mod), shape = ~ model + statistic)
     expect_equal(dim(tab), c(12, 6))
     expect_true("gof" %in% tab$part)
+    options(modelsummary_factory_default = NULL)
 })
 
 test_that("partial formulas", {
@@ -88,6 +89,7 @@ test_that("horizontal statistics: dim only", {
 
 
 test_that("Michael E Flynn ultra-niche bug check", {
+    options(modelsummary_get = "easystats")
     requiet("nnet")
     dat_multinom <- mtcars
     dat_multinom$cyl <- as.factor(dat_multinom$cyl)
@@ -130,31 +132,31 @@ test_that("nnet::multinom: order of rows determined by formula terms", {
     trash <- capture.output(tab <- modelsummary(mod, "data.frame", shape = response + term ~ model))
     expect_s3_class(tab, "data.frame")
     expect_equal(colnames(tab),
-                 c("part", "group", "term", "statistic", "Model 1", "Model 2"))
+                 c("part", "response", "term", "statistic", "(1)", "(2)"))
     expect_equal(tab$term[1:4], c("(Intercept)", "(Intercept)", "mpg", "mpg"))
-    expect_equal(tab$group[1:12], c(rep("6", 6), rep("8", 6)))
+    expect_equal(tab$response[1:12], c(rep("6", 6), rep("8", 6)))
 
     ## order of rows determined by order of formula terms
     trash <- capture.output(tab <- modelsummary(mod, "data.frame", shape = term + response ~ model))
     expect_s3_class(tab, "data.frame")
     expect_equal(colnames(tab),
-                 c("part", "term", "group", "statistic", "Model 1", "Model 2"))
+                 c("part", "term", "response", "statistic", "(1)", "(2)"))
     expect_equal(tab$term[1:4], rep("(Intercept)", 4))
-    expect_equal(tab$group[1:4], c("6", "6", "8", "8"))
+    expect_equal(tab$response[1:4], c("6", "6", "8", "8"))
 
     ## order of rows determined by order of formula terms
     trash <- capture.output(tab <- modelsummary(mod, "data.frame", shape = model + term ~ response))
     expect_s3_class(tab, "data.frame")
     expect_equal(colnames(tab),
                  c("part", "model", "term", "statistic", "6", "8"))
-    expect_equal(tab$model[1:10], c(rep("Model 1", 4), rep("Model 2", 6)))
+    expect_equal(tab$model[1:10], c(rep("(1)", 4), rep("(2)", 6)))
 
     ## order of rows determined by order of formula terms
     trash <- capture.output(tab <- modelsummary(mod, "data.frame", shape = term + model ~ response))
     expect_s3_class(tab, "data.frame")
     expect_equal(colnames(tab),
                  c("part", "term", "model", "statistic", "6", "8"))
-    expect_equal(tab$model[1:3], c("Model 1", "Model 1", "Model 2"))
+    expect_equal(tab$model[1:3], c("(1)", "(1)", "(2)"))
 
 })
 
@@ -169,8 +171,8 @@ test_that("group ~ model + term", {
                         output = "data.frame",
                         shape = response ~ model + term,
                         metrics = "RMSE")
-    known <- c("part", "group", "statistic", "Model 1 / (Intercept)", "Model 1 / mpg",
-"Model 2 / (Intercept)", "Model 2 / mpg", "Model 2 / drat")
+    known <- c("part", "response", "statistic", "(1) / (Intercept)", "(1) / mpg",
+"(2) / (Intercept)", "(2) / mpg", "(2) / drat")
     expect_equal(colnames(tab), known)
     expect_equal(dim(tab), c(6, 8))
 
@@ -178,8 +180,8 @@ test_that("group ~ model + term", {
                         output = "data.frame",
                         shape = response ~ term + model,
                         metrics = "RMSE")
-    known <- c("part", "group", "statistic", "(Intercept) / Model 1", "(Intercept) / Model 2",
-"mpg / Model 1", "mpg / Model 2", "drat / Model 2")
+    known <- c("part", "response", "statistic", "(Intercept) / (1)", "(Intercept) / (2)",
+"mpg / (1)", "mpg / (2)", "drat / (2)")
     expect_equal(colnames(tab), known)
     expect_equal(dim(tab), c(6, 8))
 })
@@ -198,13 +200,13 @@ test_that("nnet::multinom: order of columns determined by formula terms", {
         tab <- modelsummary(mod, "data.frame", shape = term ~ model + response))
     expect_s3_class(tab, "data.frame")
     expect_equal(colnames(tab),
-                 c("part", "term", "statistic", "Model 1 / 6", "Model 1 / 8", "Model 2 / 6", "Model 2 / 8"))
+                 c("part", "term", "statistic", "(1) / 6", "(1) / 8", "(2) / 6", "(2) / 8"))
 
     ## term ~ response + model
     trash <- capture.output(tab <- modelsummary(mod, "data.frame", shape = term ~ response + model))
     expect_s3_class(tab, "data.frame")
     expect_equal(colnames(tab),
-                 c("part", "term", "statistic", "6 / Model 1", "6 / Model 2", "8 / Model 1", "8 / Model 2"))
+                 c("part", "term", "statistic", "6 / (1)", "6 / (2)", "8 / (1)", "8 / (2)"))
 
     ## model ~ term + response
     trash <- capture.output(tab <- modelsummary(mod, "data.frame", shape = model ~ term + response))
@@ -237,12 +239,12 @@ test_that("grouped coefficients: gamlss", {
     tab <- modelsummary(mod, "data.frame", shape = term + component ~ model)
     expect_s3_class(tab, "data.frame")
     expect_equal(colnames(tab),
-                 c("part", "term", "group", "statistic", "Model 1", "Model 2"))
+                 c("part", "term", "component", "statistic", "(1)", "(2)"))
 
     tab <- modelsummary(mod, "data.frame", shape = component + term ~ model)
     expect_s3_class(tab, "data.frame")
     expect_equal(colnames(tab),
-                 c("part", "group", "term", "statistic", "Model 1", "Model 2"))
+                 c("part", "component", "term", "statistic", "(1)", "(2)"))
 
     tab <- modelsummary(mod, "data.frame", shape = term ~ model + component)
     expect_s3_class(tab, "data.frame")
@@ -255,7 +257,6 @@ test_that("grouped coefficients: gamlss", {
 
     tab <- modelsummary(mod, "data.frame", shape = model + term ~ component)
     expect_s3_class(tab, "data.frame")
-
 })
 
 
@@ -278,10 +279,8 @@ test_that("group_map reorder rename", {
                         shape = component + term ~ model,
                         group_map = c("zero_inflated" = "Zero", "conditional" = "Count"),
                         output = "data.frame")
-    expect_equal(tab$group[1], "Zero")
+    expect_equal(tab$component[1], "Zero")
 })
-
-
 
 
 test_that("Issue #531", {
@@ -291,7 +290,7 @@ test_that("Issue #531", {
         output = "dataframe",
         shape = term + model ~ statistic,
         statistic = c("std.error", "{p.value}{stars}", "{estimate} ({statistic})"),
-        fmt = list(estimate = 3, p.value = 2))
+        fmt = fmt_statistic(estimate = 3, p.value = 2))
     expect_equal(
         colnames(tab),
         c("part", "term", "model", "Est.", "S.E.", "p", "Est.  (t)"))

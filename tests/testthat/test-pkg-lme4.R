@@ -1,5 +1,14 @@
 requiet("lme4")
 
+test_that("random components are displayed together", {
+    mod <- lmer(Sepal.Length ~ Sepal.Width + Petal.Length + Petal.Width + (1 | Species), data = iris)
+    tab <- modelsummary(mod, output = "data.frame", gof_map = NA)
+    expect_equal(
+        tab$term,
+        c("(Intercept)", "(Intercept)", "Sepal.Width", "Sepal.Width", "Petal.Length", "Petal.Length", "Petal.Width", "Petal.Width", "SD (Intercept Species)", "SD (Observations)")
+    )
+})
+
 
 test_that("Issue #505", {
     skip_if_not_installed("parameters", minimum_version = "0.18.2")
@@ -12,7 +21,7 @@ test_that("Issue #505", {
 
     skip("TODO: not sure why this doesn't work on some platforms")
     # 4 confidence intervals includes the random terms
-    expect_equal(sum(grepl("\\[", tab[["Model 1"]])), 4)
+    expect_equal(sum(grepl("\\[", tab[["(1)"]])), 4)
 })
 
 
@@ -44,7 +53,7 @@ test_that("Issue #494 comment", {
 
 test_that("Issue #496: multiple models keeps random/fixed grouped together", {
     models <- modelsummary:::hush(list(
-        lm(Sepal.Width ~ Petal.Length, data = iris),
+        lm(Sepal.Width ~ Petal.Length + Petal.Width, data = iris),
         lmer(Sepal.Width ~ Petal.Length + (1|Species), data = iris),
         lmer(Sepal.Width ~ Petal.Length + (1 + Petal.Length |Species), data = iris),
         lmer(Sepal.Width ~ Petal.Length + Petal.Width + (1 + Petal.Length | Species), data = iris)
@@ -55,8 +64,7 @@ test_that("Issue #496: multiple models keeps random/fixed grouped together", {
         statistic = NULL)
     expect_equal(
         tab$term[1:7],
-        c("(Intercept)", "Petal.Length", "Petal.Width", "SD (Intercept Species)",
-        "SD (Petal.Length Species)", "Cor (Intercept~Petal.Length Species)", "SD (Observations)"))
+        c("(Intercept)", "Petal.Length", "Petal.Width", "SD (Intercept Species)", "SD (Petal.Length Species)", "Cor (Intercept~Petal.Length Species)", "SD (Observations)"))
 })
 
 

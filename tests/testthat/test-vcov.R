@@ -23,7 +23,7 @@ test_that("manual sandwich", {
             fmt = NULL,
             statistic = NULL,
             gof_map = NA)
-        tab <- as.numeric(tab[["Model 1"]])
+        tab <- as.numeric(tab[["(1)"]])
         man <- sqrt(diag(sandwich::vcovHC(m, type = "HC1")))
         expect_equal(tab, man, ignore_attr = TRUE)
     }
@@ -36,7 +36,7 @@ test_that("manual sandwich", {
             fmt = NULL,
             statistic = NULL,
             gof_map = NA)
-        tab <- as.numeric(tab[["Model 1"]])
+        tab <- as.numeric(tab[["(1)"]])
         man <- sqrt(diag(sandwich::vcovHC(m, type = "HC4")))
         expect_equal(tab, man, ignore_attr = TRUE)
     }
@@ -66,8 +66,9 @@ test_that("sandwich arguments in ellipsis", {
                       vcov = "panel-corrected",
                       cluster = "firm")
   v <- vcovPC(mod, cluster = "firm")
-  v <- modelsummary:::rounding(sqrt(diag(v)), 7)
-  expect_equal(unname(v), tab[["Model 1"]])
+  fun <- fmt_decimal(7)
+  v <- fun(sqrt(diag(v)))
+  expect_equal(unname(v), tab[["(1)"]])
 })
 
 
@@ -76,9 +77,9 @@ test_that("multi vcov with model recycling", {
     vc <- list("HC0", "classical", ~cyl)
     tab <- modelsummary(mod, output = "data.frame",
       estimate = "std.error", statistic = NULL, vcov = vc, gof_omit = ".*")
-    expect_equal(tab[["Model 1"]], "11.929")
-    expect_equal(tab[["Model 2"]], "12.120")
-    expect_equal(tab[["Model 3"]], "43.502")
+    expect_equal(tab[["(1)"]], "11.929")
+    expect_equal(tab[["(2)"]], "12.120")
+    expect_equal(tab[["(3)"]], "43.502")
 })
 
 
@@ -225,7 +226,7 @@ reference <- readRDS(file = "known_output/statistic-override.rds")
 
 
 test_that("bad function", {
-  expect_error(modelsummary(models, vcov = na.omit))
+  expect_error(modelsummary(models, vcov = stats::na.omit))
 })
 
 test_that("bad formula", {
@@ -331,6 +332,6 @@ test_that("hardcoded numerical", {
             "(Intercept)" = 9,
             "drat" = 3,
             "hp" = 2))
-    expect_equal(tab[["Model 1"]], c("9.000", "2.000", "3.000"))
+    expect_equal(tab[["(1)"]], c("9.000", "2.000", "3.000"))
 })
 

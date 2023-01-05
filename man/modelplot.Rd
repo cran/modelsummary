@@ -20,7 +20,19 @@ modelplot(
 )
 }
 \arguments{
-\item{models}{a model or (optionally named) list of models}
+\item{models}{a model, (named) list of models, or nested list of models.
+\itemize{
+\item Single model: \code{modelsummary(model)}
+\item Unnamed list of models: \code{modelsummary(list(model1, model2))}
+\itemize{
+\item Models are labelled automatically. The default label style can be altered by setting a global option. See below.
+}
+\item Named list of models: \code{modelsummary(list("A"=model1, "B"=model2))}
+\itemize{
+\item Models are labelled using the list names.
+}
+\item Nested list of models: When using the \code{shape="rbind"} argument, \code{models} can be a nested list of models to display "panels" or "stacks" of regression models. See the \code{shape} argument documentation and examples below.
+}}
 
 \item{conf_level}{numeric value between 0 and 1. confidence level to use for
 confidence intervals. Setting this argument to \code{NULL} does not extract
@@ -140,7 +152,7 @@ mod <- lm(hp ~ factor(cyl), mtcars)
 
 add_rows = data.frame(
   term = "factory(cyl)4",
-  model = "Model 1",
+  model = "(1)",
   estimate = NA)
 attr(add_rows, "position") = 3
 modelplot(mod, add_rows = add_rows)

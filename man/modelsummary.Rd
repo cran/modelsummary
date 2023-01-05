@@ -31,7 +31,19 @@ modelsummary(
 )
 }
 \arguments{
-\item{models}{a model or (optionally named) list of models}
+\item{models}{a model, (named) list of models, or nested list of models.
+\itemize{
+\item Single model: \code{modelsummary(model)}
+\item Unnamed list of models: \code{modelsummary(list(model1, model2))}
+\itemize{
+\item Models are labelled automatically. The default label style can be altered by setting a global option. See below.
+}
+\item Named list of models: \code{modelsummary(list("A"=model1, "B"=model2))}
+\itemize{
+\item Models are labelled using the list names.
+}
+\item Nested list of models: When using the \code{shape="rbind"} argument, \code{models} can be a nested list of models to display "panels" or "stacks" of regression models. See the \code{shape} argument documentation and examples below.
+}}
 
 \item{output}{filename or object type (character string)
 \itemize{
@@ -42,14 +54,24 @@ modelsummary(
 \item The default output formats and table-making packages can be modified with global options. See the 'Details' section.
 }}
 
-\item{fmt}{determines how to format numeric values
+\item{fmt}{how to format numeric values: integer, user-supplied function, or \code{modelsummary} function.
 \itemize{
-\item integer: the number of digits to keep after the decimal: \code{format(x, digits = 1, nsmall = fmt, scientific = FALSE)}
-\item function: returns a formatted character string. For example, the \code{format()} function can be used in combination with the \code{fmt} argument for full control of number formatting: number of digits, number of digits after the decimal, scientific notation, etc. See the Examples section below.
-\item character: passed to the \code{sprintf} function (e.g., '\%.3f' keeps 3 digits with trailing zero). See \code{?sprintf}
-\item NULL: does not format numbers, which allows users to include function in the "glue" strings in the \code{estimate} and \code{statistic} arguments.
-\item A named list to format distinct elements of the table differently. Names correspond to column names produced by \code{get_estimates(model)} or \code{get_gof(model)}. Values are integers, characters, or functions, as described above. The \code{fmt} element is used as default for unspecified elements Ex: \code{fmt=list("estimate"=2, "std.error"=1, "r.squared"=4, "fmt"=3)}
-\item LaTeX output: To ensure proper typography, all numeric entries are enclosed in the \verb{\\num\{\}} command, which requires the \code{siunitx} package to be loaded in the LaTeX preamble. This behavior can be altered with global options. See the 'Details' section.
+\item Integer: Number of decimal digits
+\item User-supplied functions:
+\itemize{
+\item Any function which accepts a numeric vector and returns a character vector of the same length.
+}
+\item \code{modelsummary} functions:
+\itemize{
+\item \code{fmt = fmt_significant(2)}: Two significant digits (at the term-level)
+\item \code{fmt = fmt_decimal(digits = 2, pdigits = 3)}: Decimal digits for estimate and p values
+\item \code{fmt = fmt_sprintf("\%.3f")}: See \code{?sprintf}
+\item \code{fmt = fmt_term("(Intercept)" = 1, "X" = 2)}: Format terms differently
+\item \code{fmt = fmt_statistic("estimate" = 1, "std.error" = 2)}: Format statistics differently.
+\item \code{fmt = fmt_identity()}: unformatted raw values
+}
+\item string:
+\item Note on LaTeX output: To ensure proper typography, all numeric entries are enclosed in the \verb{\\num\{\}} command, which requires the \code{siunitx} package to be loaded in the LaTeX preamble. This behavior can be altered with global options. See the 'Details' section.
 }}
 
 \item{estimate}{a single string or a character vector of length equal to the
@@ -106,16 +128,10 @@ statistics are exponentiated, and the \code{std.error} is transformed to
 \item Note: a legend will not be inserted at the bottom of the table when the \code{estimate} or \code{statistic} arguments use "glue strings" with \code{{stars}}.
 }}
 
-\item{shape}{formula which determines the shape of the table. The left side
-determines what appears on rows, and the right side determines what appears
-on columns. The formula can include a group identifier to display related terms
-together, which can be useful for models with multivariate outcomes or
-grouped coefficients (See examples section below). This identifier must be
-one of the column names produced by: \code{get_estimates(model)}. The group
-identifier can be combined with the term identifier in a single column by
-using the colon to represent an interaction. If an incomplete formula is
-supplied (e.g., \code{~statistic}), \code{modelsummary} tries to complete it
-automatically. Potential \code{shape} values include:
+\item{shape}{\code{NULL}, formula, or "rbind" string which determines the shape of a table.
+\itemize{
+\item \code{NULL}: Default shape with terms in rows and models in columns.
+\item Formula: The left side determines what appears on rows, and the right side determines what appears on columns. The formula can include one or more group identifier(s) to display related terms together, which can be useful for models with multivariate outcomes or grouped coefficients (See examples section below). The group identifier(s) must be column names produced by: \code{get_estimates(model)}. The group identifier(s) can be combined with the term identifier in a single column by using the colon to represent an interaction. If an incomplete formula is supplied (e.g., \code{~statistic}), \code{modelsummary} tries to complete it automatically. Potential \code{shape} values include:
 \itemize{
 \item \code{term + statistic ~ model}: default
 \item \code{term ~ model + statistic}: statistics in separate columns
@@ -123,6 +139,13 @@ automatically. Potential \code{shape} values include:
 \item \code{term + response + statistic ~ model}: term and group id in separate columns
 \item \code{term : response + statistic ~ model}: term and group id in a single column
 \item \code{term ~ response}
+}
+\item "rbind": bind rows of two or more regression tables to create "panels" or "stacks" of regression models. When \code{shape="rbind"}, the \code{models} argument must be a (potentially named) nested list of models.
+\itemize{
+\item Unnamed nested list with 2 panels: \code{list(list(model1, model2), list(model3, model4))}
+\item Named nested list with 2 panels: \code{list("Panel A" = list(model1, model2), "Panel B" = list(model3, model4))}
+\item Named panels and named models: \code{list("Panel A" = list("(I)" = model1, "(II)" = model2), "Panel B" = list("(I)" = model3, "(II)" = model4))}
+}
 }}
 
 \item{coef_map}{character vector. Subset, rename, and reorder coefficients.
@@ -285,16 +308,25 @@ diagonal.
 \section{Global Options}{
 
 
-The behavior of \code{modelsummary} can be affected by setting global options:
+The behavior of \code{modelsummary} can be modified by setting global options. For example:
 \itemize{
-\item \code{modelsummary_factory_default}
-\item \code{modelsummary_factory_latex}
-\item \code{modelsummary_factory_html}
-\item \code{modelsummary_factory_png}
-\item \code{modelsummary_get}
-\item \code{modelsummary_format_numeric_latex}
-\item \code{modelsummary_format_numeric_html}
+\item \code{options(modelsummary_model_labels = "roman")}
 }
+
+The rest of this section describes each of the options above.
+\subsection{Model labels: default column names}{
+
+These global option changes the style of the default column headers:
+\itemize{
+\item \code{options(modelsummary_model_labels = "roman")}
+\item \code{options(modelsummary_panel_labels = "roman")}
+}
+
+The supported styles are: "model", "panel", "arabic", "letters", "roman", "(arabic)", "(letters)", "(roman)""
+
+The panel-specific option is only used when \code{shape="rbind"}
+}
+
 \subsection{Table-making packages}{
 
 \code{modelsummary} supports 4 table-making packages: \code{kableExtra}, \code{gt},
@@ -304,9 +336,24 @@ change the default backend used for a specific file format, you can use
 the \code{options} function:
 
 \code{options(modelsummary_factory_html = 'kableExtra')}
+
 \code{options(modelsummary_factory_latex = 'gt')}
+
 \code{options(modelsummary_factory_word = 'huxtable')}
+
 \code{options(modelsummary_factory_png = 'gt')}
+}
+
+\subsection{Table themes}{
+
+Change the look of tables in an automated and replicable way, using the \code{modelsummary} theming functionality. See the vignette: https://vincentarelbundock.github.io/modelsummary/articles/appearance.html
+\itemize{
+\item \code{modelsummary_theme_gt}
+\item \code{modelsummary_theme_kableExtra}
+\item \code{modelsummary_theme_huxtable}
+\item \code{modelsummary_theme_flextable}
+\item \code{modelsummary_theme_dataframe}
+}
 }
 
 \subsection{Model extraction functions}{
@@ -318,7 +365,9 @@ and \code{broom}. By default, it uses \code{easystats} first and then falls back
 goodness-of-fit extracted by \emph{both} packages by setting:
 
 \code{options(modelsummary_get = "broom")}
+
 \code{options(modelsummary_get = "easystats")}
+
 \code{options(modelsummary_get = "all")}
 }
 
@@ -329,6 +378,7 @@ from the siunitx package. To prevent this behavior, or to enclose numbers
 in dollar signs (for LaTeX math mode), users can call:
 
 \code{options(modelsummary_format_numeric_latex = "plain")}
+
 \code{options(modelsummary_format_numeric_latex = "mathmode")}
 
 A similar option can be used to display numerical entries using MathJax in
@@ -414,14 +464,18 @@ modelsummary(
   vcov = list("Stata Corp" = "stata",
               "Newey Lewis & the News" = "NeweyWest"))
 
-# fmt: function to keep 3 digits including at least 2 after the decimal
-m <- lm(mpg ~ I(hp * 1000) + drat, data = mtcars)
-f <- function(x) format(x, digits = 3, nsmall = 2, scientific = FALSE)
-modelsummary(m, fmt = f, gof_map = NA)
+# fmt
+mod <- lm(mpg ~ hp + drat + qsec, data = mtcars)
+modelsummary(mod, fmt = 3)
+modelsummary(mod, fmt = fmt_significant(3))
+modelsummary(mod, fmt = NULL)
+modelsummary(mod, fmt = fmt_decimal(4))
+modelsummary(mod, fmt = fmt_sprintf("\%.5f"))
+modelsummary(mod, fmt = fmt_statistic(estimate = 4, conf.int = 1), statistic = "conf.int")
+modelsummary(mod, fmt = fmt_term(hp = 4, drat = 1, default = 2))
 
-# fmt: same as above but using scientific notation
 m <- lm(mpg ~ I(hp * 1000) + drat, data = mtcars)
-f <- function(x) format(x, digits = 3, nsmall = 2)
+f <- function(x) format(x, digits = 3, nsmall = 2, scientific = FALSE, trim = TRUE)
 modelsummary(m, fmt = f, gof_map = NA)
 
 # coef_rename
@@ -467,14 +521,28 @@ modelsummary(models, coef_omit = "^(?!.*ei|.*pt)", gof_omit = ".*")
 library(nnet)
 multi <- multinom(factor(cyl) ~ mpg + hp, data = mtcars, trace = FALSE) 
 
-# term names and group ids in rows, models in columns
+# shape: term names and group ids in rows, models in columns
 modelsummary(multi, shape = response ~ model)
 
-# term names and group ids in rows in a single column
+# shape: term names and group ids in rows in a single column
 modelsummary(multi, shape = term : response ~ model)
 
-# term names in rows and group ids in columns
+# shape: term names in rows and group ids in columns
 modelsummary(multi, shape = term ~ response:model)
+
+# shape = "rbind"
+panels <- list(
+    "Panel A: MPG" = list(
+        "A" = lm(mpg ~ hp, data = mtcars),
+        "B" = lm(mpg ~ hp + factor(gear), data = mtcars)),
+    "Panel B: Displacement" = list(
+        "A" = lm(disp ~ hp, data = mtcars),
+        "C" = lm(disp ~ hp + factor(gear), data = mtcars))
+)
+modelsummary(
+    panels,
+    shape = "rbind",
+    gof_map = c("nobs", "r.squared"))
 
 # title
 modelsummary(models, title = 'This is the title')

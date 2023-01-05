@@ -42,12 +42,19 @@ The right-hand side may contain: \code{1} for column totals, \code{N} for counts
 \item The default output formats and table-making packages can be modified with global options. See the 'Details' section.
 }}
 
-\item{fmt}{determines how to format numeric values
+\item{fmt}{how to format numeric values: integer, user-supplied function, or \code{modelsummary} function.
 \itemize{
-\item integer: the number of digits to keep after the period \code{format(round(x, fmt), nsmall=fmt)}
-\item character: passed to the \code{sprintf} function (e.g., '\%.3f' keeps 3 digits with trailing zero). See \code{?sprintf}
-\item function: returns a formatted character string.
-\item NULL: does not format numbers, which allows users to include function in the "glue" strings in the \code{estimate} and \code{statistic} arguments.
+\item Integer: Number of decimal digits
+\item User-supplied functions:
+\itemize{
+\item Any function which accepts a numeric vector and returns a character vector of the same length.
+}
+\item \code{modelsummary} functions:
+\itemize{
+\item \code{fmt = fmt_significant(2)}: Two significant digits (at the term-level)
+\item \code{fmt = fmt_sprintf("\%.3f")}: See \code{?sprintf}
+\item \code{fmt = fmt_identity()}: unformatted raw values
+}
 }}
 
 \item{title}{string}
@@ -124,16 +131,25 @@ Variables in \code{formula} are automatically wrapped in \code{Factor()}.
 \section{Global Options}{
 
 
-The behavior of \code{modelsummary} can be affected by setting global options:
+The behavior of \code{modelsummary} can be modified by setting global options. For example:
 \itemize{
-\item \code{modelsummary_factory_default}
-\item \code{modelsummary_factory_latex}
-\item \code{modelsummary_factory_html}
-\item \code{modelsummary_factory_png}
-\item \code{modelsummary_get}
-\item \code{modelsummary_format_numeric_latex}
-\item \code{modelsummary_format_numeric_html}
+\item \code{options(modelsummary_model_labels = "roman")}
 }
+
+The rest of this section describes each of the options above.
+\subsection{Model labels: default column names}{
+
+These global option changes the style of the default column headers:
+\itemize{
+\item \code{options(modelsummary_model_labels = "roman")}
+\item \code{options(modelsummary_panel_labels = "roman")}
+}
+
+The supported styles are: "model", "panel", "arabic", "letters", "roman", "(arabic)", "(letters)", "(roman)""
+
+The panel-specific option is only used when \code{shape="rbind"}
+}
+
 \subsection{Table-making packages}{
 
 \code{modelsummary} supports 4 table-making packages: \code{kableExtra}, \code{gt},
@@ -143,9 +159,24 @@ change the default backend used for a specific file format, you can use
 the \code{options} function:
 
 \code{options(modelsummary_factory_html = 'kableExtra')}
+
 \code{options(modelsummary_factory_latex = 'gt')}
+
 \code{options(modelsummary_factory_word = 'huxtable')}
+
 \code{options(modelsummary_factory_png = 'gt')}
+}
+
+\subsection{Table themes}{
+
+Change the look of tables in an automated and replicable way, using the \code{modelsummary} theming functionality. See the vignette: https://vincentarelbundock.github.io/modelsummary/articles/appearance.html
+\itemize{
+\item \code{modelsummary_theme_gt}
+\item \code{modelsummary_theme_kableExtra}
+\item \code{modelsummary_theme_huxtable}
+\item \code{modelsummary_theme_flextable}
+\item \code{modelsummary_theme_dataframe}
+}
 }
 
 \subsection{Model extraction functions}{
@@ -157,7 +188,9 @@ and \code{broom}. By default, it uses \code{easystats} first and then falls back
 goodness-of-fit extracted by \emph{both} packages by setting:
 
 \code{options(modelsummary_get = "broom")}
+
 \code{options(modelsummary_get = "easystats")}
+
 \code{options(modelsummary_get = "all")}
 }
 
@@ -168,6 +201,7 @@ from the siunitx package. To prevent this behavior, or to enclose numbers
 in dollar signs (for LaTeX math mode), users can call:
 
 \code{options(modelsummary_format_numeric_latex = "plain")}
+
 \code{options(modelsummary_format_numeric_latex = "mathmode")}
 
 A similar option can be used to display numerical entries using MathJax in

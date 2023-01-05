@@ -1,9 +1,50 @@
+# modelsummary 1.3.0
+
+Breaking change:
+
+* The default column label style in `modelsummary()` has changed from "Model 1" to "(1)". The benefits are: labels are no longer in English by default; use less horizontal space; eliminate the "Model" redundancy. Unfortunately, this could break code in some edge cases where users rely on column names to manipulate tables. The old behavior can be restored by calling: `options(modelsummary_model_labels="model")`
+
+New features:
+
+* `shape="rbind"` to stack multiple regression tables and create "panels" with labelled groups of models.
+* `fmt`: new helper functions for different formatting styles
+  - `fmt = fmt_decimal(2)`: decimal digits
+  - `fmt = fmt_decimal(digits = 2, pdigits = 4)`: decimal digits with p value-specific setting
+  - `fmt = fmt_sprintf("%.3f")`: `sprintf()` decimal
+  - `fmt = fmt_sprintf("%.3e")`: `sprintf()` scientific
+  - `fmt = fmt_significant(3)`: significant digits
+  - `fmt = fmt_statistic("estimate" = 2, "std.error" = 3)`: statistic-specific formatting
+  - `fmt = fmt_term("(Intercept)" = 2, "hp" = 3)`: term-specific formatting
+  - `fmt = fmt_identity()`: raw values
+* New styles for default column and panel labels in `modelsummary`, such as Roman Numerals or letters in parentheses.
+  - Set the style with a global option: 
+    + `options(modelsummary_model_labels = "(arabic)")`
+    + `options(modelsummary_panel_labels = "letters")`
+  - Supported styles: "model", "arabic", "letters", "roman", "(arabic)", "(letters)", "(roman)""
+* `modelplot(draw = FALSE)` now returns a `p.value` column. This allows conditional aesthetics (see the `modelplot` vignette).
+* Better integration with the `marginaleffects` package.
+
+Bugs:
+
+* Some `fixest` models returns useless "group.x" and "group.y" columns. Isse #591. Thanks to Adam Altmejd for the report.
+
 # modelsummary 1.2.0
 
+Breaking change:
+
+* With the `shape` and `output="dataframe"` arguments, there always used to be a `group` column. Now, this column has the same name as the variable in the `shape` formula ("response", "component", etc.).
+
+New features:
+
+* `shape` can include multiple groups.
 * `coef_rename` can be an unnamed vector of length equal to the number of terms in the final table, obtained after `coef_map` and `coef_omit` are applied and models are merged.
 * `coef_omit` accepts numeric indices. Positive values: coefficients to omit. Negative values: coefficients to keep.
 * `datasummary_skim`: Increased maximum number of variables to 250.
 * Quarto notebooks compile to Word and Markdown automatically.
+
+Bug fixes:
+
+* Order of notes preserved in some output format (Issue #577)
 
 # modelsummary 1.1.0
 

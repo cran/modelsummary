@@ -1,6 +1,6 @@
 # https://stackoverflow.com/questions/9439256/how-can-i-handle-r-cmd-check-no-visible-binding-for-global-variable-notes-when#comment20826625_12429344
-# 2012 hadley says "globalVariables is a hideous hack and I will never use it"
-# 2014 hadley updates his own answer with globalVariables as one of "two solutions"
+# 2012 wickham says "globalVariables is a hideous hack and I will never use it"
+# 2014 wickham updates his own answer with globalVariables as one of "two solutions"
 globalVariables(c('.', 'term', 'part', 'estimate', 'conf.high', 'conf.low',
 'value', 'p.value', 'std.error', 'statistic', 'stars_note', 'logLik',
 'formatBicLL', 'section', 'position', 'where', 'ticks', 'statistic1', 'model',
@@ -32,20 +32,32 @@ globalVariables(c('.', 'term', 'part', 'estimate', 'conf.high', 'conf.low',
 #' 
 #' @template modelsummary_examples
 #'
-#' @param models a model or (optionally named) list of models
+#' @param models a model, (named) list of models, or nested list of models.
+#' * Single model: `modelsummary(model)`
+#' * Unnamed list of models: `modelsummary(list(model1, model2))`
+#'   - Models are labelled automatically. The default label style can be altered by setting a global option. See below.
+#' * Named list of models: `modelsummary(list("A"=model1, "B"=model2))`
+#'   - Models are labelled using the list names.
+#' * Nested list of models: When using the `shape="rbind"` argument, `models` can be a nested list of models to display "panels" or "stacks" of regression models. See the `shape` argument documentation and examples below.
 #' @param output filename or object type (character string)
 #' * Supported filename extensions: .docx, .html, .tex, .md, .txt, .png, .jpg.
 #' * Supported object types: "default", "html", "markdown", "latex", "latex_tabular", "data.frame", "gt", "kableExtra", "huxtable", "flextable", "DT", "jupyter". The "modelsummary_list" value produces a lightweight object which can be saved and fed back to the `modelsummary` function.
 #' * Warning: Users should not supply a file name to the `output` argument if they intend to customize the table with external packages. See the 'Details' section.
 #' * LaTeX compilation requires the `booktabs` and `siunitx` packages, but `siunitx` can be disabled or replaced with global options. See the 'Details' section.
 #' * The default output formats and table-making packages can be modified with global options. See the 'Details' section.
-#' @param fmt determines how to format numeric values
-#' * integer: the number of digits to keep after the decimal: `format(x, digits = 1, nsmall = fmt, scientific = FALSE)`
-#' * function: returns a formatted character string. For example, the `format()` function can be used in combination with the `fmt` argument for full control of number formatting: number of digits, number of digits after the decimal, scientific notation, etc. See the Examples section below.
-#' * character: passed to the `sprintf` function (e.g., '%.3f' keeps 3 digits with trailing zero). See `?sprintf`
-#' * NULL: does not format numbers, which allows users to include function in the "glue" strings in the `estimate` and `statistic` arguments. 
-#' * A named list to format distinct elements of the table differently. Names correspond to column names produced by `get_estimates(model)` or `get_gof(model)`. Values are integers, characters, or functions, as described above. The `fmt` element is used as default for unspecified elements Ex: `fmt=list("estimate"=2, "std.error"=1, "r.squared"=4, "fmt"=3)`
-#' * LaTeX output: To ensure proper typography, all numeric entries are enclosed in the `\num{}` command, which requires the `siunitx` package to be loaded in the LaTeX preamble. This behavior can be altered with global options. See the 'Details' section.
+#' @param fmt how to format numeric values: integer, user-supplied function, or `modelsummary` function.
+#' * Integer: Number of decimal digits
+#' * User-supplied functions: 
+#'   - Any function which accepts a numeric vector and returns a character vector of the same length.
+#' * `modelsummary` functions:
+#'   - `fmt = fmt_significant(2)`: Two significant digits (at the term-level)
+#'   - `fmt = fmt_decimal(digits = 2, pdigits = 3)`: Decimal digits for estimate and p values
+#'   - `fmt = fmt_sprintf("%.3f")`: See `?sprintf`
+#'   - `fmt = fmt_term("(Intercept)" = 1, "X" = 2)`: Format terms differently
+#'   - `fmt = fmt_statistic("estimate" = 1, "std.error" = 2)`: Format statistics differently.
+#'   - `fmt = fmt_identity()`: unformatted raw values
+#' * string: 
+#' * Note on LaTeX output: To ensure proper typography, all numeric entries are enclosed in the `\num{}` command, which requires the `siunitx` package to be loaded in the LaTeX preamble. This behavior can be altered with global options. See the 'Details' section.
 #' @param stars to indicate statistical significance
 #' * FALSE (default): no significance stars.
 #' * TRUE: +=.1, *=.05, **=.01, ***=0.001
@@ -114,22 +126,19 @@ globalVariables(c('.', 'term', 'part', 'estimate', 'conf.high', 'conf.low',
 #' @param group_map named or unnamed character vector. Subset, rename, and
 #' reorder coefficient groups specified a grouping variable specified in the
 #' `shape` argument formula. This argument behaves like `coef_map`.
-#' @param shape formula which determines the shape of the table. The left side
-#' determines what appears on rows, and the right side determines what appears
-#' on columns. The formula can include a group identifier to display related terms
-#' together, which can be useful for models with multivariate outcomes or
-#' grouped coefficients (See examples section below). This identifier must be
-#' one of the column names produced by: `get_estimates(model)`. The group
-#' identifier can be combined with the term identifier in a single column by
-#' using the colon to represent an interaction. If an incomplete formula is
-#' supplied (e.g., `~statistic`), `modelsummary` tries to complete it
-#' automatically. Potential `shape` values include:
-#' * `term + statistic ~ model`: default
-#' * `term ~ model + statistic`: statistics in separate columns
-#' * `model + statistic ~ term`: models in rows and terms in columns
-#' * `term + response + statistic ~ model`: term and group id in separate columns
-#' * `term : response + statistic ~ model`: term and group id in a single column
-#' * `term ~ response`
+#' @param shape `NULL`, formula, or "rbind" string which determines the shape of a table.
+#' * `NULL`: Default shape with terms in rows and models in columns.
+#' * Formula: The left side determines what appears on rows, and the right side determines what appears on columns. The formula can include one or more group identifier(s) to display related terms together, which can be useful for models with multivariate outcomes or grouped coefficients (See examples section below). The group identifier(s) must be column names produced by: `get_estimates(model)`. The group identifier(s) can be combined with the term identifier in a single column by using the colon to represent an interaction. If an incomplete formula is supplied (e.g., `~statistic`), `modelsummary` tries to complete it automatically. Potential `shape` values include:
+#'   - `term + statistic ~ model`: default
+#'   - `term ~ model + statistic`: statistics in separate columns
+#'   - `model + statistic ~ term`: models in rows and terms in columns
+#'   - `term + response + statistic ~ model`: term and group id in separate columns
+#'   - `term : response + statistic ~ model`: term and group id in a single column
+#'   - `term ~ response`
+#' * "rbind": bind rows of two or more regression tables to create "panels" or "stacks" of regression models. When `shape="rbind"`, the `models` argument must be a (potentially named) nested list of models.
+#'   - Unnamed nested list with 2 panels: `list(list(model1, model2), list(model3, model4))`
+#'   - Named nested list with 2 panels: `list("Panel A" = list(model1, model2), "Panel B" = list(model3, model4))`
+#'   - Named panels and named models: `list("Panel A" = list("(I)" = model1, "(II)" = model2), "Panel B" = list("(I)" = model3, "(II)" = model4))`
 #' @param add_columns a data.frame (or tibble) with the same number of rows as
 #' #' your main table. By default, rows are appended to the bottom of the table.
 #' You can define a "position" attribute of integers to set the columns positions.
@@ -191,10 +200,42 @@ modelsummary <- function(
   escape      = TRUE,
   ...) {
 
+  # panel summary shape: dispatch to other function
+  if (isTRUE(checkmate::check_choice(shape, "rbind"))) {
+    out <- modelsummary_rbind(models,
+      output = output,
+      fmt = fmt,
+      estimate = estimate,
+      statistic = statistic,
+      vcov = vcov,
+      conf_level = conf_level,
+      exponentiate = exponentiate,
+      stars = stars,
+      coef_map = coef_map,
+      coef_omit = coef_omit,
+      coef_rename = coef_rename,
+      gof_map = gof_map,
+      gof_omit = gof_omit,
+      add_columns = add_columns,
+      add_rows = add_rows,
+      align = align,
+      shape = term + statistic ~ model,
+      group_map = NULL,
+      notes = notes,
+      title = title,
+      escape = escape,
+      ...)
+      return(out)
+  }
+
+  dots <- list(...)
+
   ## settings
-  settings_init(settings = list(
-     "function_called" = "modelsummary"
-  ))
+  if (!settings_equal("function_called", "modelsummary_rbind")) {
+    settings_init(settings = list(
+      "function_called" = "modelsummary"
+    ))
+  }
 
   # bug: deprecated `group` argument gets partial matched
   scall <- sys.call()
@@ -236,15 +277,39 @@ modelsummary <- function(
   }
 
   # model names dictionary: use unique names for manipulation
+  modelsummary_model_labels <- getOption("modelsummary_model_labels", default = "(arabic)")
   if (is.null(names(models))) {
-    model_names <- paste("Model", 1:number_of_models)
+    checkmate::assert_choice(
+      modelsummary_model_labels,
+      choices = c("model", "arabic", "letters", "roman", "(arabic)", "(letters)", "(roman)"))
+    if (modelsummary_model_labels == "model") {
+      model_names <- paste("Model", 1:number_of_models)
+    } else if (grepl("arabic", modelsummary_model_labels)) {
+      model_names <- as.character(1:number_of_models)
+    } else if (grepl("letters", modelsummary_model_labels)) {
+      model_names <- LETTERS[1:number_of_models]
+    } else if (grepl("roman", modelsummary_model_labels)) {
+      model_names <- as.character(utils::as.roman(1:number_of_models))
+    }
+    if (grepl("\\(", modelsummary_model_labels)) {
+      model_names <- sprintf("(%s)", model_names)
+    }
+
   } else {
     model_names <- names(models)
   }
   model_names <- pad(model_names)
-  if (isTRUE(escape)) {
-     model_names <- escape_string(model_names)
+  model_names <- escape_string(model_names)
+
+  # kableExtra sometimes converts (1), (2) to list items, which breaks formatting
+  # insert think white non-breaking space
+  # don't do this now when called from modelsummary_rbind() or there are escape issues
+  if (!settings_equal("function_called", "modelsummary_rbind") &&
+      all(grepl("^\\(\\d+\\)$", model_names)) &&
+      settings_equal("output_format", c("html", "kableExtra"))) {
+    model_names <- paste0("&nbsp;", model_names)
   }
+
 
 
   #######################
@@ -296,45 +361,37 @@ modelsummary <- function(
         coef_omit = coef_omit,
         group_map = group_map)
 
-    colnames(tmp)[4] <- model_names[i]
+    colnames(tmp)[match("modelsummary_value", colnames(tmp))] <- model_names[i]
 
     est[[model_names[i]]] <- tmp
-
   }
 
   term_order <- unique(unlist(lapply(est, function(x) x$term)))
-  group_order <- unique(unlist(lapply(est, function(x) x$group)))
   statistic_order <- unique(unlist(lapply(est, function(x) x$statistic)))
 
+  bycols <- c(list(c(shape$group_name, "group", "term", "statistic")), lapply(est, colnames))
+  bycols <- Reduce(intersect, bycols)
   f <- function(x, y) merge(x, y, all = TRUE, sort = FALSE,
-                            by = c("group", "term", "statistic"))
+                            by = bycols)
   est <- Reduce(f, est)
 
   # warn that `shape` might be needed
   if (is.null(shape$group_name)) {
-    # est[["group"]] <- NULL
     idx <- paste(est$term, est$statistic)
     if (anyDuplicated(idx) > 0) {
       candidate_groups <- sapply(msl, function(x) colnames(x[["tidy"]]))
       candidate_groups <- unlist(candidate_groups)
       candidate_groups <- setdiff(
         candidate_groups,
-        c("term", "type", "estimate", "std.error", "conf.level", "conf.low", "conf.high",
-          "statistic", "df.error", "p.value"))
-      msg <- format_msg(
-      "There are duplicate term names in the table.
-
-      The `shape` argument of the `modelsummary` function can be used to print
-      related terms together. The `group_map` argument can be used to reorder,
-      subset, and rename group identifiers. See `?modelsummary` for details.
-
-      You can find the group identifier to use in the `shape` argument by calling
-      `get_estimates()` on one of your models. Candidates include: %s ")
-      msg <- sprintf(msg, paste(candidate_groups, collapse = ", "))
-      warning(msg, call. = FALSE)
+        c("term", "type", "estimate", "std.error", "conf.level", "conf.low", "conf.high", "statistic", "df.error", "p.value"))
+      msg <- c(
+        "There are duplicate term names in the table.",
+        "The `shape` argument of the `modelsummary` function can be used to print related terms together. The `group_map` argument can be used to reorder, subset, and rename group identifiers. See `?modelsummary` for details.",
+        "You can find the group identifier to use in the `shape` argument by calling `get_estimates()` on one of your models. Candidates include:",
+        paste(candidate_groups, collapse = ", "))
+      insight::format_warning(msg)
     }
   }
-
 
   est <- shape_estimates(est, shape, conf_level = conf_level)
 
@@ -349,9 +406,7 @@ modelsummary <- function(
   if ("term" %in% colnames(est)) {
     if (!is.null(coef_map)) {
         term_order <- coef_map
-        if (isTRUE(escape)) {
-            term_order <- escape_string(term_order)
-        }
+        term_order <- escape_string(term_order)
     }
     est$term <- factor(est$term, unique(term_order))
 
@@ -374,7 +429,7 @@ modelsummary <- function(
 
   est <- est[do.call(order, as.list(est)), ]
 
-  # coef_omit is numeric
+  # coef_omit is numeric: by position in the final table, not before merging
   if (is.numeric(coef_omit)) {
     coef_omit <- unique(round(coef_omit))
 
@@ -420,10 +475,16 @@ modelsummary <- function(
   }
 
   # character for binding
-  for (col in c("term", "group", "model", "statistic")) {
-    if (col %in% colnames(est)) {
-      est[[col]] <- as.character(est[[col]])
-    }
+  cols <- intersect(
+    colnames(est),
+    c("term", shape$group_name, "model", "statistic"))
+  for (col in cols) {
+    est[[col]] <- as.character(est[[col]])
+  }
+
+  # in {marginaleffects} objects, `term` is sometimes unique and useless
+  if (all(est[["term"]] == "cross")) {
+    est[["term"]] <- NULL
   }
 
 
@@ -446,7 +507,6 @@ modelsummary <- function(
   gof <- Reduce(f, gof)
 
   gof <- map_gof(gof, gof_omit, gof_map)
-
 
   # combine estimates and gof
   tab <- bind_est_gof(est, gof)
@@ -495,7 +555,11 @@ modelsummary <- function(
   }
 
   # data.frame output keeps redundant info
-  if (!settings_equal("output_format", "dataframe")) {
+  if (settings_equal("function_called", "modelsummary_rbind")) {
+    tab <- redundant_labels(tab, "term")
+  }
+
+  if (!settings_equal("output_format", "dataframe") && !settings_equal("function_called", "modelsummary_rbind")) {
 
     tab <- redundant_labels(tab, "model")
     tab <- redundant_labels(tab, "group")
@@ -527,12 +591,23 @@ modelsummary <- function(
 
   # align
   if (is.null(align)) {
-    n_stub <- sum(grepl("^ *$", colnames(tab)))
+    n_stub <- sum(grepl("^ *$", colnames(tab))) +
+              sum(colnames(tab) %in% c(" ", shape$group_name))
     align <- paste0(strrep("l", n_stub), strrep("c", ncol(tab) - n_stub))
     if (isTRUE(checkmate::check_data_frame(add_columns))) {
       align <- paste0(align, strrep("c", ncol(add_columns)))
     }
   }
+
+
+  # {marginaleffects} hack
+  flag <- any(sapply(models, inherits, c("marginaleffects", "comparisons", "marginalmeans")))
+  if (isTRUE(flag)) {
+    colnames(tab) <- gsub("^value$", " ", colnames(tab)) # marginalmeans()
+    colnames(tab) <- gsub("^contrast_", "", colnames(tab)) # comparisons() and marginaleffects()
+    colnames(tab) <- gsub("^contrast$", " ", colnames(tab)) # comparisons() and marginaleffects()
+  }
+
 
   # HACK: remove "empty" confidence intervals or standard errors and omit empty rows
   for (i in seq_along(tab)) {
@@ -545,7 +620,6 @@ modelsummary <- function(
   }
   idx <- apply(tab, 1, function(x) any(x != ""))
   tab <- tab[idx, ]
-
 
   ## build table
   out <- factory(
@@ -564,8 +638,8 @@ modelsummary <- function(
 
   # invisible return
   if (!is.null(settings_get("output_file")) ||
-      output == "jupyter" ||
-      (output == "default" && settings_equal("output_default", "jupyter"))) {
+      isTRUE(output == "jupyter") ||
+      (isTRUE(output == "default") && settings_equal("output_default", "jupyter"))) {
     settings_rm()
     return(invisible(out))
   # visible return
@@ -650,6 +724,3 @@ redundant_labels <- function(dat, column) {
 #' @keywords internal
 #' @export
 msummary <- modelsummary
-
-
-

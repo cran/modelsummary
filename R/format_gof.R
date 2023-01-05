@@ -10,23 +10,31 @@ format_gof <- function(gof, fmt, gof_map, ...) {
     return(NULL)
   }
 
+  # factor to character (otherwise gof_map breaks under R < 4.0.0)
+  for (i in seq_along(gof)) {
+    if (is.factor(gof[[i]])) {
+      gof[[i]] <- as.character(gof[[i]])
+    }
+    if (is.character(gof[[i]])) {
+      gof[[i]] <- escape_string(gof[[i]])
+    }
+  }
+
+
   # `as.character` is needed for R-devel changes to `intersect` with empty sets
   gm_raw <- as.character(sapply(gof_map, function(x) x$raw))
   gm_clean <- as.character(sapply(gof_map, function(x) x$clean))
 
   # formating arguments priority: `fmt` > `gof_map` > 3
-  # rounding() escapes the GOF values. we escape the GOF names at the end
   for (g in gof_map) {
-    if (!g$raw %in% names(fmt)) {
-      fmt[[g$raw]] <- g$fmt
-    }
-  }
-  for (g in colnames(gof)) {
-    if (g %in% names(fmt)) {
-      gof[[g]] <- rounding(gof[[g]], fmt[[g]])
-    } else {
-      # set by default in `sanitize_fmt()`
-      gof[[g]] <- rounding(gof[[g]], fmt[["fmt"]])
+    if (is.numeric(gof[[g$raw]])) {
+      if (g$raw %in% colnames(gof)) {
+        fun <- sanitize_fmt(g$fmt)
+        gof[[g$raw]] <- fun(gof[[g$raw]])
+      } else {
+        fun <- sanitize_fmt(fmt)
+        gof[[g$raw]] <- fmt(gof[[g$raw]])
+      }
     }
   }
 
@@ -43,17 +51,6 @@ format_gof <- function(gof, fmt, gof_map, ...) {
   } else {
     out <- data.frame(term = NA_character_, value = NA_character_)
     out <- stats::na.omit(out)
-  }
-
-  # factor to character (otherwise gof_map breaks under R < 4.0.0)
-  for (i in seq_along(out)) {
-    if (is.factor(out[[i]])) {
-      out[[i]] <- as.character(out[[i]])
-    }
-  }
-
-  if (settings_get("escape")) {
-    out$term <- escape_string(out$term)
   }
 
   # output
