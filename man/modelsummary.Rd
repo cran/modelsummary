@@ -47,11 +47,16 @@ modelsummary(
 
 \item{output}{filename or object type (character string)
 \itemize{
-\item Supported filename extensions: .docx, .html, .tex, .md, .txt, .png, .jpg.
+\item Supported filename extensions: .docx, .html, .tex, .md, .txt, .csv, .xlsx, .png, .jpg
 \item Supported object types: "default", "html", "markdown", "latex", "latex_tabular", "data.frame", "gt", "kableExtra", "huxtable", "flextable", "DT", "jupyter". The "modelsummary_list" value produces a lightweight object which can be saved and fed back to the \code{modelsummary} function.
+\item The "default" output format can be set to "kableExtra", "gt", "flextable", "huxtable", "DT", or "markdown"
+\itemize{
+\item If the user does not choose a default value, the packages listed above are tried in sequence.
+\item Session-specific configuration: \code{options("modelsummary_factory_default" = "gt")}
+\item Persistent configuration: \code{modelsummary_config(output = "markdown")}
+}
 \item Warning: Users should not supply a file name to the \code{output} argument if they intend to customize the table with external packages. See the 'Details' section.
 \item LaTeX compilation requires the \code{booktabs} and \code{siunitx} packages, but \code{siunitx} can be disabled or replaced with global options. See the 'Details' section.
-\item The default output formats and table-making packages can be modified with global options. See the 'Details' section.
 }}
 
 \item{fmt}{how to format numeric values: integer, user-supplied function, or \code{modelsummary} function.
@@ -67,7 +72,7 @@ modelsummary(
 \item \code{fmt = fmt_decimal(digits = 2, pdigits = 3)}: Decimal digits for estimate and p values
 \item \code{fmt = fmt_sprintf("\%.3f")}: See \code{?sprintf}
 \item \code{fmt = fmt_term("(Intercept)" = 1, "X" = 2)}: Format terms differently
-\item \code{fmt = fmt_statistic("estimate" = 1, "std.error" = 2)}: Format statistics differently.
+\item \code{fmt = fmt_statistic("estimate" = 1, "r.sqared" = 6)}: Format statistics differently.
 \item \code{fmt = fmt_identity()}: unformatted raw values
 }
 \item string:
@@ -87,8 +92,8 @@ the data.frame produced by \code{get_estimates(model)}, and strings with curly b
 statistics to report vertically below the estimate. NULL omits all
 uncertainty statistics.
 \itemize{
-\item "conf.int", "std.error", "statistic", "p.value", "conf.low", "conf.high",
-or any column name produced by: \code{get_estimates(model)}
+\item "conf.int", "std.error", "statistic", "p.value", "conf.low", "conf.high", .
+or any column name produced by \code{get_estimates(model)}
 \item \code{glue} package strings with braces, with or without R functions, such as:
 \itemize{
 \item \code{"{p.value} [{conf.low}, {conf.high}]"}
@@ -97,6 +102,7 @@ or any column name produced by: \code{get_estimates(model)}
 }
 \item Numbers are automatically rounded and converted to strings. To apply functions to their numeric values, as in the last \code{glue} example, users must set \code{fmt=NULL}.
 \item Parentheses are added automatically unless the string includes \code{glue} curly braces \code{{}}.
+\item Some statistics are not supported for all models. See column names in \code{get_estimates(model)}, and visit the website to learn how to add custom statistics.
 }}
 
 \item{vcov}{robust standard errors and other manual statistics. The \code{vcov}
@@ -128,10 +134,10 @@ statistics are exponentiated, and the \code{std.error} is transformed to
 \item Note: a legend will not be inserted at the bottom of the table when the \code{estimate} or \code{statistic} arguments use "glue strings" with \code{{stars}}.
 }}
 
-\item{shape}{\code{NULL}, formula, or "rbind" string which determines the shape of a table.
+\item{shape}{\code{NULL}, formula, or string which determines the shape of a table.
 \itemize{
 \item \code{NULL}: Default shape with terms in rows and models in columns.
-\item Formula: The left side determines what appears on rows, and the right side determines what appears on columns. The formula can include one or more group identifier(s) to display related terms together, which can be useful for models with multivariate outcomes or grouped coefficients (See examples section below). The group identifier(s) must be column names produced by: \code{get_estimates(model)}. The group identifier(s) can be combined with the term identifier in a single column by using the colon to represent an interaction. If an incomplete formula is supplied (e.g., \code{~statistic}), \code{modelsummary} tries to complete it automatically. Potential \code{shape} values include:
+\item Formula: The left side determines what appears on rows, and the right side determines what appears on columns. The formula can include one or more group identifier(s) to display related terms together, which can be useful for models with multivariate outcomes or grouped coefficients (See examples section below). The group identifier(s) must be column names produced by: \code{get_estimates(model)}. The group identifier(s) can be combined with the term identifier in a single column by using the colon to represent an interaction. If an incomplete formula is supplied (e.g., \code{~statistic}), \code{modelsummary} tries to complete it automatically. Goodness-of-fit statistics are only appended to the bottom of the table when \code{model} is on the right hand side of the formula (i.e., columns). Potential \code{shape} values include:
 \itemize{
 \item \code{term + statistic ~ model}: default
 \item \code{term ~ model + statistic}: statistics in separate columns
@@ -140,11 +146,18 @@ statistics are exponentiated, and the \code{std.error} is transformed to
 \item \code{term : response + statistic ~ model}: term and group id in a single column
 \item \code{term ~ response}
 }
-\item "rbind": bind rows of two or more regression tables to create "panels" or "stacks" of regression models. When \code{shape="rbind"}, the \code{models} argument must be a (potentially named) nested list of models.
+\item String: "rbind" or "rcollapse" to bind rows of two or more regression tables to create "panels" or "stacks" of regression models.
+\itemize{
+\item the \code{models} argument must be a (potentially named) nested list of models.
+}
 \itemize{
 \item Unnamed nested list with 2 panels: \code{list(list(model1, model2), list(model3, model4))}
 \item Named nested list with 2 panels: \code{list("Panel A" = list(model1, model2), "Panel B" = list(model3, model4))}
 \item Named panels and named models: \code{list("Panel A" = list("(I)" = model1, "(II)" = model2), "Panel B" = list("(I)" = model3, "(II)" = model4))}
+}
+\itemize{
+\item "rbind": Bind the rows of independent regression tables
+\item "rcollapse": Bind the rows of regression tables and create a panel at the bottom where we "collapse" goodness-of-fit statistics which are identical across models.
 }
 }}
 
@@ -181,7 +194,7 @@ Examples section below.}
 model information. This argument accepts 4 types of values:
 \itemize{
 \item NULL (default): the \code{modelsummary::gof_map} dictionary is used for formatting, and all unknown statistic are included.
-\item character vector: "all", "none", or a vector of statistics such as \code{c("rmse", "nobs", "r.squared")}. Elements correspond to colnames in the data.frame produced by \code{get_gof(model)}. The \code{modelsummary::gof_map}default dictionary is used to format and rename statistics.
+\item character vector: "all", "none", or a vector of statistics such as \code{c("rmse", "nobs", "r.squared")}. Elements correspond to colnames in the data.frame produced by \code{get_gof(model)}. The \code{modelsummary::gof_map} default dictionary is used to format and rename statistics.
 \item NA: excludes all statistics from the bottom part of the table.
 \item data.frame with 3 columns named "raw", "clean", "fmt". Unknown statistics are omitted. See the 'Examples' section below.
 \item list of lists, each of which includes 3 elements named "raw", "clean", "fmt". Unknown statistics are omitted. See the 'Examples section below'.
@@ -407,11 +420,21 @@ For example, to use 4 cores to extract results:
 
 \if{html}{\out{<div class="sourceCode r">}}\preformatted{library(future.apply)
 plan(multicore, workers = 4)
+options("modelsummary_future" = TRUE)
 modelsummary(model_list)
 }\if{html}{\out{</div>}}
 
 Note that the "multicore" plan only parallelizes under mac or linux. Windows
-users can use \verb{plan(multisession)' instead. However, note that the first time }modelsummary()\verb{is called under multisession can be a fair bit longer, because of extra costs in passing data to and loading required packages on to workers. Subsequent calls to}modelsummary()` will often be much faster.
+users can use \code{plan(multisession)} instead. However, note that the first
+time \code{modelsummary()} is called under multisession can be a fair bit longer,
+because of extra costs in passing data to and loading required packages on
+to workers. Subsequent calls to \code{modelsummary()} will often be much faster.
+
+Some users have reported difficult to reproduce errors when using the
+\code{future} package with some packages. The \code{future} parallelization in
+\code{modelsummary} can be disabled by calling:
+
+\code{options("modelsummary_future" = FALSE)}
 }
 
 \examples{
@@ -530,7 +553,7 @@ modelsummary(multi, shape = term : response ~ model)
 # shape: term names in rows and group ids in columns
 modelsummary(multi, shape = term ~ response:model)
 
-# shape = "rbind"
+# shape = "rcollapse"
 panels <- list(
     "Panel A: MPG" = list(
         "A" = lm(mpg ~ hp, data = mtcars),
@@ -539,6 +562,7 @@ panels <- list(
         "A" = lm(disp ~ hp, data = mtcars),
         "C" = lm(disp ~ hp + factor(gear), data = mtcars))
 )
+
 modelsummary(
     panels,
     shape = "rbind",

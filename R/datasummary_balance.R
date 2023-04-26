@@ -63,6 +63,9 @@ datasummary_balance <- function(formula,
     checkmate::assert_choice(dinm_statistic, choices = c("std.error", "p.value"))
     data <- sanitize_datasummary_balance_data(formula, data)
 
+    if ("p.value" %in% dinm_statistic) {
+      insight::check_if_installed("estimatr")
+    }
 
     ## rhs condition variable
     rhs <- labels(stats::terms(formula))
@@ -160,13 +163,13 @@ datasummary_balance <- function(formula,
             if(!is.null(rhs)) {
               f_num <- "All(data_norhs) ~ %s Factor(%s) * (
                         Heading('Mean') * weighted.mean * Arguments(w = weights, na.rm = TRUE) +
-                        Heading('Std. Dev.') * weighted.sd * Arguments(w = weights))"
+                        Heading('Std. Dev.') * modelsummary:::weighted_sd * Arguments(w = weights))"
               f_num <- stats::as.formula(sprintf(f_num, empty, rhs))
           #No groups
           } else {
               f_num <- "All(data_norhs) ~ %s (
                     Heading('Mean') * weighted.mean * Arguments(w = weights, na.rm = TRUE) +
-                    Heading('Std. Dev.') * weighted.sd * Arguments(w = weights))"
+                    Heading('Std. Dev.') * modelsummary:::weighted_sd * Arguments(w = weights))"
               f_num <- stats::as.formula(sprintf(f_num, empty))
             }
         # no weights

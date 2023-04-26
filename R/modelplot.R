@@ -70,6 +70,20 @@
 #'   geom_point(aes(y = term, x = estimate), alpha = .3,
 #'     size = 10, color = 'red', shape = 'square'))
 #' modelplot(mod, background = b)
+#'
+#' # logistic regression example
+#' df <- as.data.frame(Titanic)
+#' mod_titanic <- glm(
+#'   Survived ~ Class + Sex,
+#'   family = binomial,
+#'   weight = Freq,
+#'   data = df
+#' )
+#'
+#' # displaying odds ratio using a log scale
+#' modelplot(mod_titanic, exponentiate = TRUE) +
+#'   scale_x_log10() +
+#'   xlab("Odds Ratios and 95% confidence intervals")
 #' }
 #'
 #' @export
@@ -105,9 +119,9 @@ modelplot <- function(models,
   if (is.null(conf_level)) {
     estimate <- "estimate"
   } else {
+    # oooof, ugly hack, but we want to return all those when draw=FALSE
     estimate <- "{estimate}|{std.error}|{conf.low}|{conf.high}|{p.value}"
   }
-
 
   out <- modelsummary(
     output      = "dataframe",
@@ -150,11 +164,14 @@ modelplot <- function(models,
   }
 
   # clean and sort
-  dat <- stats::na.omit(out)
+  dat <- out[!is.na(out$term) & !is.na(out$model) & !is.na(out$estimate),]
   row.names(dat) <- dat$value <- dat$id <- NULL
   dat$term <- factor(dat$term, term_order)
   dat$model <- factor(dat$model, model_order)
   dat <- dat[order(dat$term, dat$model), ]
+
+  if (all(is.na(dat$std.error))) dat$std.error <- NULL
+  if (all(is.na(dat$p.value))) dat$p.value <- NULL
 
   # add_rows
   if (!is.null(add_rows)) {
@@ -186,7 +203,7 @@ modelplot <- function(models,
   # set a new theme only if the default is theme_grey(). this prevents user's
   # theme_set() from being overwritten
   if (identical(ggplot2::theme_get(), ggplot2::theme_grey())) {
-    p <- p + 
+    p <- p +
          ggplot2::theme_minimal() +
          ggplot2::theme(legend.title = ggplot2::element_blank())
   }

@@ -22,7 +22,14 @@ get_estimates <- function(model, conf_level = .95, vcov = NULL, shape = NULL, co
         return(model[["tidy"]])
     }
 
+    # this is usually done in `modelsummary`, but some users may call
+    # `get_estimates(mod, vcov = "stata")`
+    if (isTRUE(checkmate::check_string(vcov)) || isTRUE(checkmate::check_formula(vcov))) {
+        vcov <- sanitize_vcov(list(vcov), list(model), ...)[[1]]
+    }
+
     args <- append(list(model, "vcov" = vcov), list(...))
+
     vcov <- do.call("get_vcov", args)
 
     # priority: {parameters} messes up {marginaleffects}, whereas VAB controls `tidy()` exactly
@@ -123,6 +130,14 @@ get_estimates <- function(model, conf_level = .95, vcov = NULL, shape = NULL, co
     # term must be a character (not rounded with decimals when integer)
     out$term <- as.character(out$term)
 
+    # standard columns may be missing, but a blank space is better than an
+    # error, especially for mix of brms::brm() and lm(), for example
+    for (col in c("estimate", "std.error", "statistic", "p.value", "conf.low", "conf.high")) {
+        if (!col %in% colnames(out)) {
+            out[[col]] <- NA_real_
+        }
+    }
+
     if (inherits(out, "data.frame")) {
         return(out)
     }
@@ -130,6 +145,7 @@ get_estimates <- function(model, conf_level = .95, vcov = NULL, shape = NULL, co
 
 
 get_estimates_broom <- function(model, conf_int, conf_level, ...) {
+    insight::check_if_installed("broom")
 
     if (isTRUE(conf_int) && !is.null(conf_level)) {
         out <- suppressWarnings(try(
@@ -197,9 +213,10 @@ get_estimates_parameters <- function(model,
         }
         inner <- parameters::parameters
         out <- do.call("inner", dots)
-        out <- parameters::standardize_names(out, style = "broom")
+        out <- insight::standardize_names(out, style = "broom")
         return(out)
     }
+
 
     if (is.character(vcov) || is.matrix(vcov)) {
       args[["vcov"]] <- vcov

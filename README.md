@@ -8,9 +8,9 @@
 <!-- [![status](https://tinyverse.netlify.com/badge/modelsummary)](https://CRAN.R-project.org/package=modelsummary) -->
 <!-- badges: end -->
 
-`modelsummary` creates tables and plots to summarize statistical models and data in `R`. 
+`modelsummary` creates tables and plots to present *descriptive statistics* and to summarize *statistical models* in `R`.
 
-The tables and plots produced by `modelsummary` are beautiful and highly customizable. They can be echoed to the `R` console or displayed in the `RStudio` Viewer. They can be saved to a wide variety of formats, including HTML, PDF, Text/Markdown, LaTeX, MS Word, RTF, JPG, and PNG. Tables can easily be embedded in dynamic documents with `Rmarkdown`, `knitr`, or `Sweave`. `modelsummary` supports *hundreds* of model types out-of-the-box. The look of your tables is infinitely customizable using external package such as `kableExtra`, `gt`, `flextable`, `huxtable`, or `DT`.
+> modelsummary is a package to summarize data and statistical models in R. It supports over one hundred types of models out-of-the-box, and allows users to report the results of those models side-by-side in a table, or in coefficient plots. It makes it easy to execute common tasks such as computing robust standard errors, adding significance stars, and manipulating coefficient and model labels. Beyond model summaries, the package also includes a suite of tools to produce highly flexible data summary tables, such as dataset overviews, correlation matrices, (multi-level) cross-tabulations, and balance tables (also known as "Table 1"). The appearance of the tables produced by modelsummary can be customized using external packages such as kableExtra, gt, flextable, or huxtable; the plots can be customized using ggplot2. Tables can be exported to many output formats, including HTML, LaTeX, Text/Markdown, Microsoft Word, Powerpoint, Excel, RTF, PDF, and image files. Tables and plots can be embedded seamlessly in rmarkdown, knitr, or Sweave dynamic documents. The modelsummary package is designed to be simple, robust, modular, and extensible [(Arel-Bundock, 2022)](https://doi.org/10.18637/jss.v103.i01).
 
 `modelsummary` includes two families of functions:
 
@@ -24,10 +24,8 @@ The tables and plots produced by `modelsummary` are beautiful and highly customi
     - `datasummary_correlation`: Correlation tables.
     - `datasummary_skim`: Quick overview ("skim") of a dataset.
     - `datasummary_df`: Turn dataframes into nice tables with titles, notes, etc.
-      
-The `modelsummary` website hosts a *ton* of examples. Make sure you click on the links at the top of this page: https://vincentarelbundock.github.io/modelsummary
 
-The following tables and plots were created using `modelsummary`, without any manual editing at all:
+With these functions, you can create tables and plots like these:
 
 | | |
 |:-------------------------:|:-------------------------:|
@@ -35,7 +33,22 @@ The following tables and plots were created using `modelsummary`, without any ma
 |<img width="203" src="https://user-images.githubusercontent.com/987057/210188882-8f2c83d6-18d3-46c6-b640-a446f0474b8a.png">|<img width="2406" src="https://user-images.githubusercontent.com/987057/86512021-50839480-bdcc-11ea-893c-8c1e7a277895.png"><br><img width="2406" src="https://user-images.githubusercontent.com/987057/95397127-6d9a9880-08d0-11eb-8ee4-3cd181d55b32.png">
 |<img width="2406" src="https://user-images.githubusercontent.com/987057/86502482-9eb77a00-bd71-11ea-80da-dc935c1fbd90.jpeg">|<img width="2406" src="https://user-images.githubusercontent.com/987057/86511490-cb967c00-bdc7-11ea-9d9b-0ef188840faf.png">
 
-# Why should I use `modelsummary`?
+## Table of contents
+
+The `modelsummary` website hosts a *ton* of examples. Make sure you click on the links at the top of this page: https://vincentarelbundock.github.io/modelsummary
+
+* Introduction
+  - [Why should I use `modelsummary`?](https://vincentarelbundock.github.io/modelsummary/#why-should-i-use-modelsummary)
+  - [Installation](https://vincentarelbundock.github.io/modelsummary/#installation)
+  - [Getting started](https://vincentarelbundock.github.io/modelsummary/#getting-started)
+  - [Alternative packages](https://vincentarelbundock.github.io/modelsummary/#alternative-packages)
+* [`modelsummary`: Model summaries ](https://vincentarelbundock.github.io/modelsummary/articles/modelsummary.html)
+* [`modelplot`: Model plots ](https://vincentarelbundock.github.io/modelsummary/articles/modelplot.html)
+* [`datasummary`: Data summaries](https://vincentarelbundock.github.io/modelsummary/articles/datasummary.html)
+* [`Customizing the look of your tables`](https://vincentarelbundock.github.io/modelsummary/articles/appearance.html)
+      
+
+## Why should I use `modelsummary`?
 
 Here are a few benefits of `modelsummary` over some [alternative packages](#alternative-packages):
 
@@ -83,7 +96,7 @@ modelsummary(mod, output = "table.tex")
 
 #### Reliable
 
-`modelsummary` is *reliably* dangerous\! The package is developed using a [suite of unit tests](https://github.com/vincentarelbundock/modelsummary/tree/master/tests/testthat) with about 95% coverage, so it (probably) won’t break.
+`modelsummary` is *reliably* dangerous\! The package is developed using a [suite of unit tests](https://github.com/vincentarelbundock/modelsummary/tree/main/inst/tinytest) with about 95% coverage, so it (probably) won’t break.
 
 #### Community
 
@@ -92,7 +105,7 @@ modelsummary(mod, output = "table.tex")
 One benefit of this community-focused approach is that when external packages improve, `modelsummary` improves as well. Another benefit is that leveraging external packages allows `modelsummary` to have a massively simplified codebase (relative to other similar packages). This should improve long term code maintainability, and allow contributors to participate through GitHub.
 
 
-# Installation
+## Installation
 
 You can install `modelsummary` from CRAN:
 
@@ -112,7 +125,7 @@ install.packages(
 ****
 **Restart `R` completely before moving on.** 
 
-# Getting started
+## Getting started
 
 There are a million ways to customize the tables and plots produced by `modelsummary`. In this Getting Started section we will only scratch the surface. For details, see the vignettes:
 
@@ -177,7 +190,7 @@ models <- list(
 modelsummary(models, output = "table.docx")
 ```
 
-# Alternative packages
+## Alternative packages
 
 There are several excellent alternatives to draw model summary tables in `R`:
 

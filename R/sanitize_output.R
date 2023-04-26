@@ -1,3 +1,15 @@
+get_factory_name <- function(x, default) {
+  out <- getOption(paste0("modelsummary_factory_", x))
+  if (is.null(out)) {
+    out <- config_get(paste0("factory_", x))
+  }
+  if (is.null(out)) {
+    out <- default
+  }
+  return(out)
+}
+
+
 #' parse an `output` argument to determine which table factory and which output
 #' format to use.
 #'
@@ -38,11 +50,9 @@ sanitize_output <- function(output) {
     }
   }
 
-
-
   extension_dict <- c(
     "csv"  = "dataframe",
-    "xlsx"  = "dataframe",
+    "xlsx" = "dataframe",
     "md"   = "markdown",
     "Rmd"  = "markdown",
     "txt"  = "markdown",
@@ -58,41 +68,25 @@ sanitize_output <- function(output) {
     "htm"  = "html",
     "html" = "html")
 
-
-  ## deprecated global options
-  bad <- c("modelsummary_default", "modelsummary_html", "modelsummary_latex",
-           "modelsummary_markdown", "modelsummary_jpg", "modelsummary_png",
-           "modelsummary_rtf", "modelsummary_word", "modelsummary_powerpoint")
-  for (a in bad) {
-      b <- gsub("modelsummary_", "modelsummary_factory_", a)
-      tmp <- getOption(a, default = NULL)
-      if (!is.null(tmp)) {
-          options(b = tmp)
-          msg <- sprintf('The "%s" global option is deprecated. Please use "%s" instead.', a, b)
-          warn_once(msg, id = "deprecated_global_option")
-      }
-  }
-
-
   factory_dict <- c(
-    "dataframe"      = "dataframe",
-    "data.frame"     = "dataframe",
-    "flextable"      = "flextable",
-    "gt"             = "gt",
-    "huxtable"       = "huxtable",
-    "DT"             = "DT",
-    "kableExtra"     = "kableExtra",
-    "markdown"       = "kableExtra",
-    "latex_tabular"  = "kableExtra",
+    "dataframe" = "dataframe",
+    "data.frame" = "dataframe",
+    "flextable" = "flextable",
+    "gt" = "gt",
+    "huxtable" = "huxtable",
+    "DT" = "DT",
+    "kableExtra" = "kableExtra",
+    "latex_tabular" = "kableExtra",
     "modelsummary_list" = "modelsummary_list",
-    "jupyter"        = getOption("modelsummary_factory_html", default       = "kableExtra"),
-    "latex"          = getOption("modelsummary_factory_latex", default      = "kableExtra"),
-    "html"           = getOption("modelsummary_factory_html", default       = "kableExtra"),
-    "jpg"            = getOption("modelsummary_factory_jpg", default        = "kableExtra"),
-    "png"            = getOption("modelsummary_factory_png", default        = "kableExtra"),
-    "rtf"            = getOption("modelsummary_factory_rtf", default        = "gt"),
-    "word"           = getOption("modelsummary_factory_word", default       = "flextable"),
-    "powerpoint"     = getOption("modelsummary_factory_powerpoint", default = "flextable"))
+    "markdown" = get_factory_name("markdown", default = "modelsummary"),
+    "jupyter" = get_factory_name("html", default = "kableExtra"),
+    "latex" = get_factory_name("latex", default = "kableExtra"),
+    "html" = get_factory_name("html", default = "kableExtra"),
+    "jpg" = get_factory_name("jpg", default = "kableExtra"),
+    "png" = get_factory_name("png", default = "kableExtra"),
+    "rtf" = get_factory_name("rtf", default = "gt"),
+    "word" = get_factory_name("word", default = "flextable"),
+    "powerpoint" = get_factory_name("powerpoint", default = "flextable"))
 
   ## sanity check: are user-supplied global options ok?
   sanity_factory(factory_dict)
@@ -102,17 +96,27 @@ sanitize_output <- function(output) {
 
   # defaults
   if (output == "default") {
-      output <- getOption("modelsummary_factory_default", default = "kableExtra")
+      output <- getOption("modelsummary_factory_default", default = NULL)
+      if (is.null(output)) {
+        output <- config_get("factory_default")
+      }
+      if (is.null(output)) {
+        if (isTRUE(insight::check_if_installed("kableExtra", quietly = TRUE))) {
+          output <- "kableExtra"
+        } else if (isTRUE(insight::check_if_installed("gt", quietly = TRUE))) {
+          output <- "gt"
+        } else if (isTRUE(insight::check_if_installed("flextable", quietly = TRUE))) {
+          output <- "flextable"
+        } else if (isTRUE(insight::check_if_installed("huxtable", quietly = TRUE))) {
+          output <- "huxtable"
+        } else if (isTRUE(insight::check_if_installed("DT", quietly = TRUE))) {
+          output <- "DT"
+        } else {
+          output <- "markdown"
+        }
+      }
   } else if (output == "jupyter") {
       output <- "html"
-  }
-
-  # kableExtra is the only factory that I use for markdown
-  if (output == 'markdown') {
-    settings_set("output_factory", "kableExtra")
-    settings_set("output_format", "markdown")
-    settings_set("output_file", NULL)
-    return(invisible(NULL))
   }
 
   # rename otherwise an extension is wrongly detected

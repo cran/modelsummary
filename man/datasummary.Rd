@@ -30,11 +30,16 @@ formula, but all summary functions must be on one side.}
 
 \item{output}{filename or object type (character string)
 \itemize{
-\item Supported filename extensions: .docx, .html, .tex, .md, .txt, .png, .jpg.
+\item Supported filename extensions: .docx, .html, .tex, .md, .txt, .csv, .xlsx, .png, .jpg
 \item Supported object types: "default", "html", "markdown", "latex", "latex_tabular", "data.frame", "gt", "kableExtra", "huxtable", "flextable", "DT", "jupyter". The "modelsummary_list" value produces a lightweight object which can be saved and fed back to the \code{modelsummary} function.
+\item The "default" output format can be set to "kableExtra", "gt", "flextable", "huxtable", "DT", or "markdown"
+\itemize{
+\item If the user does not choose a default value, the packages listed above are tried in sequence.
+\item Session-specific configuration: \code{options("modelsummary_factory_default" = "gt")}
+\item Persistent configuration: \code{modelsummary_config(output = "markdown")}
+}
 \item Warning: Users should not supply a file name to the \code{output} argument if they intend to customize the table with external packages. See the 'Details' section.
 \item LaTeX compilation requires the \code{booktabs} and \code{siunitx} packages, but \code{siunitx} can be disabled or replaced with global options. See the 'Details' section.
-\item The default output formats and table-making packages can be modified with global options. See the 'Details' section.
 }}
 
 \item{fmt}{how to format numeric values: integer, user-supplied function, or \code{modelsummary} function.
@@ -96,10 +101,11 @@ affect the behavior of other functions behind the scenes.}
 \description{
 \code{datasummary} can use any summary function which produces one numeric or
 character value per variable. The examples section of this documentation
-shows how to define custom summary functions. The package also ships with
-several shortcut summary functions: Min, Max, Mean, Median, Var, SD,
-NPercent, NUnique, Ncol, P0, P25, P50, P75, P100. See the Details and
-Examples sections below, and the vignettes on the \code{modelsummary} website:
+shows how to define custom summary functions.
+
+\code{modelsummary} also supplies several shortcut summary functions which can be used in \code{datasummary()} formulas: Min, Max, Mean, Median, Var, SD, NPercent, NUnique, Ncol, P0, P25, P50, P75, P100.
+
+See the Details and Examples sections below, and the vignettes on the \code{modelsummary} website:
 \itemize{
 \item https://vincentarelbundock.github.io/modelsummary/
 \item https://vincentarelbundock.github.io/modelsummary/articles/datasummary.html

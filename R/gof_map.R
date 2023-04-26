@@ -32,6 +32,7 @@ gof_map_build <- function() {
   waic,                      WAIC,               1, FALSE
   rmse,                      RMSE,               2, FALSE,
   statistic.Weak.instrument, Weak IV F-stat,     1, FALSE,
+  weak.instruments,          Weak IV F-stat,     1, FALSE,
   statistic.Wu.Hausman,      Wu-Hausman Chi-Sq., 1, FALSE,
   statistic.Sargan,          Sargan J-stat,      1, FALSE,
   nrow,                      Rows,               0, FALSE,
@@ -61,6 +62,7 @@ gof_map_build <- function() {
   p.value,                   p,                  3, TRUE,
   p.value.Sargan,            Sargan p,           3, TRUE,
   p.value.Weak.instrument,   Weak IV p,          3, TRUE,
+  weak.instruments.p,        Weak IV p,          3, TRUE,
   p.value.Wu.Hausman,        Wu-Hausman p,       3, TRUE,
   pcp,                       PCP,                3, TRUE,
   r2.nagelkerke,             R2 Nagelkerke,      2, TRUE,
@@ -71,6 +73,9 @@ gof_map_build <- function() {
   score.spherical,           Score Spherical,    3, TRUE,
   sigma,                     Sigma,              3, TRUE,
   srmr,                      SRMR,               0, TRUE,
+  statistic,                 Statistics,         3, TRUE,
+  wu.hausman,                Wu-Hausman,         3, TRUE,
+  wu.hausman.p,              Wu-Hausman (p),     3, TRUE,
   statistic,                 Statistics,         3, TRUE,
   tli,                       TLI,                0, TRUE,'
   out <- utils::read.csv(

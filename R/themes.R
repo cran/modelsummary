@@ -36,7 +36,8 @@ theme_ms_kableExtra <- function(tab,
         latex_gap_space = "0.5em",
         group_label = names(hgroup[i]),
         start_row = hgroup[[i]][1],
-        end_row = hgroup[[i]][2])
+        end_row = hgroup[[i]][2],
+        escape = FALSE)
 
       # user-specified arguments override default themes
       dots <- list(...)
@@ -55,7 +56,7 @@ theme_ms_kableExtra <- function(tab,
     for (pos in hrule) {
       out <- kableExtra::row_spec(out,
         row = pos - 1,
-        extra_css = "box-shadow: 0px 1px"
+        extra_css = "box-shadow: 0px 1.5px"
       )
     }
   }

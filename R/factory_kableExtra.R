@@ -13,6 +13,8 @@ factory_kableExtra <- function(tab,
                                escape = TRUE,
                                ...) {
 
+  insight::check_if_installed("kableExtra")
+
   # new variable "kable_format" because "kableExtra" and "html" both produce
   # html, but we need to distinguish the two.
   if (settings_equal("output_format", c("latex", "latex_tabular"))) {
@@ -35,6 +37,11 @@ factory_kableExtra <- function(tab,
   # kableExtra::kbl and knitr::kable do not respect the `escape` argument for captions.
   # this will never be fixed upstream because of backward compatibility
   title <- escape_string(title)
+
+  # don't escape \\label{} calls
+  if (isTRUE(kable_format == "latex")) {
+    title <- sub("\\\\textbackslash\\{\\}label\\\\\\{(.*)\\\\}", "\\\\label{\\1}", title)
+  }
 
   arguments <- c(
     list(...),

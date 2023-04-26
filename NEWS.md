@@ -1,3 +1,22 @@
+# modelsummary 1.4.0
+
+* Built-in support for markdown tables.
+* Package no longer depends on `kableExtra`. Recommends an additional install for other formats.
+* Persistent configuration of default output format: `config_modelsummary(factory_default = "gt")`
+* `shape = "rcollapse"` and `shape = "rbind"`
+* `glance_custom()` can drop GOF by assigning `NA`: https://stackoverflow.com/questions/75215355/assigning-different-coefficient-names-and-goodness-of-fit-statistics-to-differen
+* When a `statistic` is not available, `modelsummary` prints an empty cell instead of returning an error.
+* "\\label{tab:something}" works in `title` even when `escape=TRUE`
+* Multiple `fixest_multi` objects supported.
+* `options(modelsummary_future = FALSE)` disables `future` parallelism.
+
+Bug fixes:
+
+* `statistic=NULL` is now respected when `shape="rbind"`. Thanks to Panos Mavros for report #620.
+* `get_estimates()` supports `vcov` string shortcuts and formulas. Thanks to @ethans-carl for report #605.
+* Quarto and Rmarkdown documents include `situnix` in header automatically for decimal alignement with `align="ddd"` 
+* `escape` is now respected by `modelsummary` with `shape="rbind"`. Thanks to @chickymonkeys for report #622.
+
 # modelsummary 1.3.0
 
 Breaking change:
@@ -16,10 +35,8 @@ New features:
   - `fmt = fmt_statistic("estimate" = 2, "std.error" = 3)`: statistic-specific formatting
   - `fmt = fmt_term("(Intercept)" = 2, "hp" = 3)`: term-specific formatting
   - `fmt = fmt_identity()`: raw values
-* New styles for default column and panel labels in `modelsummary`, such as Roman Numerals or letters in parentheses.
-  - Set the style with a global option: 
-    + `options(modelsummary_model_labels = "(arabic)")`
-    + `options(modelsummary_panel_labels = "letters")`
+* New styles for default column labels in `modelsummary`, such as Roman Numerals or letters in parentheses.
+  - Set the style with a global option: `options(modelsummary_model_labels = "roman")`
   - Supported styles: "model", "arabic", "letters", "roman", "(arabic)", "(letters)", "(roman)""
 * `modelplot(draw = FALSE)` now returns a `p.value` column. This allows conditional aesthetics (see the `modelplot` vignette).
 * Better integration with the `marginaleffects` package.

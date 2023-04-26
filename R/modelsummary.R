@@ -29,7 +29,7 @@ globalVariables(c('.', 'term', 'part', 'estimate', 'conf.high', 'conf.low',
 #' @template options
 #'
 #' @template modelsummary_parallel
-#' 
+#'
 #' @template modelsummary_examples
 #'
 #' @param models a model, (named) list of models, or nested list of models.
@@ -40,23 +40,26 @@ globalVariables(c('.', 'term', 'part', 'estimate', 'conf.high', 'conf.low',
 #'   - Models are labelled using the list names.
 #' * Nested list of models: When using the `shape="rbind"` argument, `models` can be a nested list of models to display "panels" or "stacks" of regression models. See the `shape` argument documentation and examples below.
 #' @param output filename or object type (character string)
-#' * Supported filename extensions: .docx, .html, .tex, .md, .txt, .png, .jpg.
+#' * Supported filename extensions: .docx, .html, .tex, .md, .txt, .csv, .xlsx, .png, .jpg
 #' * Supported object types: "default", "html", "markdown", "latex", "latex_tabular", "data.frame", "gt", "kableExtra", "huxtable", "flextable", "DT", "jupyter". The "modelsummary_list" value produces a lightweight object which can be saved and fed back to the `modelsummary` function.
+#' * The "default" output format can be set to "kableExtra", "gt", "flextable", "huxtable", "DT", or "markdown"
+#'   - If the user does not choose a default value, the packages listed above are tried in sequence.
+#'   - Session-specific configuration: `options("modelsummary_factory_default" = "gt")`
+#'   - Persistent configuration: `modelsummary_config(output = "markdown")`
 #' * Warning: Users should not supply a file name to the `output` argument if they intend to customize the table with external packages. See the 'Details' section.
 #' * LaTeX compilation requires the `booktabs` and `siunitx` packages, but `siunitx` can be disabled or replaced with global options. See the 'Details' section.
-#' * The default output formats and table-making packages can be modified with global options. See the 'Details' section.
 #' @param fmt how to format numeric values: integer, user-supplied function, or `modelsummary` function.
 #' * Integer: Number of decimal digits
-#' * User-supplied functions: 
+#' * User-supplied functions:
 #'   - Any function which accepts a numeric vector and returns a character vector of the same length.
 #' * `modelsummary` functions:
 #'   - `fmt = fmt_significant(2)`: Two significant digits (at the term-level)
 #'   - `fmt = fmt_decimal(digits = 2, pdigits = 3)`: Decimal digits for estimate and p values
 #'   - `fmt = fmt_sprintf("%.3f")`: See `?sprintf`
 #'   - `fmt = fmt_term("(Intercept)" = 1, "X" = 2)`: Format terms differently
-#'   - `fmt = fmt_statistic("estimate" = 1, "std.error" = 2)`: Format statistics differently.
+#'   - `fmt = fmt_statistic("estimate" = 1, "r.sqared" = 6)`: Format statistics differently.
 #'   - `fmt = fmt_identity()`: unformatted raw values
-#' * string: 
+#' * string:
 #' * Note on LaTeX output: To ensure proper typography, all numeric entries are enclosed in the `\num{}` command, which requires the `siunitx` package to be loaded in the LaTeX preamble. This behavior can be altered with global options. See the 'Details' section.
 #' @param stars to indicate statistical significance
 #' * FALSE (default): no significance stars.
@@ -66,14 +69,15 @@ globalVariables(c('.', 'term', 'part', 'estimate', 'conf.high', 'conf.low',
 #' @param statistic vector of strings or `glue` strings which select uncertainty
 #' statistics to report vertically below the estimate. NULL omits all
 #' uncertainty statistics.
-#' * "conf.int", "std.error", "statistic", "p.value", "conf.low", "conf.high",
-#'    or any column name produced by: `get_estimates(model)`
+#' * "conf.int", "std.error", "statistic", "p.value", "conf.low", "conf.high", .
+#'    or any column name produced by `get_estimates(model)`
 #' * `glue` package strings with braces, with or without R functions, such as:
 #'   - `"{p.value} [{conf.low}, {conf.high}]"`
 #'   - `"Std.Error: {std.error}"`
 #'   - `"{exp(estimate) * std.error}"
 #' * Numbers are automatically rounded and converted to strings. To apply functions to their numeric values, as in the last `glue` example, users must set `fmt=NULL`.
 #' * Parentheses are added automatically unless the string includes `glue` curly braces `{}`.
+#' * Some statistics are not supported for all models. See column names in `get_estimates(model)`, and visit the website to learn how to add custom statistics.
 #' @param vcov robust standard errors and other manual statistics. The `vcov`
 #'   argument accepts six types of input (see the 'Details' and 'Examples'
 #'   sections below):
@@ -110,35 +114,38 @@ globalVariables(c('.', 'term', 'part', 'estimate', 'conf.high', 'conf.low',
 #' @param coef_rename logical, named or unnamed character vector, or function
 #' * Logical: TRUE renames variables based on the "label" attribute of each column. See the Example section below.
 #' * Unnamed character vector of length equal to the number of coefficients in the final table, after `coef_omit` is applied.
-#' * Named character vector: Values refer to the variable names that will appear in the table. Names refer to the original term names stored in the model object. Ex: c("hp:mpg"="hp X mpg") 
+#' * Named character vector: Values refer to the variable names that will appear in the table. Names refer to the original term names stored in the model object. Ex: c("hp:mpg"="hp X mpg")
 #' * Function: Accepts a character vector of the model's term names and returns a named vector like the one described above. The `modelsummary` package supplies a `coef_rename()` function which can do common cleaning tasks: `modelsummary(model, coef_rename = coef_rename)`
 #' @param gof_map rename, reorder, and omit goodness-of-fit statistics and other
 #'   model information. This argument accepts 4 types of values:
 #' * NULL (default): the `modelsummary::gof_map` dictionary is used for formatting, and all unknown statistic are included.
-#' * character vector: "all", "none", or a vector of statistics such as `c("rmse", "nobs", "r.squared")`. Elements correspond to colnames in the data.frame produced by `get_gof(model)`. The `modelsummary::gof_map`default dictionary is used to format and rename statistics.
+#' * character vector: "all", "none", or a vector of statistics such as `c("rmse", "nobs", "r.squared")`. Elements correspond to colnames in the data.frame produced by `get_gof(model)`. The `modelsummary::gof_map` default dictionary is used to format and rename statistics.
 #' * NA: excludes all statistics from the bottom part of the table.
 #' * data.frame with 3 columns named "raw", "clean", "fmt". Unknown statistics are omitted. See the 'Examples' section below.
 #' * list of lists, each of which includes 3 elements named "raw", "clean", "fmt". Unknown statistics are omitted. See the 'Examples section below'.
 #' @param gof_omit string regular expression (perl-compatible) used to determine which statistics to omit from the bottom section of the table. A "negative lookahead" can be used to specify which statistics to *keep* in the table. Examples:
 #' * `"IC"`: omit statistics matching the "IC" substring.
 #' * `"BIC|AIC"`: omit statistics matching the "AIC" or "BIC" substrings.
-#' * `"^(?!.*IC)"`: keep statistics matching the "IC" substring. 
+#' * `"^(?!.*IC)"`: keep statistics matching the "IC" substring.
 #' @param group_map named or unnamed character vector. Subset, rename, and
 #' reorder coefficient groups specified a grouping variable specified in the
 #' `shape` argument formula. This argument behaves like `coef_map`.
-#' @param shape `NULL`, formula, or "rbind" string which determines the shape of a table.
+#' @param shape `NULL`, formula, or string which determines the shape of a table.
 #' * `NULL`: Default shape with terms in rows and models in columns.
-#' * Formula: The left side determines what appears on rows, and the right side determines what appears on columns. The formula can include one or more group identifier(s) to display related terms together, which can be useful for models with multivariate outcomes or grouped coefficients (See examples section below). The group identifier(s) must be column names produced by: `get_estimates(model)`. The group identifier(s) can be combined with the term identifier in a single column by using the colon to represent an interaction. If an incomplete formula is supplied (e.g., `~statistic`), `modelsummary` tries to complete it automatically. Potential `shape` values include:
+#' * Formula: The left side determines what appears on rows, and the right side determines what appears on columns. The formula can include one or more group identifier(s) to display related terms together, which can be useful for models with multivariate outcomes or grouped coefficients (See examples section below). The group identifier(s) must be column names produced by: `get_estimates(model)`. The group identifier(s) can be combined with the term identifier in a single column by using the colon to represent an interaction. If an incomplete formula is supplied (e.g., `~statistic`), `modelsummary` tries to complete it automatically. Goodness-of-fit statistics are only appended to the bottom of the table when `model` is on the right hand side of the formula (i.e., columns). Potential `shape` values include:
 #'   - `term + statistic ~ model`: default
 #'   - `term ~ model + statistic`: statistics in separate columns
 #'   - `model + statistic ~ term`: models in rows and terms in columns
 #'   - `term + response + statistic ~ model`: term and group id in separate columns
 #'   - `term : response + statistic ~ model`: term and group id in a single column
 #'   - `term ~ response`
-#' * "rbind": bind rows of two or more regression tables to create "panels" or "stacks" of regression models. When `shape="rbind"`, the `models` argument must be a (potentially named) nested list of models.
-#'   - Unnamed nested list with 2 panels: `list(list(model1, model2), list(model3, model4))`
-#'   - Named nested list with 2 panels: `list("Panel A" = list(model1, model2), "Panel B" = list(model3, model4))`
-#'   - Named panels and named models: `list("Panel A" = list("(I)" = model1, "(II)" = model2), "Panel B" = list("(I)" = model3, "(II)" = model4))`
+#' * String: "rbind" or "rcollapse" to bind rows of two or more regression tables to create "panels" or "stacks" of regression models.
+#'   -  the `models` argument must be a (potentially named) nested list of models.
+#'     + Unnamed nested list with 2 panels: `list(list(model1, model2), list(model3, model4))`
+#'     + Named nested list with 2 panels: `list("Panel A" = list(model1, model2), "Panel B" = list(model3, model4))`
+#'     + Named panels and named models: `list("Panel A" = list("(I)" = model1, "(II)" = model2), "Panel B" = list("(I)" = model3, "(II)" = model4))`
+#'   - "rbind": Bind the rows of independent regression tables
+#'   - "rcollapse": Bind the rows of regression tables and create a panel at the bottom where we "collapse" goodness-of-fit statistics which are identical across models.
 #' @param add_columns a data.frame (or tibble) with the same number of rows as
 #' #' your main table. By default, rows are appended to the bottom of the table.
 #' You can define a "position" attribute of integers to set the columns positions.
@@ -168,7 +175,7 @@ globalVariables(c('.', 'term', 'part', 'estimate', 'conf.high', 'conf.low',
 #' prevent the file from compiling/displaying. This setting does not affect captions or notes.
 #' @param ... all other arguments are passed through to three functions. See the documentation of these functions for lists of available arguments.
 #' + [parameters::model_parameters] extracts parameter estimates. Available arguments depend on model type, but include:
-#'     - `standardize`, `centrality`, `dispersion`, `test`, `ci_method`, `prior`, `diagnostic`, `rope_range`, `power`, `cluster`, etc. 
+#'     - `standardize`, `centrality`, `dispersion`, `test`, `ci_method`, `prior`, `diagnostic`, `rope_range`, `power`, `cluster`, etc.
 #' + [performance::model_performance] extracts goodness-of-fit statistics. Available arguments depend on model type, but include:
 #'     - `metrics`, `estimator`, etc.
 #' + [kableExtra::kbl] or [gt::gt] draw tables, depending on the value of the `output` argument.
@@ -201,7 +208,11 @@ modelsummary <- function(
   ...) {
 
   # panel summary shape: dispatch to other function
-  if (isTRUE(checkmate::check_choice(shape, "rbind"))) {
+  checkmate::assert(
+    checkmate::check_formula(shape),
+    checkmate::check_choice(shape, c("rbind", "rcollapse")),
+    checkmate::check_null(shape))
+  if (isTRUE(checkmate::check_choice(shape, c("rbind", "rcollapse")))) {
     out <- modelsummary_rbind(models,
       output = output,
       fmt = fmt,
@@ -219,7 +230,7 @@ modelsummary <- function(
       add_columns = add_columns,
       add_rows = add_rows,
       align = align,
-      shape = term + statistic ~ model,
+      shape = shape,
       group_map = NULL,
       notes = notes,
       title = title,
@@ -332,7 +343,6 @@ modelsummary <- function(
       return(msl)
     }
   }
-
 
   ###############
   #  estimates  #
@@ -637,7 +647,9 @@ modelsummary <- function(
   )
 
   # invisible return
-  if (!is.null(settings_get("output_file")) ||
+  if (settings_equal("function_called", "modelsummary_rbind")) {
+    return(out)
+  } else if (!is.null(settings_get("output_file")) ||
       isTRUE(output == "jupyter") ||
       (isTRUE(output == "default") && settings_equal("output_default", "jupyter"))) {
     settings_rm()
@@ -690,7 +702,8 @@ get_list_of_modelsummary_lists <- function(models, conf_level, vcov, gof_map, sh
     # {future}
     } else if (isTRUE(check_dependency("future.apply")) &&
                future::nbrOfWorkers() > 1 &&
-               number_of_models > 1) {
+               number_of_models > 1 &&
+               isTRUE(getOption("modelsummary_future", default = TRUE))) {
         out <- future.apply::future_lapply(seq_len(number_of_models), inner_loop, future.seed = TRUE)
 
     # sequential
@@ -707,7 +720,7 @@ redundant_labels <- function(dat, column) {
     return(dat)
   }
   # Issue #558: 1-row estimates table with no gof
-  if (nrow(dat) > 1) { 
+  if (nrow(dat) > 1) {
     for (i in nrow(dat):2) {
       if (dat$part[i] == "estimates" &&
         dat[[column]][i - 1] == dat[[column]][i]) {
