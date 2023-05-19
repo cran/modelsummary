@@ -20,9 +20,8 @@
 #'
 #' @template citation
 #' @template options
-#' @examples
-#'
-#' \dontrun{
+#' @section Examples:
+#' ```{r, eval = identical(Sys.getenv("pkgdown"), "true")}
 #' dat <- mtcars
 #' dat$vs <- as.logical(dat$vs)
 #' dat$cyl <- as.factor(dat$cyl)
@@ -37,9 +36,9 @@
 #' # display these unicode histograms.
 #'
 #' f <- All(mtcars) ~ Mean + SD + Min + Median + Max + Histogram
-#' datasummary(f, mtcars, output="markdown")
+#' # datasummary(f, mtcars, output="markdown")
 #'
-#' }
+#' ```
 #' @export
 datasummary_skim <- function(data,
                              type   = 'numeric',

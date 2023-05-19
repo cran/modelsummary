@@ -204,11 +204,14 @@ HTML tables:
 }
 }
 
-\examples{
-\dontrun{
+\section{Examples}{
+
+
+\if{html}{\out{<div class="sourceCode r">}}\preformatted{library(modelsummary)
 datasummary_balance(~am, mtcars)
+}\if{html}{\out{</div>}}
 }
-}
+
 \references{
 Arel-Bundock V (2022). “modelsummary: Data and Model Summaries in R.” \emph{Journal of Statistical Software}, \emph{103}(1), 1-23. \doi{10.18637/jss.v103.i01}.'
 }

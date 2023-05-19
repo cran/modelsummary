@@ -10,7 +10,7 @@ Description: Create beautiful and customizable tables to summarize several
     RTF, JPG, or PNG. Tables can easily be embedded in 'Rmarkdown' or 'knitr'
     dynamic documents. Details can be found in Arel-Bundock (2022)
     <doi:10.18637/jss.v103.i01>.
-Version: 1.4.0
+Version: 1.4.1
 Authors@R: c(person("Vincent", "Arel-Bundock", 
                    email = "vincent.arel-bundock@umontreal.ca", 
                    role = c("aut", "cre"),
@@ -89,7 +89,7 @@ Collate: 'bind_est_gof.R' 'coef_rename.R' 'config_modelsummary.R'
         'utils_print.R' 'utils_replace.R' 'utils_stats.R'
         'utils_warn.R' 'zzz.R'
 NeedsCompilation: no
-Packaged: 2023-04-26 02:06:00 UTC; vincent
+Packaged: 2023-05-19 17:52:32 UTC; vincent
 Author: Vincent Arel-Bundock [aut, cre]
     (<https://orcid.org/0000-0003-2042-7063>),
   Joachim Gassen [ctb] (<https://orcid.org/0000-0003-4364-2911>),
@@ -101,4 +101,4 @@ Author: Vincent Arel-Bundock [aut, cre]
   Lukas Wallrich [ctb] (<https://orcid.org/0000-0003-2121-5177>)
 Maintainer: Vincent Arel-Bundock <vincent.arel-bundock@umontreal.ca>
 Repository: CRAN
-Date/Publication: 2023-04-26 04:50:02 UTC
+Date/Publication: 2023-05-19 18:20:02 UTC

@@ -207,6 +207,10 @@ get_estimates_parameters <- function(model,
     # main call
     tidy_easystats <- function(...) {
         dots <- list(...)
+        # ci_method="profile" in parameters() does not respect vcov argument
+        if ("vcov" %in% names(dots) && !"ci_method" %in% names(dots)) {
+            dots[["ci_method"]] <- "wald"
+        }
         # bug in `parameters`
         if (isTRUE(dots$coef_rename)) {
             dots[["pretty_names"]] <- "labels"
@@ -226,11 +230,8 @@ get_estimates_parameters <- function(model,
     if (isTRUE(coef_rename)) {
         labs <- attr(out, "pretty_labels")
         labs <- gsub("\\*", "\u00d7", labs)
-        if (isTRUE(length(labs) == nrow(out))) {
-            out$term <- labs
-        } else {
-            out$term <- gsub("\\*", "\u00d7", out$term)
-        }
+        out$term <- replace_dict(out$term, labs)
+        out$term <- gsub("\\*", "\u00d7", out$term)
     }
 
     # errors and warnings: before processing the data frame term names

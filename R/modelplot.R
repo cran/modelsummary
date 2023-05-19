@@ -16,9 +16,8 @@
 #' plot.  This is especially useful to display annotations "behind" the
 #' 'geom_pointrange' that 'modelplot' draws.
 #' @template citation
-#' @examples
-#' \dontrun{
-#'
+#' @section Examples:
+#' ```{r, eval = identical(Sys.getenv("pkgdown"), "true"), fig.asp = .4}
 #' library(modelsummary)
 #'
 #' # single model
@@ -84,7 +83,7 @@
 #' modelplot(mod_titanic, exponentiate = TRUE) +
 #'   scale_x_log10() +
 #'   xlab("Odds Ratios and 95% confidence intervals")
-#' }
+#' ```
 #'
 #' @export
 modelplot <- function(models,

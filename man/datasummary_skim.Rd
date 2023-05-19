@@ -178,10 +178,10 @@ HTML tables:
 }
 }
 
-\examples{
+\section{Examples}{
 
-\dontrun{
-dat <- mtcars
+
+\if{html}{\out{<div class="sourceCode r">}}\preformatted{dat <- mtcars
 dat$vs <- as.logical(dat$vs)
 dat$cyl <- as.factor(dat$cyl)
 datasummary_skim(dat)
@@ -195,10 +195,11 @@ datasummary_skim(dat, "categorical")
 # display these unicode histograms.
 
 f <- All(mtcars) ~ Mean + SD + Min + Median + Max + Histogram
-datasummary(f, mtcars, output="markdown")
+# datasummary(f, mtcars, output="markdown")
 
+}\if{html}{\out{</div>}}
 }
-}
+
 \references{
 Arel-Bundock V (2022). “modelsummary: Data and Model Summaries in R.” \emph{Journal of Statistical Software}, \emph{103}(1), 1-23. \doi{10.18637/jss.v103.i01}.'
 }

@@ -186,9 +186,10 @@ HTML tables:
 }
 }
 
-\examples{
-\dontrun{
-library(modelsummary)
+\section{Examples}{
+
+
+\if{html}{\out{<div class="sourceCode r">}}\preformatted{library(modelsummary)
 
 # clean variable names (base R)
 dat <- mtcars[, c("mpg", "hp")]
@@ -220,14 +221,14 @@ datasummary_correlation(dat, notes = note)
 # `datasummary_correlation_format`: custom function with formatting
 dat <- mtcars[, c("mpg", "hp", "disp")]
 
-cor_fun <- function(x) {
+cor_fun <- function(x) \{
   out <- cor(x, method = "kendall")
   datasummary_correlation_format(
     out,
     fmt = 2,
     upper_triangle = "x",
     diagonal = ".")
-}
+\}
 
 datasummary_correlation(dat, method = cor_fun)
 
@@ -237,7 +238,7 @@ library(kableExtra)
 
 dat <- mtcars[, c("vs", "hp", "gear")]
 
-cor_fun <- function(dat) {
+cor_fun <- function(dat) \{
   # compute correlations and format them
   correlations <- data.frame(cor(dat))
   correlations <- datasummary_correlation_format(correlations, fmt = 2)
@@ -246,20 +247,21 @@ cor_fun <- function(dat) {
   pvalues <- psych::corr.test(dat)$p
 
   # use `kableExtra::cell_spec` to color significant cells
-  for (i in 1:nrow(correlations)) {
-    for (j in 1:ncol(correlations)) {
-      if (pvalues[i, j] < 0.05 && i != j) {
+  for (i in 1:nrow(correlations)) \{
+    for (j in 1:ncol(correlations)) \{
+      if (pvalues[i, j] < 0.05 && i != j) \{
         correlations[i, j] <- cell_spec(correlations[i, j], background = "pink")
-      }
-    }
-  }
+      \}
+    \}
+  \}
   return(correlations)
-}
+\}
 
 # The `escape=FALSE` is important here!
 datasummary_correlation(dat, method = cor_fun, escape = FALSE)
+}\if{html}{\out{</div>}}
 }
-}
+
 \references{
 Arel-Bundock V (2022). “modelsummary: Data and Model Summaries in R.” \emph{Journal of Statistical Software}, \emph{103}(1), 1-23. \doi{10.18637/jss.v103.i01}.'
 }

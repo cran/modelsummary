@@ -122,10 +122,10 @@ https://vincentarelbundock.github.io/modelsummary/
 \item \href{https://vincentarelbundock.github.io/modelsummary/articles/modelplot.html}{modelplot Vignette.}
 }
 }
-\examples{
-\dontrun{
+\section{Examples}{
 
-library(modelsummary)
+
+\if{html}{\out{<div class="sourceCode r">}}\preformatted{library(modelsummary)
 
 # single model
 mod <- lm(hp ~ vs + drat, mtcars)
@@ -190,9 +190,9 @@ mod_titanic <- glm(
 modelplot(mod_titanic, exponentiate = TRUE) +
   scale_x_log10() +
   xlab("Odds Ratios and 95\% confidence intervals")
+}\if{html}{\out{</div>}}
 }
 
-}
 \references{
 Arel-Bundock V (2022). “modelsummary: Data and Model Summaries in R.” \emph{Journal of Statistical Software}, \emph{103}(1), 1-23. \doi{10.18637/jss.v103.i01}.'
 }

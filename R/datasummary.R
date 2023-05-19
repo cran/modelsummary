@@ -42,10 +42,11 @@
 #' affect the behavior of other functions behind the scenes.
 #' @template citation
 #' @template options
-#' @examples
+#' @section Examples:
 #'
-#' \dontrun{
-#'
+#' ```{r, eval = identical(Sys.getenv("pkgdown"), "true")}
+#' library(modelsummary)
+#' 
 #' # The left-hand side of the formula describes rows, and the right-hand side
 #' # describes columns. This table uses the "mpg" variable as a row and the "mean"
 #' # function as a column:
@@ -100,7 +101,7 @@
 #' # with the argument `na.rm=TRUE` by default: Mean, Median, Min, Max, SD, Var,
 #' # P0, P25, P50, P75, P100, NUnique, Histogram
 #'
-#' datasummary(hp + mpg ~ Mean + SD + Histogram, data = mtcars)
+#' #datasummary(hp + mpg ~ Mean + SD + Histogram, data = mtcars)
 #'
 #' # These functions also accept a 'fmt' argument which allows you to
 #' # round/format the results
@@ -109,30 +110,30 @@
 #'
 #' # Save your tables to a variety of output formats:
 #' f <- hp + mpg ~ Mean + SD
-#' datasummary(f, data = mtcars, output = 'table.html')
-#' datasummary(f, data = mtcars, output = 'table.tex')
-#' datasummary(f, data = mtcars, output = 'table.md')
-#' datasummary(f, data = mtcars, output = 'table.docx')
-#' datasummary(f, data = mtcars, output = 'table.pptx')
-#' datasummary(f, data = mtcars, output = 'table.jpg')
-#' datasummary(f, data = mtcars, output = 'table.png')
+#' #datasummary(f, data = mtcars, output = 'table.html')
+#' #datasummary(f, data = mtcars, output = 'table.tex')
+#' #datasummary(f, data = mtcars, output = 'table.md')
+#' #datasummary(f, data = mtcars, output = 'table.docx')
+#' #datasummary(f, data = mtcars, output = 'table.pptx')
+#' #datasummary(f, data = mtcars, output = 'table.jpg')
+#' #datasummary(f, data = mtcars, output = 'table.png')
 #'
 #' # Display human-readable code
-#' datasummary(f, data = mtcars, output = 'html')
-#' datasummary(f, data = mtcars, output = 'markdown')
-#' datasummary(f, data = mtcars, output = 'latex')
+#' #datasummary(f, data = mtcars, output = 'html')
+#' #datasummary(f, data = mtcars, output = 'markdown')
+#' #datasummary(f, data = mtcars, output = 'latex')
 #'
 #' # Return a table object to customize using a table-making package
-#' datasummary(f, data = mtcars, output = 'gt')
-#' datasummary(f, data = mtcars, output = 'kableExtra')
-#' datasummary(f, data = mtcars, output = 'flextable')
-#' datasummary(f, data = mtcars, output = 'huxtable')
+#' #datasummary(f, data = mtcars, output = 'gt')
+#' #datasummary(f, data = mtcars, output = 'kableExtra')
+#' #datasummary(f, data = mtcars, output = 'flextable')
+#' #datasummary(f, data = mtcars, output = 'huxtable')
 #'
 #' # add_rows
 #' new_rows <- data.frame(a = 1:2, b = 2:3, c = 4:5)
 #' attr(new_rows, 'position') <- c(1, 3)
 #' datasummary(mpg + hp ~ mean + sd, data = mtcars, add_rows = new_rows)
-#' }
+#' ```
 #'
 #' @details
 #' Visit the 'modelsummary' website for more usage examples:
