@@ -43,7 +43,7 @@ globalVariables(c('.', 'term', 'part', 'estimate', 'conf.high', 'conf.low',
 #' * The "default" output format can be set to "kableExtra", "gt", "flextable", "huxtable", "DT", or "markdown"
 #'   - If the user does not choose a default value, the packages listed above are tried in sequence.
 #'   - Session-specific configuration: `options("modelsummary_factory_default" = "gt")`
-#'   - Persistent configuration: `modelsummary_config(output = "markdown")`
+#'   - Persistent configuration: `config_modelsummary(output = "markdown")`
 #' * Warning: Users should not supply a file name to the `output` argument if they intend to customize the table with external packages. See the 'Details' section.
 #' * LaTeX compilation requires the `booktabs` and `siunitx` packages, but `siunitx` can be disabled or replaced with global options. See the 'Details' section.
 #' @param fmt how to format numeric values: integer, user-supplied function, or `modelsummary` function.
@@ -877,7 +877,13 @@ get_list_of_modelsummary_lists <- function(models, conf_level, vcov, gof_map, sh
                future::nbrOfWorkers() > 1 &&
                number_of_models > 1 &&
                isTRUE(getOption("modelsummary_future", default = TRUE))) {
-        out <- future.apply::future_lapply(seq_len(number_of_models), inner_loop, future.seed = TRUE)
+        # Issue #647: conflict with `furrr`. Very hard to diagnose.
+        out <- try(
+          future.apply::future_lapply(seq_len(number_of_models), inner_loop, future.seed = TRUE),
+          silent = TRUE)
+        if (inherits(out, "try-error")) {
+          out <- lapply(seq_len(number_of_models), inner_loop)
+        }
 
     # sequential
     } else {

@@ -1,3 +1,18 @@
+# modelsummary 1.4.2
+
+New:
+
+* Minimal support for `Typst` output, with auto-detection in Quarto documents.
+* `strip` argument in `dvnames`.
+* `s.value` statistic is now available whenever `p.value` is available. See Greenland (2019).
+* `datasummary_skim()` now includes histograms in `gt` tables.
+
+Bugs:
+
+* GOF term names get escaped in LaTeX. Thanks to @shreyasgm for reviving Issue #546.
+* Conflict with `furrr` generated errors for some models. Thanks to @sammo3182 for Issue #647.
+
+
 # modelsummary 1.4.1
 
 New:

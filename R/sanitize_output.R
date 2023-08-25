@@ -29,7 +29,7 @@ sanitize_output <- function(output) {
 
   object_types <- c('default', 'gt', 'kableExtra', 'flextable', 'huxtable', 'DT',
                     'html', 'jupyter', 'latex', 'latex_tabular', 'markdown',
-                    'dataframe', 'data.frame', 'modelsummary_list')
+                    'dataframe', 'data.frame', 'typst', 'modelsummary_list')
   extension_types <- c('html', 'tex', 'md', 'txt', 'docx', 'pptx', 'rtf',
                        'jpg', 'png', 'csv', 'xlsx')
 
@@ -78,6 +78,7 @@ sanitize_output <- function(output) {
     "kableExtra" = "kableExtra",
     "latex_tabular" = "kableExtra",
     "modelsummary_list" = "modelsummary_list",
+    "typst" = "typst",
     "markdown" = get_factory_name("markdown", default = "modelsummary"),
     "jupyter" = get_factory_name("html", default = "kableExtra"),
     "latex" = get_factory_name("latex", default = "kableExtra"),
@@ -167,6 +168,10 @@ sanitize_output <- function(output) {
     ## reprex and github: change to markdown output format only if `output` is "default"
     } else if (any(markdown_fmt %in% fmt) && (output_user == "default")) {
       output_format <- "markdown"
+
+
+    } else if (isTRUE(knitr::pandoc_to() == "typst")) {
+      output_format <- "typst"
     }
 
   }

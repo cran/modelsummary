@@ -4,12 +4,14 @@
 \alias{dvnames}
 \title{Title models with their dependent variables}
 \usage{
-dvnames(models, number = FALSE, fill = "Model")
+dvnames(models, number = FALSE, strip = FALSE, fill = "Model")
 }
 \arguments{
 \item{models}{A regression model or list of regression models}
 
 \item{number}{Should the models be numbered (1), (2), etc., in addition to their dependent variable names?}
+
+\item{strip}{boolean FALSE returns the dependent variable names as they appear in the model. TRUE returns the dependent variable names as they appear in the data, without transformations.}
 
 \item{fill}{If \code{insight::find_response()} cannot find a response, the column title to use in its place. Set to \code{' '} to leave blank.}
 }

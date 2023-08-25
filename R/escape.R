@@ -3,7 +3,7 @@
 #' @keywords internal
 escape_string <- function(x) {
     if (settings_equal("escape", TRUE)) {
-        if (settings_equal("output_format", c("html", "kableExtra"))) {
+        if (identical(Sys.getenv("pkgdown"),  "true") || settings_equal("output_format", c("html", "kableExtra"))) {
             out <- escape_html(x)
         } else if (settings_equal("output_format", c("latex", "latex_tabular"))) {
             out <- escape_latex(x)
@@ -46,9 +46,9 @@ escape_latex <- function (x, newlines = FALSE, spaces = FALSE) {
 #' @param x a character string to escape
 #' @keywords internal
 escape_html <- function (x) {
-    x <- gsub("&", "&amp;", x)
-    x <- gsub("<", "&lt;", x)
-    x <- gsub(">", "&gt;", x)
-    x <- gsub("\"", "&quot;", x)
+    x <- gsub("&", "&amp;", x, fixed = TRUE)
+    x <- gsub("<", "&lt;", x, fixed = TRUE)
+    x <- gsub(">", "&gt;", x, fixed = TRUE)
+    x <- gsub("\"", "&quot;", x, fixed = TRUE)
     x
 }
