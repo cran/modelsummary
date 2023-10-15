@@ -18,9 +18,9 @@ globalVariables(c('.', 'term', 'part', 'estimate', 'conf.high', 'conf.low',
 #' one of the supported table customization packages: `kableExtra`, `gt`,
 #' `flextable`, `huxtable`, `DT`. For more information, see the Details and Examples
 #' sections below, and the vignettes on the `modelsummary` website:
-#' https://vincentarelbundock.github.io/modelsummary/
-#' * [The `modelsummary` Vignette includes dozens of examples of tables with extensive customizations.](https://vincentarelbundock.github.io/modelsummary/articles/modelsummary.html)
-#' * [The Appearance Vignette shows how to modify the look of tables.](https://vincentarelbundock.github.io/modelsummary/articles/appearance.html)
+#' https://modelsummary.com/
+#' * [The `modelsummary` Vignette includes dozens of examples of tables with extensive customizations.](https://modelsummary.com/articles/modelsummary.html)
+#' * [The Appearance Vignette shows how to modify the look of tables.](https://modelsummary.com/articles/appearance.html)
 #'
 #' @template citation
 #'
@@ -72,7 +72,7 @@ globalVariables(c('.', 'term', 'part', 'estimate', 'conf.high', 'conf.low',
 #' * `glue` package strings with braces, with or without R functions, such as:
 #'   - `"{p.value} [{conf.low}, {conf.high}]"`
 #'   - `"Std.Error: {std.error}"`
-#'   - `"{exp(estimate) * std.error}"
+#'   - `"{exp(estimate) * std.error}"`
 #' * Numbers are automatically rounded and converted to strings. To apply functions to their numeric values, as in the last `glue` example, users must set `fmt=NULL`.
 #' * Parentheses are added automatically unless the string includes `glue` curly braces `{}`.
 #' * Some statistics are not supported for all models. See column names in `get_estimates(model)`, and visit the website to learn how to add custom statistics.
@@ -184,7 +184,7 @@ globalVariables(c('.', 'term', 'part', 'estimate', 'conf.high', 'conf.low',
 #' ```{r, eval = identical(Sys.getenv("pkgdown"), "true")}
 
 # The `modelsummary` website includes \emph{many} examples and tutorials:
-# https://vincentarelbundock.github.io/modelsummary
+# https://modelsummary.com
 #'
 #' library(modelsummary)
 #' 
@@ -744,9 +744,10 @@ modelsummary <- function(
 
   if (!settings_equal("output_format", "dataframe") && !settings_equal("function_called", "modelsummary_rbind")) {
 
-    tab <- redundant_labels(tab, "model")
-    tab <- redundant_labels(tab, "group")
-    tab <- redundant_labels(tab, "term")
+    dups <- c("term", "model", shape$group_name)
+    for (d in dups) {
+      tab <- redundant_labels(tab, d)
+    }
 
     # after label redundancy, before align
     tab$statistic <- tab$part <- NULL

@@ -104,6 +104,16 @@ factory_kableExtra <- function(tab,
       colnames(tab) <- gsub("\\|{4}", " / ", colnames(tab))
   }
 
+  # Issue #669: <0.001 gets printed as a tag in HTML
+  if (settings_equal("output_format", c("kableExtra", "html"))) {
+    for (i in seq_along(tab)) {
+      idx <- grepl("<[^>]*$", tab[[i]]) | grepl("^[^<]*>", tab[[i]])
+      # Brackets are not matching, perform substitution
+      tab[[i]][idx] <- gsub("<", "&lt;", tab[[i]][idx])
+      tab[[i]][idx] <- gsub(">", "&gt;", tab[[i]][idx])
+    }
+  }
+
   # kableExtra sometimes converts (1), (2) to list items, which breaks formatting
   # insert think white non-breaking space
   if (settings_equal("output_format", c("html", "kableExtra"))) {
