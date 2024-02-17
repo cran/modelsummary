@@ -15,7 +15,7 @@ globalVariables(c('.', 'term', 'part', 'estimate', 'conf.high', 'conf.low',
 #' and it can produce tables in HTML, LaTeX, Word, Markdown, PDF, PowerPoint,
 #' Excel, RTF, JPG, or PNG. The appearance of the tables can be customized
 #' extensively by specifying the `output` argument, and by using functions from
-#' one of the supported table customization packages: `kableExtra`, `gt`,
+#' one of the supported table customization packages: `tinytable`, `kableExtra`, `gt`,
 #' `flextable`, `huxtable`, `DT`. For more information, see the Details and Examples
 #' sections below, and the vignettes on the `modelsummary` website:
 #' https://modelsummary.com/
@@ -39,7 +39,7 @@ globalVariables(c('.', 'term', 'part', 'estimate', 'conf.high', 'conf.low',
 #' * Nested list of models: When using the `shape="rbind"` argument, `models` can be a nested list of models to display "panels" or "stacks" of regression models. See the `shape` argument documentation and examples below.
 #' @param output filename or object type (character string)
 #' * Supported filename extensions: .docx, .html, .tex, .md, .txt, .csv, .xlsx, .png, .jpg
-#' * Supported object types: "default", "html", "markdown", "latex", "latex_tabular", "data.frame", "gt", "kableExtra", "huxtable", "flextable", "DT", "jupyter". The "modelsummary_list" value produces a lightweight object which can be saved and fed back to the `modelsummary` function.
+#' * Supported object types: "default", "html", "markdown", "latex", "latex_tabular", "data.frame", "tinytable", "gt", "kableExtra", "huxtable", "flextable", "DT", "jupyter". The "modelsummary_list" value produces a lightweight object which can be saved and fed back to the `modelsummary` function.
 #' * The "default" output format can be set to "kableExtra", "gt", "flextable", "huxtable", "DT", or "markdown"
 #'   - If the user does not choose a default value, the packages listed above are tried in sequence.
 #'   - Session-specific configuration: `options("modelsummary_factory_default" = "gt")`
@@ -55,7 +55,7 @@ globalVariables(c('.', 'term', 'part', 'estimate', 'conf.high', 'conf.low',
 #'   - `fmt = fmt_decimal(digits = 2, pdigits = 3)`: Decimal digits for estimate and p values
 #'   - `fmt = fmt_sprintf("%.3f")`: See `?sprintf`
 #'   - `fmt = fmt_term("(Intercept)" = 1, "X" = 2)`: Format terms differently
-#'   - `fmt = fmt_statistic("estimate" = 1, "r.sqared" = 6)`: Format statistics differently.
+#'   - `fmt = fmt_statistic("estimate" = 1, "r.squared" = 6)`: Format statistics differently.
 #'   - `fmt = fmt_identity()`: unformatted raw values
 #' * string:
 #' * Note on LaTeX output: To ensure proper typography, all numeric entries are enclosed in the `\num{}` command, which requires the `siunitx` package to be loaded in the LaTeX preamble. This behavior can be altered with global options. See the 'Details' section.
@@ -724,7 +724,6 @@ modelsummary <- function(
     hrule <- NULL
   }
 
-
   # stars
   stars_note <- settings_get("stars_note")
   if (isTRUE(stars_note) && !isFALSE(stars) && !any(grepl("\\{stars\\}", c(estimate, statistic)))) {
@@ -792,7 +791,6 @@ modelsummary <- function(
     colnames(tab) <- gsub("^contrast$", " ", colnames(tab)) # comparisons() and marginaleffects()
   }
 
-
   # HACK: remove "empty" confidence intervals or standard errors and omit empty rows
   for (i in seq_along(tab)) {
     tab[[i]] <- gsub("\\(\\s*\\)", "", tab[[i]])
@@ -800,8 +798,10 @@ modelsummary <- function(
     tab[[i]] <- gsub("\\[,\\s*\\]", "", tab[[i]])
     tab[[i]] <- gsub("\\[\\\\num\\{NA\\}, \\\\num\\{NA\\}\\]", "", tab[[i]])
     # Issue #560 don't replace fe1^fe2 -> fe1\textasciicircum{}fe2 -> fe1\textasciicircumfe2
-    tab[[i]] <- gsub("^\\S*\\{\\}\\S*", "", tab[[i]])
+    # commented out because I don't see a problem without, and because this line breaks I(wt^2) (Issue #693)
+    # tab[[i]] <- gsub("^\\S*\\{\\}\\S*", "", tab[[i]])
   }
+
   idx <- apply(tab, 1, function(x) any(x != ""))
   tab <- tab[idx, ]
 

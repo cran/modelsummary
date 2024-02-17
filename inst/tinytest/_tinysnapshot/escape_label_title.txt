@@ -1,7 +1,6 @@
 \begin{table}
-
-\caption{Blah\_blah \label{tab:blah-blah}}
 \centering
+\caption{Blah\_blah \label{tab:blah-blah}}
 \begin{tabular}[t]{lc}
 \toprule
   & (1)\\

@@ -48,7 +48,7 @@ msummary(
 \item{output}{filename or object type (character string)
 \itemize{
 \item Supported filename extensions: .docx, .html, .tex, .md, .txt, .csv, .xlsx, .png, .jpg
-\item Supported object types: "default", "html", "markdown", "latex", "latex_tabular", "data.frame", "gt", "kableExtra", "huxtable", "flextable", "DT", "jupyter". The "modelsummary_list" value produces a lightweight object which can be saved and fed back to the \code{modelsummary} function.
+\item Supported object types: "default", "html", "markdown", "latex", "latex_tabular", "data.frame", "tinytable", "gt", "kableExtra", "huxtable", "flextable", "DT", "jupyter". The "modelsummary_list" value produces a lightweight object which can be saved and fed back to the \code{modelsummary} function.
 \item The "default" output format can be set to "kableExtra", "gt", "flextable", "huxtable", "DT", or "markdown"
 \itemize{
 \item If the user does not choose a default value, the packages listed above are tried in sequence.
@@ -72,7 +72,7 @@ msummary(
 \item \code{fmt = fmt_decimal(digits = 2, pdigits = 3)}: Decimal digits for estimate and p values
 \item \code{fmt = fmt_sprintf("\%.3f")}: See \code{?sprintf}
 \item \code{fmt = fmt_term("(Intercept)" = 1, "X" = 2)}: Format terms differently
-\item \code{fmt = fmt_statistic("estimate" = 1, "r.sqared" = 6)}: Format statistics differently.
+\item \code{fmt = fmt_statistic("estimate" = 1, "r.squared" = 6)}: Format statistics differently.
 \item \code{fmt = fmt_identity()}: unformatted raw values
 }
 \item string:
@@ -264,7 +264,7 @@ models side-by-side. This function supports dozens of statistical models,
 and it can produce tables in HTML, LaTeX, Word, Markdown, PDF, PowerPoint,
 Excel, RTF, JPG, or PNG. The appearance of the tables can be customized
 extensively by specifying the \code{output} argument, and by using functions from
-one of the supported table customization packages: \code{kableExtra}, \code{gt},
+one of the supported table customization packages: \code{tinytable}, \code{kableExtra}, \code{gt},
 \code{flextable}, \code{huxtable}, \code{DT}. For more information, see the Details and Examples
 sections below, and the vignettes on the \code{modelsummary} website:
 https://modelsummary.com/

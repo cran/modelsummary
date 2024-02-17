@@ -27,7 +27,7 @@ sanitize_output <- function(output) {
     stop("The `output` argument must be a string. Type `?modelsummary` for details. This error is sometimes raised when users supply multiple models to `modelsummary` but forget to wrap them in a list. This works: `modelsummary(list(model1, model2))`. This does *not* work: `modelsummary(model1, model2)`")
   }
 
-  object_types <- c('default', 'gt', 'kableExtra', 'flextable', 'huxtable', 'DT',
+  object_types <- c('default', 'gt', 'kableExtra', 'flextable', 'huxtable', 'DT', "tinytable",
                     'html', 'jupyter', 'latex', 'latex_tabular', 'markdown',
                     'dataframe', 'data.frame', 'typst', 'modelsummary_list')
   extension_types <- c('html', 'tex', 'md', 'txt', 'docx', 'pptx', 'rtf',
@@ -72,6 +72,7 @@ sanitize_output <- function(output) {
     "dataframe" = "dataframe",
     "data.frame" = "dataframe",
     "flextable" = "flextable",
+    "tinytable" = "tinytable",
     "gt" = "gt",
     "huxtable" = "huxtable",
     "DT" = "DT",
@@ -106,6 +107,8 @@ sanitize_output <- function(output) {
           output <- "kableExtra"
         } else if (isTRUE(insight::check_if_installed("gt", quietly = TRUE))) {
           output <- "gt"
+        } else if (isTRUE(insight::check_if_installed("tinytable", quietly = TRUE))) {
+          output <- "tinytable"
         } else if (isTRUE(insight::check_if_installed("flextable", quietly = TRUE))) {
           output <- "flextable"
         } else if (isTRUE(insight::check_if_installed("huxtable", quietly = TRUE))) {
@@ -154,7 +157,10 @@ sanitize_output <- function(output) {
       "bookdown::word_document2")
 
     markdown_fmt <- c(
+      "md",
       "gfm",
+      "markdown",
+      "markdown_strict",
       "commonmark",
       "github_document",
       "reprex_render",
@@ -166,7 +172,10 @@ sanitize_output <- function(output) {
     # unfortunately, `rmarkdown::default_output_format` only detects
     # `html_document` on reprex, so this will only work in `github_document`
     ## reprex and github: change to markdown output format only if `output` is "default"
-    } else if (any(markdown_fmt %in% fmt) && (output_user == "default")) {
+    } else if (any(markdown_fmt %in% fmt) &&
+               output_user == "default"  &&
+               # respect global options, even in qmd->md documents
+               is.null(getOption("modelsummary_factory_default", default = NULL))) {
       output_format <- "markdown"
 
 

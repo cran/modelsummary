@@ -14,11 +14,21 @@ align_str_center <- function(x, pad_n = NULL) {
     right <- strrep(" ", floor((pad_n - nchar(x)) / 2))
     paste0(left, x, right)
 }
+
+#' @export
+#' @keywords internal
+#' @noRd
 print.modelsummary_markdown <- function(x, ...) {
     cat("\n\n")
     cat(x, sep = "\n")
 }
 
+
+#' Internal function to build table with `markdown`
+#'
+#' @inheritParams factory_gt
+#' @noRd
+#' @return tinytable object
 factory_markdown <- function(tab,
                              align = NULL,
                              hrule = NULL,

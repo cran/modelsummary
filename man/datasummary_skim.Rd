@@ -25,7 +25,7 @@ datasummary_skim(
 \item{output}{filename or object type (character string)
 \itemize{
 \item Supported filename extensions: .docx, .html, .tex, .md, .txt, .csv, .xlsx, .png, .jpg
-\item Supported object types: "default", "html", "markdown", "latex", "latex_tabular", "data.frame", "gt", "kableExtra", "huxtable", "flextable", "DT", "jupyter". The "modelsummary_list" value produces a lightweight object which can be saved and fed back to the \code{modelsummary} function.
+\item Supported object types: "default", "html", "markdown", "latex", "latex_tabular", "data.frame", "tinytable", "gt", "kableExtra", "huxtable", "flextable", "DT", "jupyter". The "modelsummary_list" value produces a lightweight object which can be saved and fed back to the \code{modelsummary} function.
 \item The "default" output format can be set to "kableExtra", "gt", "flextable", "huxtable", "DT", or "markdown"
 \itemize{
 \item If the user does not choose a default value, the packages listed above are tried in sequence.
@@ -196,7 +196,6 @@ datasummary_skim(dat, "categorical")
 
 f <- All(mtcars) ~ Mean + SD + Min + Median + Max + Histogram
 # datasummary(f, mtcars, output="markdown")
-
 }\if{html}{\out{</div>}}
 }
 
