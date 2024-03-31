@@ -30,8 +30,8 @@ formula, but all summary functions must be on one side.}
 \item{output}{filename or object type (character string)
 \itemize{
 \item Supported filename extensions: .docx, .html, .tex, .md, .txt, .csv, .xlsx, .png, .jpg
-\item Supported object types: "default", "html", "markdown", "latex", "latex_tabular", "data.frame", "tinytable", "gt", "kableExtra", "huxtable", "flextable", "DT", "jupyter". The "modelsummary_list" value produces a lightweight object which can be saved and fed back to the \code{modelsummary} function.
-\item The "default" output format can be set to "kableExtra", "gt", "flextable", "huxtable", "DT", or "markdown"
+\item Supported object types: "default", "html", "markdown", "latex", "latex_tabular", "typst", "data.frame", "tinytable", "gt", "kableExtra", "huxtable", "flextable", "DT", "jupyter". The "modelsummary_list" value produces a lightweight object which can be saved and fed back to the \code{modelsummary} function.
+\item The "default" output format can be set to "tinytable", "kableExtra", "gt", "flextable", "huxtable", "DT", or "markdown"
 \itemize{
 \item If the user does not choose a default value, the packages listed above are tried in sequence.
 \item Session-specific configuration: \code{options("modelsummary_factory_default" = "gt")}
@@ -66,12 +66,7 @@ the table (e.g., \code{align = "lcc"}).  Valid characters: l, c, r, d.
 \item "l": left-aligned column
 \item "c": centered column
 \item "r": right-aligned column
-\item "d": dot-aligned column. For LaTeX/PDF output, this option requires at least version 3.0.25 of the siunitx LaTeX package. These commands must appear in the LaTeX preamble (they are added automatically when compiling Rmarkdown documents to PDF):
-\itemize{
-\item \verb{\\usepackage\{booktabs\}}
-\item \verb{\\usepackage\{siunitx\}}
-\item \verb{\\newcolumntype\{d\}\{S[ input-open-uncertainty=, input-close-uncertainty=, parse-numbers = false, table-align-text-pre=false, table-align-text-post=false ]\}}
-}
+\item "d": dot-aligned column. For LaTeX/PDF output, this option requires at least version 3.0.25 of the siunitx LaTeX package. See the LaTeX preamble help section below for commands to insert in your LaTeX preamble.
 }}
 
 \item{add_columns}{a data.frame (or tibble) with the same number of rows as
@@ -90,10 +85,10 @@ the formula determines the order in which headers appear. For example,
 header.`}
 
 \item{escape}{boolean TRUE escapes or substitutes LaTeX/HTML characters which could
-prevent the file from compiling/displaying. This setting does not affect captions or notes.}
+prevent the file from compiling/displaying. \code{TRUE} escapes all cells, captions, and notes. Users can have more fine-grained control by setting \code{escape=FALSE} and using an external command such as: \code{modelsummary(model, "latex") |> tinytable::format_tt(tab, j=1:5, escape=TRUE)}}
 
 \item{...}{all other arguments are passed through to the table-making
-functions \link[kableExtra:kbl]{kableExtra::kbl}, \link[gt:gt]{gt::gt}, \link[DT:datatable]{DT::datatable}, etc. depending on the \code{output} argument.
+functions \link[tinytable:tt]{tinytable::tt}, \link[kableExtra:kbl]{kableExtra::kbl}, \link[gt:gt]{gt::gt}, \link[DT:datatable]{DT::datatable}, etc. depending on the \code{output} argument.
 This allows users to pass arguments directly to \code{datasummary} in order to
 affect the behavior of other functions behind the scenes.}
 }
@@ -119,7 +114,7 @@ from the 'tables' package. More details about table-making formulas can be
 found in the 'tables' package documentation: ?tables::tabular
 
 Hierarchical or "nested" column labels are only available for these output
-formats: kableExtra, gt, html, rtf, and LaTeX. When saving tables to other
+formats: tinytable, kableExtra, gt, html, rtf, and LaTeX. When saving tables to other
 formats, nested labels will be combined to a "flat" header.
 }
 \section{Global Options}{
@@ -139,25 +134,21 @@ These global option changes the style of the default column headers:
 \item \code{options(modelsummary_panel_labels = "roman")}
 }
 
-The supported styles are: "model", "panel", "arabic", "letters", "roman", "(arabic)", "(letters)", "(roman)""
+The supported styles are: "model", "panel", "arabic", "letters", "roman", "(arabic)", "(letters)", "(roman)"
 
 The panel-specific option is only used when \code{shape="rbind"}
 }
 
 \subsection{Table-making packages}{
 
-\code{modelsummary} supports 4 table-making packages: \code{kableExtra}, \code{gt},
+\code{modelsummary} supports 6 table-making packages: \code{tinytable}, \code{kableExtra}, \code{gt},
 \code{flextable}, \code{huxtable}, and \code{DT}. Some of these packages have overlapping
-functionalities. For example, 3 of those packages can export to LaTeX. To
-change the default backend used for a specific file format, you can use
-the \code{options} function:
+functionalities. To change the default backend used for a specific file
+format, you can use ' the \code{options} function:
 
 \code{options(modelsummary_factory_html = 'kableExtra')}
-
 \code{options(modelsummary_factory_latex = 'gt')}
-
 \code{options(modelsummary_factory_word = 'huxtable')}
-
 \code{options(modelsummary_factory_png = 'gt')}
 }
 
@@ -181,9 +172,9 @@ and \code{broom}. By default, it uses \code{easystats} first and then falls back
 \code{broom} in case of failure. You can change the order of priorities or include
 goodness-of-fit extracted by \emph{both} packages by setting:
 
-\code{options(modelsummary_get = "broom")}
-
 \code{options(modelsummary_get = "easystats")}
+
+\code{options(modelsummary_get = "broom")}
 
 \code{options(modelsummary_get = "all")}
 }
@@ -202,6 +193,21 @@ A similar option can be used to display numerical entries using MathJax in
 HTML tables:
 
 \code{options(modelsummary_format_numeric_html = "mathjax")}
+}
+
+\subsection{LaTeX preamble}{
+
+When creating LaTeX via the \code{tinytable} backend (default in version 2.0.0 and later), it is useful to include the following commands in the LaTeX preamble of your documents. Note that they are added automatically when compiling Rmarkdown or Quarto documents.
+
+\\usepackage\{tabularray\}
+\\usepackage\{float\}
+\\usepackage\{graphicx\}
+\\usepackage\{codehigh\}
+\\usepackage[normalem]\{ulem\}
+\\UseTblrLibrary\{booktabs\}
+\\newcommand\{\\tinytableTabularrayUnderline\}[1]\{\\underline\{#1\}\}
+\\newcommand\{\\tinytableTabularrayStrikeout\}[1]\{\\sout\{#1\}\}
+\\NewTableCommand\{\\tinytableDefineColor\}[3]\{\\definecolor\{#1\}\{#2\}\{#3\}\}
 }
 }
 
@@ -287,6 +293,7 @@ f <- hp + mpg ~ Mean + SD
 #datasummary(f, data = mtcars, output = 'latex')
 
 # Return a table object to customize using a table-making package
+#datasummary(f, data = mtcars, output = 'tinytable')
 #datasummary(f, data = mtcars, output = 'gt')
 #datasummary(f, data = mtcars, output = 'kableExtra')
 #datasummary(f, data = mtcars, output = 'flextable')

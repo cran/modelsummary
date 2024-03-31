@@ -31,7 +31,10 @@ modelplot(
 \itemize{
 \item Models are labelled using the list names.
 }
-\item Nested list of models: When using the \code{shape="rbind"} argument, \code{models} can be a nested list of models to display "panels" or "stacks" of regression models. See the \code{shape} argument documentation and examples below.
+\item Nested list of models:
+\itemize{
+\item When using the \code{shape} argument with "rbind", "rcollapse", or "cbind" values, \code{models} can be a nested list of models to display "panels" or "stacks" of regression models. See the \code{shape} argument documentation and examples below.
+}
 }}
 
 \item{conf_level}{numeric value between 0 and 1. confidence level to use for
@@ -104,13 +107,13 @@ plot.  This is especially useful to display annotations "behind" the
 \itemize{
 \item \link[parameters:model_parameters]{parameters::model_parameters} extracts parameter estimates. Available arguments depend on model type, but include:
 \itemize{
-\item \code{standardize}, \code{centrality}, \code{dispersion}, \code{test}, \code{ci_method}, \code{prior}, \code{diagnostic}, \code{rope_range}, \code{power}, \code{cluster}, etc.
+\item \code{standardize}, \code{include_reference}, \code{centrality}, \code{dispersion}, \code{test}, \code{ci_method}, \code{prior}, \code{diagnostic}, \code{rope_range}, \code{power}, \code{cluster}, etc.
 }
 \item \link[performance:model_performance]{performance::model_performance} extracts goodness-of-fit statistics. Available arguments depend on model type, but include:
 \itemize{
 \item \code{metrics}, \code{estimator}, etc.
 }
-\item \link[kableExtra:kbl]{kableExtra::kbl} or \link[gt:gt]{gt::gt} draw tables, depending on the value of the \code{output} argument.
+\item \link[tinytable:tt]{tinytable::tt}, \link[kableExtra:kbl]{kableExtra::kbl} or \link[gt:gt]{gt::gt} draw tables, depending on the value of the \code{output} argument.
 }}
 }
 \description{

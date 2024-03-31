@@ -122,7 +122,7 @@ vc <- list(
 tab <- modelsummary(
   m,
   output = "data.frame",
-  statistic_override = vc["Clustered"],
+  vcov = vc["Clustered"],
   stars = TRUE)
 expect_inherits(tab, "data.frame")
 expect_true("Clustered" %in% tab[["(1)"]])
@@ -140,15 +140,15 @@ make_data <- function(response = c("A", "B", "C")) {
 dat <- make_data()
 invisible(capture.output(mod <- nnet::multinom(var1 ~ var2, data = dat)))
 expect_warning(modelsummary(mod, output = "dataframe"), pattern = "duplicate")
-tab <- suppressWarnings(modelsummary(mod, group = response + term ~ model, output = "dataframe"))
+tab <- suppressWarnings(modelsummary(mod, shape = response + term ~ model, output = "dataframe"))
 expect_inherits(tab, "data.frame")
 expect_true(nrow(tab) > 11)
 
 
-exit_file("did package works interactively broken")
+# did
 requiet("did")
 data(mpdta, package = 'did')
-dat <<- mpdta
+dat <- mpdta
 dat$newvar <- substr(mpdta$countyreal, 1, 2)
 mod1 <- att_gt(yname = "lemp", gname = "first.treat", idname = "countyreal",
                tname = "year", xformla = ~1, data = dat)
@@ -157,5 +157,5 @@ mod2 <- att_gt(yname = "lemp", gname = "first.treat", idname = "countyreal",
                clustervars = c('countyreal', 'newvar'))
 mods <- list('mod1' = mod1, 'mod2' = mod2)
 tab <- msummary(mods, gof_omit = 'Num|ngroup|ntime|control|method', output = 'data.frame')
-expect_equivalent(tab$mod1[nrow(tab)], "Clustered (countyreal)")
-expect_equivalent(tab$mod2[nrow(tab)], "Clustered (countyreal & newvar)")
+expect_equivalent(tab$mod1[nrow(tab)], "by: countyreal")
+expect_equivalent(tab$mod2[nrow(tab)], "by: countyreal & newvar")

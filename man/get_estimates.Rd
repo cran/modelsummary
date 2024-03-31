@@ -44,8 +44,10 @@ sections below):
 \item \code{term : response + statistic ~ model}: term and group id in a single column
 \item \code{term ~ response}
 }
-\item String: "rbind" or "rcollapse" to bind rows of two or more regression tables to create "panels" or "stacks" of regression models.
+\item String: "cbind", "rbind", "rcollapse"
 \itemize{
+\item "cbind": side-by-side models with autmoatic spanning column headers to group models (\code{tinytable} only feature).
+\item "rbind" or "rcollapse": "panels" or "stacks" of regression models.
 \item the \code{models} argument must be a (potentially named) nested list of models.
 }
 \itemize{
@@ -71,13 +73,13 @@ sections below):
 \itemize{
 \item \link[parameters:model_parameters]{parameters::model_parameters} extracts parameter estimates. Available arguments depend on model type, but include:
 \itemize{
-\item \code{standardize}, \code{centrality}, \code{dispersion}, \code{test}, \code{ci_method}, \code{prior}, \code{diagnostic}, \code{rope_range}, \code{power}, \code{cluster}, etc.
+\item \code{standardize}, \code{include_reference}, \code{centrality}, \code{dispersion}, \code{test}, \code{ci_method}, \code{prior}, \code{diagnostic}, \code{rope_range}, \code{power}, \code{cluster}, etc.
 }
 \item \link[performance:model_performance]{performance::model_performance} extracts goodness-of-fit statistics. Available arguments depend on model type, but include:
 \itemize{
 \item \code{metrics}, \code{estimator}, etc.
 }
-\item \link[kableExtra:kbl]{kableExtra::kbl} or \link[gt:gt]{gt::gt} draw tables, depending on the value of the \code{output} argument.
+\item \link[tinytable:tt]{tinytable::tt}, \link[kableExtra:kbl]{kableExtra::kbl} or \link[gt:gt]{gt::gt} draw tables, depending on the value of the \code{output} argument.
 }}
 }
 \description{

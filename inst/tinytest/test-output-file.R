@@ -12,7 +12,6 @@ mod[[2]] <- lm(hp ~ mpg + drat, mtcars)
 # modelsummary(mod, output = "known_output/output-file.md")
 # modelsummary(mod, output = "known_output/output-file.txt")
 # modelsummary(mod, output = "known_output/output-file.tex")
-# modelsummary(mod, output = "known_output/output-file.txt")
 # modelsummary(mod, output = "known_output/output-file.rtf")
 # modelsummary(mod, output = "known_output/output-file.docx")
 # modelsummary(mod, output = "known_output/output-file.pptx")
@@ -30,17 +29,19 @@ for (x in extensions) {
   unlink(fn1)
 }
 
-# docx hash changes from write to write
-# output='table.docx'
-fn1 <- paste0(random_string(), ".docx")
-modelsummary(mod, output = fn1)
-expect_true(file.info(fn1)$size > 10000)
-unlink(fn1)
+# pandoc error on github actions
+if (!ON_CI) {
+  # docx hash changes from write to write
+  # output='table.docx'
+  fn1 <- paste0(random_string(), ".docx")
+  modelsummary(mod, output = fn1)
+  expect_true(file.info(fn1)$size > 10000)
+  unlink(fn1)
 
-
-# pptx hash changes from write to write
-# output='table.pptx'
-fn1 <- paste0(random_string(), ".pptx")
-modelsummary(mod, output = fn1)
-expect_true(file.info(fn1)$size > 10000)
-unlink(fn1)
+  # pptx hash changes from write to write
+  # output='table.pptx'
+  fn1 <- paste0(random_string(), ".pptx")
+  modelsummary(mod, output = fn1)
+  expect_true(file.info(fn1)$size > 10000)
+  unlink(fn1)
+}

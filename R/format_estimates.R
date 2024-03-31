@@ -97,6 +97,13 @@ format_estimates <- function(
     }
   }
 
+  # reference categories (while still numeric)
+  if ("include_reference" %in% names(list(...)) && all(c("estimate", "std.error") %in% colnames(est))) {
+    idx_ref <- est$estimate == 0 & is.na(est$std.error)
+  } else {
+    idx_ref <- rep(FALSE, nrow(est))
+  }
+
   # exponentiate
   if (isTRUE(exponentiate)) {
     # standard error before transforming estimate
@@ -118,6 +125,7 @@ format_estimates <- function(
     }
   }
 
+
   ## round all
   ## ensures that the reshape doesn't produce incompatible types
   ## exclude factors and characters, otherwise `rounding` will escape them
@@ -136,6 +144,7 @@ format_estimates <- function(
     }
   }
 
+
   # modelplot safety hack: statistics may not be available for some models (e.g., "brms")
   if (identical(estimate_glue, "{estimate}|{std.error}|{conf.low}|{conf.high}|{p.value}")) {
     if (!"std.error" %in% colnames(est)) {
@@ -145,6 +154,7 @@ format_estimates <- function(
       estimate_glue <- gsub("{p.value}", " ", estimate_glue, fixed = TRUE)
     }
   }
+
 
   # extract estimates (there can be several)
   for (i in seq_along(estimate_glue)) {
@@ -165,6 +175,9 @@ format_estimates <- function(
     # avoid empty parentheses for NAs
     est[[paste0("modelsummary_tmp", i)]][est[[s]] == ""] <- ""
   }
+
+  # reference level: only first category, rest should be empty
+  est[["modelsummary_tmp1"]][idx_ref] <- "-"
 
   if (!is.null(group_name)) {
     miss <- setdiff(shape$group_name, colnames(est))

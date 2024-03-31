@@ -37,13 +37,15 @@ expect_equivalent(colnames(tab2), c(" ", "A", "B", "C"))
 
 # stars note
 p <- suppressWarnings(modelsummary(panels, output = "markdown", stars = TRUE, shape = "rbind"))
-expect_true(any(grepl("Note", p)))
+expect_true(any(grepl("p < 0.1", p, fixed = TRUE)))
 
 # output formats: no validity
 p <- modelsummary(panels, output = "gt", shape = "rbind")
 expect_inherits(p, "gt_tbl")
 p <- modelsummary(panels, output = "latex", shape = "rbind")
-expect_inherits(p, "knitr_kable")
+expect_inherits(p, "tinytable")
+p <- modelsummary(panels, output = "tinytable", shape = "rbind")
+expect_inherits(p, "tinytable")
 
 # Issue #593: rbind vs rcollapse
 panels <- list(
@@ -122,3 +124,27 @@ expect_snapshot_print(
         add_rows = rows),
     "rbind-add_rows_rbind"
 )
+
+
+# Issue #725: Headers are not printed if shape = "rbind" is used
+gm <- c("r.squared", "nobs", "rmse")
+panels <- list(
+  list(
+    lm(mpg ~ 1, data = mtcars),
+    lm(mpg ~ qsec, data = mtcars)
+  ),
+  list(
+    lm(hp ~ 1, data = mtcars),
+    lm(hp ~ qsec, data = mtcars)
+  )
+)
+tab <- modelsummary(
+  panels,
+  output = "tinytable",
+  shape = "rbind",
+  gof_map = gm)
+expect_snapshot_print(tab, "rbind-issue725_tinytable_hgroup")
+
+
+
+rm(list=ls())

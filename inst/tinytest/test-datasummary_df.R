@@ -1,4 +1,4 @@
-# TODO: add_columns
+source("helpers.R")
 
 tmp <- head(mtcars)
 
@@ -17,4 +17,4 @@ tab <- datasummary_df(
     title = "blah blah title",
     notes = c("first note", "second note"),
     add_rows = ar)
-expect_inherits(tab, "kableExtra")
+expect_inherits(tab, "tinytable")

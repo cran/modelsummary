@@ -118,6 +118,7 @@ datasummary_correlation <- function(data,
   sanitize_output(output) # before sanitize_escape
   sanitize_escape(escape) # after sanitize_output
   sanity_add_columns(add_columns)
+  sanity_align(align)
 
   any_numeric <- any(sapply(data, is.numeric) == TRUE)
   if (any_numeric == FALSE) {
@@ -183,9 +184,6 @@ datasummary_correlation <- function(data,
       }
       align <- paste0('l', strrep('r', ncols - 1))
   }
-
-  out[, 1] <- escape_string(out[, 1])
-  colnames(out) <- escape_string(colnames(out))
 
   # labelled data
   dict <- get_variable_labels_data(data)

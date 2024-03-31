@@ -6,27 +6,27 @@
 \usage{
 datasummary_skim(
   data,
-  type = "numeric",
   output = "default",
-  fmt = "\%.1f",
-  histogram = TRUE,
+  type = "all",
+  fmt = 1,
   title = NULL,
   notes = NULL,
   align = NULL,
   escape = TRUE,
+  by = NULL,
+  fun_numeric = list(Unique = NUnique, `Missing Pct.` = PercentMissing, Mean = Mean, SD =
+    SD, Min = Min, Median = Median, Max = Max, Histogram = function(x) ""),
   ...
 )
 }
 \arguments{
 \item{data}{A data.frame (or tibble)}
 
-\item{type}{of variables to summarize: "numeric" or "categorical" (character)}
-
 \item{output}{filename or object type (character string)
 \itemize{
 \item Supported filename extensions: .docx, .html, .tex, .md, .txt, .csv, .xlsx, .png, .jpg
-\item Supported object types: "default", "html", "markdown", "latex", "latex_tabular", "data.frame", "tinytable", "gt", "kableExtra", "huxtable", "flextable", "DT", "jupyter". The "modelsummary_list" value produces a lightweight object which can be saved and fed back to the \code{modelsummary} function.
-\item The "default" output format can be set to "kableExtra", "gt", "flextable", "huxtable", "DT", or "markdown"
+\item Supported object types: "default", "html", "markdown", "latex", "latex_tabular", "typst", "data.frame", "tinytable", "gt", "kableExtra", "huxtable", "flextable", "DT", "jupyter". The "modelsummary_list" value produces a lightweight object which can be saved and fed back to the \code{modelsummary} function.
+\item The "default" output format can be set to "tinytable", "kableExtra", "gt", "flextable", "huxtable", "DT", or "markdown"
 \itemize{
 \item If the user does not choose a default value, the packages listed above are tried in sequence.
 \item Session-specific configuration: \code{options("modelsummary_factory_default" = "gt")}
@@ -35,6 +35,8 @@ datasummary_skim(
 \item Warning: Users should not supply a file name to the \code{output} argument if they intend to customize the table with external packages. See the 'Details' section.
 \item LaTeX compilation requires the \code{booktabs} and \code{siunitx} packages, but \code{siunitx} can be disabled or replaced with global options. See the 'Details' section.
 }}
+
+\item{type}{String. Variables to summarize: "all", "numeric", "categorical", "dataset"}
 
 \item{fmt}{how to format numeric values: integer, user-supplied function, or \code{modelsummary} function.
 \itemize{
@@ -51,15 +53,6 @@ datasummary_skim(
 }
 }}
 
-\item{histogram}{include a histogram (TRUE/FALSE). Supported for:
-\itemize{
-\item type = "numeric"
-\item output is "html", "default", "jpg", "png", or "kableExtra"
-\item PDF and HTML documents compiled via Rmarkdown or knitr
-\item See the examples section below for an example of how to use
-\code{datasummary} to include histograms in other formats such as markdown.
-}}
-
 \item{title}{string}
 
 \item{notes}{list or vector of notes to append to the bottom of the table.}
@@ -70,19 +63,18 @@ the table (e.g., \code{align = "lcc"}).  Valid characters: l, c, r, d.
 \item "l": left-aligned column
 \item "c": centered column
 \item "r": right-aligned column
-\item "d": dot-aligned column. For LaTeX/PDF output, this option requires at least version 3.0.25 of the siunitx LaTeX package. These commands must appear in the LaTeX preamble (they are added automatically when compiling Rmarkdown documents to PDF):
-\itemize{
-\item \verb{\\usepackage\{booktabs\}}
-\item \verb{\\usepackage\{siunitx\}}
-\item \verb{\\newcolumntype\{d\}\{S[ input-open-uncertainty=, input-close-uncertainty=, parse-numbers = false, table-align-text-pre=false, table-align-text-post=false ]\}}
-}
+\item "d": dot-aligned column. For LaTeX/PDF output, this option requires at least version 3.0.25 of the siunitx LaTeX package. See the LaTeX preamble help section below for commands to insert in your LaTeX preamble.
 }}
 
 \item{escape}{boolean TRUE escapes or substitutes LaTeX/HTML characters which could
-prevent the file from compiling/displaying. This setting does not affect captions or notes.}
+prevent the file from compiling/displaying. \code{TRUE} escapes all cells, captions, and notes. Users can have more fine-grained control by setting \code{escape=FALSE} and using an external command such as: \code{modelsummary(model, "latex") |> tinytable::format_tt(tab, j=1:5, escape=TRUE)}}
+
+\item{by}{Character vector of grouping variables to compute statistics over.}
+
+\item{fun_numeric}{Named list of funtions to apply to each column of \code{data}. If \code{fun_numeric} includes "Histogram" or "Density", inline plots are inserted.}
 
 \item{...}{all other arguments are passed through to the table-making
-functions \link[kableExtra:kbl]{kableExtra::kbl}, \link[gt:gt]{gt::gt}, \link[DT:datatable]{DT::datatable}, etc. depending on the \code{output} argument.
+functions \link[tinytable:tt]{tinytable::tt}, \link[kableExtra:kbl]{kableExtra::kbl}, \link[gt:gt]{gt::gt}, \link[DT:datatable]{DT::datatable}, etc. depending on the \code{output} argument.
 This allows users to pass arguments directly to \code{datasummary} in order to
 affect the behavior of other functions behind the scenes.}
 }
@@ -112,25 +104,21 @@ These global option changes the style of the default column headers:
 \item \code{options(modelsummary_panel_labels = "roman")}
 }
 
-The supported styles are: "model", "panel", "arabic", "letters", "roman", "(arabic)", "(letters)", "(roman)""
+The supported styles are: "model", "panel", "arabic", "letters", "roman", "(arabic)", "(letters)", "(roman)"
 
 The panel-specific option is only used when \code{shape="rbind"}
 }
 
 \subsection{Table-making packages}{
 
-\code{modelsummary} supports 4 table-making packages: \code{kableExtra}, \code{gt},
+\code{modelsummary} supports 6 table-making packages: \code{tinytable}, \code{kableExtra}, \code{gt},
 \code{flextable}, \code{huxtable}, and \code{DT}. Some of these packages have overlapping
-functionalities. For example, 3 of those packages can export to LaTeX. To
-change the default backend used for a specific file format, you can use
-the \code{options} function:
+functionalities. To change the default backend used for a specific file
+format, you can use ' the \code{options} function:
 
 \code{options(modelsummary_factory_html = 'kableExtra')}
-
 \code{options(modelsummary_factory_latex = 'gt')}
-
 \code{options(modelsummary_factory_word = 'huxtable')}
-
 \code{options(modelsummary_factory_png = 'gt')}
 }
 
@@ -154,9 +142,9 @@ and \code{broom}. By default, it uses \code{easystats} first and then falls back
 \code{broom} in case of failure. You can change the order of priorities or include
 goodness-of-fit extracted by \emph{both} packages by setting:
 
-\code{options(modelsummary_get = "broom")}
-
 \code{options(modelsummary_get = "easystats")}
+
+\code{options(modelsummary_get = "broom")}
 
 \code{options(modelsummary_get = "all")}
 }
@@ -176,29 +164,32 @@ HTML tables:
 
 \code{options(modelsummary_format_numeric_html = "mathjax")}
 }
+
+\subsection{LaTeX preamble}{
+
+When creating LaTeX via the \code{tinytable} backend (default in version 2.0.0 and later), it is useful to include the following commands in the LaTeX preamble of your documents. Note that they are added automatically when compiling Rmarkdown or Quarto documents.
+
+\\usepackage\{tabularray\}
+\\usepackage\{float\}
+\\usepackage\{graphicx\}
+\\usepackage\{codehigh\}
+\\usepackage[normalem]\{ulem\}
+\\UseTblrLibrary\{booktabs\}
+\\newcommand\{\\tinytableTabularrayUnderline\}[1]\{\\underline\{#1\}\}
+\\newcommand\{\\tinytableTabularrayStrikeout\}[1]\{\\sout\{#1\}\}
+\\NewTableCommand\{\\tinytableDefineColor\}[3]\{\\definecolor\{#1\}\{#2\}\{#3\}\}
+}
 }
 
-\section{Examples}{
-
-
-\if{html}{\out{<div class="sourceCode r">}}\preformatted{dat <- mtcars
+\examples{
+\dontshow{if (FALSE) (if (getRversion() >= "3.4") withAutoprint else force)(\{ # examplesIf}
+dat <- mtcars
 dat$vs <- as.logical(dat$vs)
 dat$cyl <- as.factor(dat$cyl)
 datasummary_skim(dat)
-datasummary_skim(dat, "categorical")
-
-# You can use `datasummary` to produce a similar table in different formats.
-# Note that the `Histogram` function relies on unicode characters. These
-# characters will only display correctly in some operating systems, under some
-# locales, using some fonts. Displaying such histograms on Windows computers
-# is notoriously tricky. The `modelsummary` authors cannot provide support to
-# display these unicode histograms.
-
-f <- All(mtcars) ~ Mean + SD + Min + Median + Max + Histogram
-# datasummary(f, mtcars, output="markdown")
-}\if{html}{\out{</div>}}
+datasummary_skim(dat, type = "categorical")
+\dontshow{\}) # examplesIf}
 }
-
 \references{
 Arel-Bundock V (2022). “modelsummary: Data and Model Summaries in R.” \emph{Journal of Statistical Software}, \emph{103}(1), 1-23. \doi{10.18637/jss.v103.i01}.'
 }

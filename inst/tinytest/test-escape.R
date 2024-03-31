@@ -1,6 +1,7 @@
 source("helpers.R")
 requiet("tinysnapshot")
 using("tinysnapshot")
+# exit_file("many tinytable problems")
 
 dat <- mtcars
 colnames(dat)[1] <- "under_score"
@@ -15,13 +16,11 @@ expect_snapshot_print(
     modelsummary(mod, output = "latex"),
     "escape-latex")
 ## <td style="text-align:left;"> `oh&amp;yeah&lt;sup&gt;2&lt;/sup&gt;` </td>
-expect_snapshot_print(
-    modelsummary(mod, output = "html"),
-    "escape-html")
+tab <- modelsummary(mod)
+expect_snapshot_print(print_html(tab), "escape-html")
 ## <td style="text-align:left;"> `oh&amp;yeah<sup>2</sup>` </td>
-expect_snapshot_print(
-    modelsummary(mod, output = "html", escape = FALSE),
-    "escape-html_escape_FALSE")
+tab <- modelsummary(mod, escape = FALSE)
+expect_snapshot_print(print_html(tab), "escape-html_escape_FALSE")
 
 # manual escape
 expect_equivalent(modelsummary:::escape_latex("$&_"), "\\$\\&\\_")
@@ -122,11 +121,10 @@ expect_snapshot_print(modelsummary(models, coef_map = cm, output = "latex_tabula
 mod <- list(
     "<code>lm()</code>" = lm(mpg ~ hp + drat, mtcars),
     "<code>lm_robust()</code>" = lm(mpg ~ hp + drat, mtcars))
-expect_snapshot_print(modelsummary(mod,
+tab <- modelsummary(mod,
     vcov = c("classical", "HC1"),
-    escape = FALSE,
-    output = "html"),
-    "escape-modelsummary_html")
+    escape = FALSE)
+expect_snapshot_print(print_html(tab), "escape-modelsummary_html")
 
 # Issue 546: escape gof names
 requiet("fixest")
@@ -154,6 +152,14 @@ expect_snapshot_print(
     "escape-panel_escape_TRUE")
 
 
+# Escape caption and notes
+tmp <- mtcars |>
+    transform(x = ifelse(cyl == 4, "foo_bar", "hello_world")) |>
+    transform(x = ifelse(cyl == 6, "banana_fish", x))
+mod <- lm(mpg ~ x + drat, data = tmp)
+tab <- modelsummary(mod, output = "latex", title = "banana_fish", notes = c("foo_bar", "hello_world"))
+expect_snapshot_print(tab, "escape-caption_notes")
+
 
 # Issue #560 and #693
 mod <- lm(mpg ~ I(wt^2) * disp, data = mtcars)
@@ -172,11 +178,13 @@ expect_snapshot_print(
     "escape-hat_fixest")
 
 
-exit_file("minor snapshot diff, possibly related to kableExtra version")
-# Issue #594: escape LaTeX label
-if (!requiet("tinysnapshot")) exit_file("tinysnapshot")
-using("tinysnapshot")
+# Issue #707: inconsistent escape for captions in modelsummary and datasummary
 mod <- lm(mpg ~ hp, mtcars)
-expect_snapshot_print(
-    modelsummary(mod, "latex", title = "Blah_blah \\label{tab:blah-blah}"),
-    "escape_label_title")
+tab <- modelsummary(mod, title = "blah_blah", gof_map = NA, output = "latex")
+expect_snapshot_print(tab, "escape-issue707_01")
+tab <- datasummary(mpg + hp ~ mean + sd, title = "blah_blah", data = mtcars, output = "latex")
+expect_snapshot_print(tab, "escape-issue707_02")
+tab <- modelsummary(mod, title = "blah_blah", gof_map = NA, output = "latex", escape = FALSE)
+expect_snapshot_print(tab, "escape-issue707_03")
+tab <- datasummary(mpg + hp ~ mean + sd, title = "blah_blah", data = mtcars, output = "latex", escape = FALSE)
+expect_snapshot_print(tab, "escape-issue707_04")

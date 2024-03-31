@@ -4,7 +4,7 @@
 globalVariables(c('.', 'term', 'part', 'estimate', 'conf.high', 'conf.low',
 'value', 'p.value', 'std.error', 'statistic', 'stars_note', 'logLik',
 'formatBicLL', 'section', 'position', 'where', 'ticks', 'statistic1', 'model',
-'tmp_grp', 'condition_variable', 'conf_int', 'conf_level'))
+'tmp_grp', 'condition_variable', 'conf_int', 'conf_level', '..idx', 'Internal Data List', 'Variable', 'variable'))
 
 
 
@@ -12,7 +12,7 @@ globalVariables(c('.', 'term', 'part', 'estimate', 'conf.high', 'conf.low',
 #'
 #' Create beautiful and customizable tables to summarize several statistical
 #' models side-by-side. This function supports dozens of statistical models,
-#' and it can produce tables in HTML, LaTeX, Word, Markdown, PDF, PowerPoint,
+#' and it can produce tables in HTML, LaTeX, Word, Markdown, Typst, PDF, PowerPoint,
 #' Excel, RTF, JPG, or PNG. The appearance of the tables can be customized
 #' extensively by specifying the `output` argument, and by using functions from
 #' one of the supported table customization packages: `tinytable`, `kableExtra`, `gt`,
@@ -36,11 +36,12 @@ globalVariables(c('.', 'term', 'part', 'estimate', 'conf.high', 'conf.low',
 #'   - Models are labelled automatically. The default label style can be altered by setting a global option. See below.
 #' * Named list of models: `modelsummary(list("A"=model1, "B"=model2))`
 #'   - Models are labelled using the list names.
-#' * Nested list of models: When using the `shape="rbind"` argument, `models` can be a nested list of models to display "panels" or "stacks" of regression models. See the `shape` argument documentation and examples below.
+#' * Nested list of models: 
+#'   - When using the `shape` argument with "rbind", "rcollapse", or "cbind" values, `models` can be a nested list of models to display "panels" or "stacks" of regression models. See the `shape` argument documentation and examples below.
 #' @param output filename or object type (character string)
 #' * Supported filename extensions: .docx, .html, .tex, .md, .txt, .csv, .xlsx, .png, .jpg
-#' * Supported object types: "default", "html", "markdown", "latex", "latex_tabular", "data.frame", "tinytable", "gt", "kableExtra", "huxtable", "flextable", "DT", "jupyter". The "modelsummary_list" value produces a lightweight object which can be saved and fed back to the `modelsummary` function.
-#' * The "default" output format can be set to "kableExtra", "gt", "flextable", "huxtable", "DT", or "markdown"
+#' * Supported object types: "default", "html", "markdown", "latex", "latex_tabular", "typst", "data.frame", "tinytable", "gt", "kableExtra", "huxtable", "flextable", "DT", "jupyter". The "modelsummary_list" value produces a lightweight object which can be saved and fed back to the `modelsummary` function.
+#' * The "default" output format can be set to "tinytable", "kableExtra", "gt", "flextable", "huxtable", "DT", or "markdown"
 #'   - If the user does not choose a default value, the packages listed above are tried in sequence.
 #'   - Session-specific configuration: `options("modelsummary_factory_default" = "gt")`
 #'   - Persistent configuration: `config_modelsummary(output = "markdown")`
@@ -85,6 +86,7 @@ globalVariables(c('.', 'term', 'part', 'estimate', 'conf.high', 'conf.low',
 #' * formula or (named) list of formulas with the cluster variable(s) on the right-hand side (e.g., ~clusterid).
 #' * named list of `length(models)` variance-covariance matrices with row and column names equal to the names of your coefficient estimates.
 #' * a named list of length(models) vectors with names equal to the names of your coefficient estimates. See 'Examples' section below. Warning: since this list of vectors can include arbitrary strings or numbers, `modelsummary` cannot automatically calculate p values. The `stars` argument may thus use incorrect significance thresholds when `vcov` is a list of vectors.
+
 #' @param conf_level numeric value between 0 and 1. confidence level to use for
 #' confidence intervals. Setting this argument to `NULL` does not extract
 #' confidence intervals, which can be faster for some models.
@@ -119,7 +121,7 @@ globalVariables(c('.', 'term', 'part', 'estimate', 'conf.high', 'conf.low',
 #' * NULL (default): the `modelsummary::gof_map` dictionary is used for formatting, and all unknown statistic are included.
 #' * character vector: "all", "none", or a vector of statistics such as `c("rmse", "nobs", "r.squared")`. Elements correspond to colnames in the data.frame produced by `get_gof(model)`. The `modelsummary::gof_map` default dictionary is used to format and rename statistics.
 #' * NA: excludes all statistics from the bottom part of the table.
-#' * data.frame with 3 columns named "raw", "clean", "fmt". Unknown statistics are omitted. See the 'Examples' section below.
+#' * data.frame with 3 columns named "raw", "clean", "fmt". Unknown statistics are omitted. See the 'Examples' section below. The `fmt` column in this data frame only accepts integers. For more flexibility, use a list of lists, as described in the next bullet.
 #' * list of lists, each of which includes 3 elements named "raw", "clean", "fmt". Unknown statistics are omitted. See the 'Examples section below'.
 #' @param gof_omit string regular expression (perl-compatible) used to determine which statistics to omit from the bottom section of the table. A "negative lookahead" can be used to specify which statistics to *keep* in the table. Examples:
 #' * `"IC"`: omit statistics matching the "IC" substring.
@@ -137,7 +139,9 @@ globalVariables(c('.', 'term', 'part', 'estimate', 'conf.high', 'conf.low',
 #'   - `term + response + statistic ~ model`: term and group id in separate columns
 #'   - `term : response + statistic ~ model`: term and group id in a single column
 #'   - `term ~ response`
-#' * String: "rbind" or "rcollapse" to bind rows of two or more regression tables to create "panels" or "stacks" of regression models.
+#' * String: "cbind", "rbind", "rcollapse"
+#'   - "cbind": side-by-side models with autmoatic spanning column headers to group models (`tinytable` only feature).
+#'   - "rbind" or "rcollapse": "panels" or "stacks" of regression models.
 #'   -  the `models` argument must be a (potentially named) nested list of models.
 #'     + Unnamed nested list with 2 panels: `list(list(model1, model2), list(model3, model4))`
 #'     + Named nested list with 2 panels: `list("Panel A" = list(model1, model2), "Panel B" = list(model3, model4))`
@@ -165,26 +169,20 @@ globalVariables(c('.', 'term', 'part', 'estimate', 'conf.high', 'conf.low',
 #' * "l": left-aligned column
 #' * "c": centered column
 #' * "r": right-aligned column
-#' * "d": dot-aligned column. For LaTeX/PDF output, this option requires at least version 3.0.25 of the siunitx LaTeX package. These commands must appear in the LaTeX preamble (they are added automatically when compiling Rmarkdown documents to PDF):
-#'   - `\usepackage{booktabs}`
-#'   - `\usepackage{siunitx}`
-#'   - `\newcolumntype{d}{S[ input-open-uncertainty=, input-close-uncertainty=, parse-numbers = false, table-align-text-pre=false, table-align-text-post=false ]}`
+#' * "d": dot-aligned column. For LaTeX/PDF output, this option requires at least version 3.0.25 of the siunitx LaTeX package. See the LaTeX preamble help section below for commands to insert in your LaTeX preamble.
 #' @param escape boolean TRUE escapes or substitutes LaTeX/HTML characters which could
-#' prevent the file from compiling/displaying. This setting does not affect captions or notes.
+#' prevent the file from compiling/displaying. `TRUE` escapes all cells, captions, and notes. Users can have more fine-grained control by setting `escape=FALSE` and using an external command such as: `modelsummary(model, "latex") |> tinytable::format_tt(tab, j=1:5, escape=TRUE)`
 #' @param ... all other arguments are passed through to three functions. See the documentation of these functions for lists of available arguments.
 #' + [parameters::model_parameters] extracts parameter estimates. Available arguments depend on model type, but include:
-#'     - `standardize`, `centrality`, `dispersion`, `test`, `ci_method`, `prior`, `diagnostic`, `rope_range`, `power`, `cluster`, etc.
+#'     - `standardize`, `include_reference`, `centrality`, `dispersion`, `test`, `ci_method`, `prior`, `diagnostic`, `rope_range`, `power`, `cluster`, etc.
 #' + [performance::model_performance] extracts goodness-of-fit statistics. Available arguments depend on model type, but include:
 #'     - `metrics`, `estimator`, etc.
-#' + [kableExtra::kbl] or [gt::gt] draw tables, depending on the value of the `output` argument.
+#' + [tinytable::tt], [kableExtra::kbl] or [gt::gt] draw tables, depending on the value of the `output` argument.
 #' @return a regression table in a format determined by the `output` argument.
 #' @importFrom generics glance tidy
-#'
-#' @section Examples:
-#' ```{r, eval = identical(Sys.getenv("pkgdown"), "true")}
-
-# The `modelsummary` website includes \emph{many} examples and tutorials:
-# https://modelsummary.com
+#' @examplesIf isTRUE(Sys.getenv("R_NOT_CRAN") == 'true')
+#' # The `modelsummary` website includes \emph{many} examples and tutorials:
+#' # https://modelsummary.com
 #'
 #' library(modelsummary)
 #' 
@@ -325,6 +323,9 @@ globalVariables(c('.', 'term', 'part', 'estimate', 'conf.high', 'conf.low',
 #'         "C" = lm(disp ~ hp + factor(gear), data = mtcars))
 #' )
 #' 
+#' # shape = "cbind"
+#' modelsummary(panels, shape = "cbind")
+#' 
 #' modelsummary(
 #'     panels,
 #'     shape = "rbind",
@@ -352,8 +353,6 @@ globalVariables(c('.', 'term', 'part', 'estimate', 'conf.high', 'conf.low',
 #'   ~raw,        ~clean,      ~fmt,
 #'   "r.squared", "R Squared", 5)
 #' modelsummary(models, gof_map = gm)
-#' ```
-#' 
 #' @export
 modelsummary <- function(
   models,
@@ -383,8 +382,9 @@ modelsummary <- function(
   # panel summary shape: dispatch to other function
   checkmate::assert(
     checkmate::check_formula(shape),
-    checkmate::check_choice(shape, c("rbind", "rcollapse")),
+    checkmate::check_choice(shape, c("cbind", "rbind", "rcollapse")),
     checkmate::check_null(shape))
+
   if (isTRUE(checkmate::check_choice(shape, c("rbind", "rcollapse")))) {
     out <- modelsummary_rbind(models,
       output = output,
@@ -421,23 +421,22 @@ modelsummary <- function(
     ))
   }
 
-  # bug: deprecated `group` argument gets partial matched
-  scall <- sys.call()
-  if (all(c("group", "shape") %in% names(scall))) {
-    stop("The `group` argument is deprecated. Please use `shape` instead.", call. = FALSE)
-  # both group and group_map -> group is pushed to ...
-  } else if ("group" %in% names(scall) && "group_map" %in% names(scall)) {
-    shape <- list(...)[["group"]]
-  # only group -> partial match assigns to group_map
-  } else if ("group" %in% names(scall) && !"group_map" %in% names(scall)) {
-    shape <- group_map
-    group_map <- NULL
-  }
 
   ## sanity functions validate variables/settings
   ## sanitize functions validate & modify & initialize
   checkmate::assert_string(gof_omit, null.ok = TRUE)
   sanitize_output(output)           # early
+
+  # shape="cbind" only available with `tinytable`
+  # before sanitize_models()
+  # before sanitize_shape()
+  # after sanitize_output()
+  tmp <- get_span_cbind(models, shape)
+  shape <- tmp$shape
+  models <- tmp$models
+  span_cbind <- tmp$span_cbind
+
+  # other sanity checks
   sanitize_escape(escape)
   sanity_ellipsis(vcov, ...)        # before sanitize_vcov
   models <- sanitize_models(models, ...) # before sanitize_vcov
@@ -483,14 +482,13 @@ modelsummary <- function(
     model_names <- names(models)
   }
   model_names <- pad(model_names)
-  model_names <- escape_string(model_names)
 
   # kableExtra sometimes converts (1), (2) to list items, which breaks formatting
   # insert think white non-breaking space
   # don't do this now when called from modelsummary_rbind() or there are escape issues
   if (!settings_equal("function_called", "modelsummary_rbind") &&
       all(grepl("^\\(\\d+\\)$", model_names)) &&
-      settings_equal("output_format", c("html", "kableExtra"))) {
+      settings_equal("output_format", "kableExtra")) {
     model_names <- paste0("&nbsp;", model_names)
   }
 
@@ -576,7 +574,7 @@ modelsummary <- function(
     }
   }
 
-  est <- shape_estimates(est, shape, conf_level = conf_level)
+  est <- shape_estimates(est, shape, conf_level = conf_level, statistic = statistic, estimate = estimate)
 
   # distinguish between estimates and gof (first column for tests)
   est$part <- "estimates"
@@ -589,7 +587,6 @@ modelsummary <- function(
   if ("term" %in% colnames(est)) {
     if (!is.null(coef_map)) {
         term_order <- coef_map
-        term_order <- escape_string(term_order)
     }
     est$term <- factor(est$term, unique(term_order))
 
@@ -733,7 +730,6 @@ modelsummary <- function(
     } else {
       notes <- c(stars_note, notes)
     }
-    notes <- escape_string(notes)
   }
 
   # data.frame output keeps redundant info
@@ -819,6 +815,9 @@ modelsummary <- function(
     escape = escape,
     ...
   )
+
+  # after factory call
+  out <- set_span_cbind(out, span_cbind)
 
   # invisible return
   if (settings_equal("function_called", "modelsummary_rbind")) {
@@ -917,3 +916,5 @@ redundant_labels <- function(dat, column) {
 #' @keywords internal
 #' @export
 msummary <- modelsummary
+
+

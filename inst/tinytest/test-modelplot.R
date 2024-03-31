@@ -1,4 +1,5 @@
 source("helpers.R")
+if (ON_CI) exit_file("plot local only")
 requiet("tinysnapshot")
 using("tinysnapshot")
 requiet("sandwich")
@@ -100,3 +101,7 @@ des <- svydesign(ids = ~1, data = dat, weights = dat$weights)
 mod <- svyglm(vs ~ hp + drat + mpg + disp, design = des, family = quasibinomial())
 p <- suppressWarnings(modelplot(mod, color = "red"))
 expect_inherits(p, "gg")
+
+# Issue #682
+mod <- lm(mpg ~ hp, mtcars)
+expect_silent(modelplot(mod, ci_method = "wald"))

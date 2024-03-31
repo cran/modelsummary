@@ -2,7 +2,7 @@
 
 <p align="center">
 <a href="https://modelsummary.com">
-<img src="man/figures/modelsummary_gallery.gif" height = "250" class = "center">
+<img src="man/figures/modelsummary_gallery.gif" height = "350" class = "center">
 </a> <br> <br>
 <a href = "https://github.com/vincentarelbundock/modelsummary/blob/main/LICENSE.md" target = "_blank"><img src="https://img.shields.io/badge/license-GPLv3-blue"></a>
 <a href = "https://modelsummary.com" target = "_blank"><img src="https://img.shields.io/static/v1?label=Website&message=Visit&color=blue"></a>
@@ -51,10 +51,6 @@ statistics* and to summarize *statistical models* in `R`.
     -   `datasummary_df`: Turn dataframes into nice tables with titles,
         notes, etc.
 
-With these functions, you can create tables and plots like these:
-
-<img src="https://user-images.githubusercontent.com/987057/103904985-060d0880-50cc-11eb-8be0-3922ef5108e0.png" align="center" width="100%">
-
 ## Why?
 
 Here are a few benefits of `modelsummary` over some [alternative
@@ -99,7 +95,9 @@ intervals; add titles, footnotes, or source notes; insert stars or
 custom characters to indicate levels of statistical significance; or add
 rows with supplemental information about your models.
 
-*Appearance*: Thanks to the [`gt`](https://gt.rstudio.com),
+*Appearance*: Thanks to the
+[`tinytable`](https://vincentarelbundock.github.io/tinytable/),
+[`gt`](https://gt.rstudio.com),
 [`kableExtra`](https://haozhu233.github.io/kableExtra/),
 [`huxtable`](https://hughjonesd.github.io/huxtable/),
 [`flextable`](https://davidgohel.github.io/flextable/), and
@@ -128,12 +126,10 @@ formats.](https://modelsummary.com/articles/modelsummary.html#rmarkdown-and-knit
 #### Dangerous
 
 `modelsummary` is dangerous! It allows users to do stupid stuff like
-[replacing their intercepts by
-squirrels.](https://modelsummary.com/articles/appearance.html#gt-1)
+[inserting squirrels in all your
+tables.](https://modelsummary.com/articles/appearance.html#gt-1)
 
-<center>
-<img src="https://user-images.githubusercontent.com/987057/82818916-7a60a780-9e6d-11ea-96ed-04fa92874a23.png" width="40%">
-</center>
+<img src="man/figures/squirrel.png" width="40%" class = "center">
 
 #### Reliable
 
@@ -169,12 +165,12 @@ You can install `modelsummary` from CRAN:
 install.packages('modelsummary')
 ```
 
-You can install the development version of `modelsummary` (and its
-dependency `insight`) from R-Universe:
+You can install the development version of `modelsummary` and its
+dependencies from R-Universe:
 
 ``` r
 install.packages(
-    c("modelsummary", "insight", "performance", "parameters"),
+    c("modelsummary", "tinytable", "insight", "performance", "parameters"),
     repos = c(
         "https://vincentarelbundock.r-universe.dev",
         "https://easystats.r-universe.dev"))
@@ -189,11 +185,15 @@ vignette will walk you through the basics of `modelsummary`.
 
 You will find that there are a million ways to customize the tables and
 plots produced by `modelsummary`, but [the Get Started
-page](https://modelsummary.com/vignettes/get_started.html) only scratches the surface. For
-details, see the vignettes:
+page](https://modelsummary.com/vignettes/get_started.html) only
+scratches the surface. For details, see the vignettes:
 
--   [Data Summaries](https://modelsummary.com/vignettes/datasummary.html)
--   [Model Summaries](https://modelsummary.com/vignettes/modelsummary.html)
+-   [Data
+    Summaries](https://modelsummary.com/vignettes/datasummary.html)
+-   [Model
+    Summaries](https://modelsummary.com/vignettes/modelsummary.html)
 -   [Model Plots](https://modelsummary.com/vignettes/modelplot.html)
--   [`modelsummary` extensions and customization](https://modelsummary.com/vignettes/modelsummary_extension.html)
--   [Themes and Styles](https://modelsummary.com/vignettes/appearance.html)
+-   [`modelsummary` extensions and
+    customization](https://modelsummary.com/vignettes/modelsummary_extension.html)
+-   [Themes and
+    Styles](https://modelsummary.com/vignettes/appearance.html)

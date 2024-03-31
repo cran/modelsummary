@@ -37,7 +37,7 @@
 #' `x~mean*z` will print the `mean`-related header above the `z`-related
 #' header.`
 #' @param ... all other arguments are passed through to the table-making
-#' functions [kableExtra::kbl], [gt::gt], [DT::datatable], etc. depending on the `output` argument.
+#' functions [tinytable::tt], [kableExtra::kbl], [gt::gt], [DT::datatable], etc. depending on the `output` argument.
 #' This allows users to pass arguments directly to `datasummary` in order to
 #' affect the behavior of other functions behind the scenes.
 #' @template citation
@@ -124,6 +124,7 @@
 #' #datasummary(f, data = mtcars, output = 'latex')
 #'
 #' # Return a table object to customize using a table-making package
+#' #datasummary(f, data = mtcars, output = 'tinytable')
 #' #datasummary(f, data = mtcars, output = 'gt')
 #' #datasummary(f, data = mtcars, output = 'kableExtra')
 #' #datasummary(f, data = mtcars, output = 'flextable')
@@ -144,7 +145,7 @@
 #' found in the 'tables' package documentation: ?tables::tabular
 #'
 #' Hierarchical or "nested" column labels are only available for these output
-#' formats: kableExtra, gt, html, rtf, and LaTeX. When saving tables to other
+#' formats: tinytable, kableExtra, gt, html, rtf, and LaTeX. When saving tables to other
 #' formats, nested labels will be combined to a "flat" header.
 #' @export
 datasummary <- function(formula,
@@ -160,13 +161,16 @@ datasummary <- function(formula,
                         escape = TRUE,
                         ...) {
 
-  ## settings: don't overwrite settings on internal calls
-  settings_init(settings = list(
-     "function_called" = "datasummary"
-  ))
+  if (!isTRUE(list(...)[["internal_call"]])) {
+    ## settings: don't overwrite settings on internal calls
+    settings_init(settings = list(
+      "function_called" = "datasummary"
+    ))
+  }
 
   sanitize_output(output) # before sanitize_escape
   sanitize_escape(escape) # after sanitize_output
+  sanity_align(align)
 
   sanity_ds_data(formula = formula, data = data, internal_call = list(...)[["internal_call"]])
 
@@ -222,13 +226,6 @@ datasummary <- function(formula,
     }
   }
 
-  ## escape stub
-  sw <- attr(dse, "stub_width")
-  for (i in 1:sw) {
-    dse[, i] <- escape_string(dse[, i])
-  }
-  colnames(dse)[1:sw] <- escape_string(colnames(dse)[1:sw])
-
   # build
   out <- factory(dse,
     align = align,
@@ -239,17 +236,18 @@ datasummary <- function(formula,
     title = title,
     add_columns = add_columns,
     add_rows = add_rows,
+    escape = escape,
     ...)
 
   # invisible return
   if (!is.null(settings_get("output_file")) ||
       output == "jupyter" ||
       (output == "default" && settings_equal("output_default", "jupyter"))) {
-    settings_rm()
+    if (!isTRUE(list(...)[["internal_call"]])) settings_rm()
     return(invisible(out))
   # visible return
   } else {
-    settings_rm()
+    if (!isTRUE(list(...)[["internal_call"]])) settings_rm()
     return(out)
   }
 

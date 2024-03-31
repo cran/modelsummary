@@ -42,14 +42,17 @@ msummary(
 \itemize{
 \item Models are labelled using the list names.
 }
-\item Nested list of models: When using the \code{shape="rbind"} argument, \code{models} can be a nested list of models to display "panels" or "stacks" of regression models. See the \code{shape} argument documentation and examples below.
+\item Nested list of models:
+\itemize{
+\item When using the \code{shape} argument with "rbind", "rcollapse", or "cbind" values, \code{models} can be a nested list of models to display "panels" or "stacks" of regression models. See the \code{shape} argument documentation and examples below.
+}
 }}
 
 \item{output}{filename or object type (character string)
 \itemize{
 \item Supported filename extensions: .docx, .html, .tex, .md, .txt, .csv, .xlsx, .png, .jpg
-\item Supported object types: "default", "html", "markdown", "latex", "latex_tabular", "data.frame", "tinytable", "gt", "kableExtra", "huxtable", "flextable", "DT", "jupyter". The "modelsummary_list" value produces a lightweight object which can be saved and fed back to the \code{modelsummary} function.
-\item The "default" output format can be set to "kableExtra", "gt", "flextable", "huxtable", "DT", or "markdown"
+\item Supported object types: "default", "html", "markdown", "latex", "latex_tabular", "typst", "data.frame", "tinytable", "gt", "kableExtra", "huxtable", "flextable", "DT", "jupyter". The "modelsummary_list" value produces a lightweight object which can be saved and fed back to the \code{modelsummary} function.
+\item The "default" output format can be set to "tinytable", "kableExtra", "gt", "flextable", "huxtable", "DT", or "markdown"
 \itemize{
 \item If the user does not choose a default value, the packages listed above are tried in sequence.
 \item Session-specific configuration: \code{options("modelsummary_factory_default" = "gt")}
@@ -146,8 +149,10 @@ statistics are exponentiated, and the \code{std.error} is transformed to
 \item \code{term : response + statistic ~ model}: term and group id in a single column
 \item \code{term ~ response}
 }
-\item String: "rbind" or "rcollapse" to bind rows of two or more regression tables to create "panels" or "stacks" of regression models.
+\item String: "cbind", "rbind", "rcollapse"
 \itemize{
+\item "cbind": side-by-side models with autmoatic spanning column headers to group models (\code{tinytable} only feature).
+\item "rbind" or "rcollapse": "panels" or "stacks" of regression models.
 \item the \code{models} argument must be a (potentially named) nested list of models.
 }
 \itemize{
@@ -196,7 +201,7 @@ model information. This argument accepts 4 types of values:
 \item NULL (default): the \code{modelsummary::gof_map} dictionary is used for formatting, and all unknown statistic are included.
 \item character vector: "all", "none", or a vector of statistics such as \code{c("rmse", "nobs", "r.squared")}. Elements correspond to colnames in the data.frame produced by \code{get_gof(model)}. The \code{modelsummary::gof_map} default dictionary is used to format and rename statistics.
 \item NA: excludes all statistics from the bottom part of the table.
-\item data.frame with 3 columns named "raw", "clean", "fmt". Unknown statistics are omitted. See the 'Examples' section below.
+\item data.frame with 3 columns named "raw", "clean", "fmt". Unknown statistics are omitted. See the 'Examples' section below. The \code{fmt} column in this data frame only accepts integers. For more flexibility, use a list of lists, as described in the next bullet.
 \item list of lists, each of which includes 3 elements named "raw", "clean", "fmt". Unknown statistics are omitted. See the 'Examples section below'.
 }}
 
@@ -227,12 +232,7 @@ the table (e.g., \code{align = "lcc"}).  Valid characters: l, c, r, d.
 \item "l": left-aligned column
 \item "c": centered column
 \item "r": right-aligned column
-\item "d": dot-aligned column. For LaTeX/PDF output, this option requires at least version 3.0.25 of the siunitx LaTeX package. These commands must appear in the LaTeX preamble (they are added automatically when compiling Rmarkdown documents to PDF):
-\itemize{
-\item \verb{\\usepackage\{booktabs\}}
-\item \verb{\\usepackage\{siunitx\}}
-\item \verb{\\newcolumntype\{d\}\{S[ input-open-uncertainty=, input-close-uncertainty=, parse-numbers = false, table-align-text-pre=false, table-align-text-post=false ]\}}
-}
+\item "d": dot-aligned column. For LaTeX/PDF output, this option requires at least version 3.0.25 of the siunitx LaTeX package. See the LaTeX preamble help section below for commands to insert in your LaTeX preamble.
 }}
 
 \item{notes}{list or vector of notes to append to the bottom of the table.}
@@ -240,19 +240,19 @@ the table (e.g., \code{align = "lcc"}).  Valid characters: l, c, r, d.
 \item{title}{string}
 
 \item{escape}{boolean TRUE escapes or substitutes LaTeX/HTML characters which could
-prevent the file from compiling/displaying. This setting does not affect captions or notes.}
+prevent the file from compiling/displaying. \code{TRUE} escapes all cells, captions, and notes. Users can have more fine-grained control by setting \code{escape=FALSE} and using an external command such as: \code{modelsummary(model, "latex") |> tinytable::format_tt(tab, j=1:5, escape=TRUE)}}
 
 \item{...}{all other arguments are passed through to three functions. See the documentation of these functions for lists of available arguments.
 \itemize{
 \item \link[parameters:model_parameters]{parameters::model_parameters} extracts parameter estimates. Available arguments depend on model type, but include:
 \itemize{
-\item \code{standardize}, \code{centrality}, \code{dispersion}, \code{test}, \code{ci_method}, \code{prior}, \code{diagnostic}, \code{rope_range}, \code{power}, \code{cluster}, etc.
+\item \code{standardize}, \code{include_reference}, \code{centrality}, \code{dispersion}, \code{test}, \code{ci_method}, \code{prior}, \code{diagnostic}, \code{rope_range}, \code{power}, \code{cluster}, etc.
 }
 \item \link[performance:model_performance]{performance::model_performance} extracts goodness-of-fit statistics. Available arguments depend on model type, but include:
 \itemize{
 \item \code{metrics}, \code{estimator}, etc.
 }
-\item \link[kableExtra:kbl]{kableExtra::kbl} or \link[gt:gt]{gt::gt} draw tables, depending on the value of the \code{output} argument.
+\item \link[tinytable:tt]{tinytable::tt}, \link[kableExtra:kbl]{kableExtra::kbl} or \link[gt:gt]{gt::gt} draw tables, depending on the value of the \code{output} argument.
 }}
 }
 \value{
@@ -261,7 +261,7 @@ a regression table in a format determined by the \code{output} argument.
 \description{
 Create beautiful and customizable tables to summarize several statistical
 models side-by-side. This function supports dozens of statistical models,
-and it can produce tables in HTML, LaTeX, Word, Markdown, PDF, PowerPoint,
+and it can produce tables in HTML, LaTeX, Word, Markdown, Typst, PDF, PowerPoint,
 Excel, RTF, JPG, or PNG. The appearance of the tables can be customized
 extensively by specifying the \code{output} argument, and by using functions from
 one of the supported table customization packages: \code{tinytable}, \code{kableExtra}, \code{gt},
@@ -284,6 +284,7 @@ by post-processing it with an external package, you need to choose a
 different output format and saving mechanism. Unfortunately, the approach
 differs from package to package:
 \itemize{
+\item \code{tinytable}: set \code{output="tinytable"}, post-process your table, and use the \code{tinytable::save_tt} function.
 \item \code{gt}: set \code{output="gt"}, post-process your table, and use the \code{gt::gtsave} function.
 \item \code{kableExtra}: set \code{output} to your destination format (e.g., "latex", "html", "markdown"), post-process your table, and use \code{kableExtra::save_kable} function.
 }
@@ -335,25 +336,21 @@ These global option changes the style of the default column headers:
 \item \code{options(modelsummary_panel_labels = "roman")}
 }
 
-The supported styles are: "model", "panel", "arabic", "letters", "roman", "(arabic)", "(letters)", "(roman)""
+The supported styles are: "model", "panel", "arabic", "letters", "roman", "(arabic)", "(letters)", "(roman)"
 
 The panel-specific option is only used when \code{shape="rbind"}
 }
 
 \subsection{Table-making packages}{
 
-\code{modelsummary} supports 4 table-making packages: \code{kableExtra}, \code{gt},
+\code{modelsummary} supports 6 table-making packages: \code{tinytable}, \code{kableExtra}, \code{gt},
 \code{flextable}, \code{huxtable}, and \code{DT}. Some of these packages have overlapping
-functionalities. For example, 3 of those packages can export to LaTeX. To
-change the default backend used for a specific file format, you can use
-the \code{options} function:
+functionalities. To change the default backend used for a specific file
+format, you can use ' the \code{options} function:
 
 \code{options(modelsummary_factory_html = 'kableExtra')}
-
 \code{options(modelsummary_factory_latex = 'gt')}
-
 \code{options(modelsummary_factory_word = 'huxtable')}
-
 \code{options(modelsummary_factory_png = 'gt')}
 }
 
@@ -377,9 +374,9 @@ and \code{broom}. By default, it uses \code{easystats} first and then falls back
 \code{broom} in case of failure. You can change the order of priorities or include
 goodness-of-fit extracted by \emph{both} packages by setting:
 
-\code{options(modelsummary_get = "broom")}
-
 \code{options(modelsummary_get = "easystats")}
+
+\code{options(modelsummary_get = "broom")}
 
 \code{options(modelsummary_get = "all")}
 }
@@ -398,6 +395,21 @@ A similar option can be used to display numerical entries using MathJax in
 HTML tables:
 
 \code{options(modelsummary_format_numeric_html = "mathjax")}
+}
+
+\subsection{LaTeX preamble}{
+
+When creating LaTeX via the \code{tinytable} backend (default in version 2.0.0 and later), it is useful to include the following commands in the LaTeX preamble of your documents. Note that they are added automatically when compiling Rmarkdown or Quarto documents.
+
+\\usepackage\{tabularray\}
+\\usepackage\{float\}
+\\usepackage\{graphicx\}
+\\usepackage\{codehigh\}
+\\usepackage[normalem]\{ulem\}
+\\UseTblrLibrary\{booktabs\}
+\\newcommand\{\\tinytableTabularrayUnderline\}[1]\{\\underline\{#1\}\}
+\\newcommand\{\\tinytableTabularrayStrikeout\}[1]\{\\sout\{#1\}\}
+\\NewTableCommand\{\\tinytableDefineColor\}[3]\{\\definecolor\{#1\}\{#2\}\{#3\}\}
 }
 }
 
@@ -437,10 +449,11 @@ Some users have reported difficult to reproduce errors when using the
 \code{options("modelsummary_future" = FALSE)}
 }
 
-\section{Examples}{
+\examples{
+\dontshow{if (isTRUE(Sys.getenv("R_NOT_CRAN") == 'true')) (if (getRversion() >= "3.4") withAutoprint else force)(\{ # examplesIf}
+# The `modelsummary` website includes \emph{many} examples and tutorials:
+# https://modelsummary.com
 
-
-\if{html}{\out{<div class="sourceCode r">}}\preformatted{
 library(modelsummary)
 
 # load data and estimate models
@@ -461,18 +474,18 @@ modelsummary(models, statistic = 'statistic')
 
 modelsummary(models, statistic = 'conf.int', conf_level = 0.99)
 
-modelsummary(models, statistic = c("t = \{statistic\}",
-                                   "se = \{std.error\}",
+modelsummary(models, statistic = c("t = {statistic}",
+                                   "se = {std.error}",
                                    "conf.int"))
 
 # estimate
 modelsummary(models,
   statistic = NULL,
-  estimate = "\{estimate\} [\{conf.low\}, \{conf.high\}]")
+  estimate = "{estimate} [{conf.low}, {conf.high}]")
 
 modelsummary(models,
-  estimate = c("\{estimate\}\{stars\}",
-               "\{estimate\} (\{std.error\})"))
+  estimate = c("{estimate}{stars}",
+               "{estimate} ({std.error})"))
 
 # vcov
 modelsummary(models, vcov = "robust")
@@ -580,6 +593,9 @@ panels <- list(
         "C" = lm(disp ~ hp + factor(gear), data = mtcars))
 )
 
+# shape = "cbind"
+modelsummary(panels, shape = "cbind")
+
 modelsummary(
     panels,
     shape = "rbind",
@@ -589,7 +605,7 @@ modelsummary(
 modelsummary(models, title = 'This is the title')
 
 # title with LaTeX label (for numbering and referencing)
-modelsummary(models, title = 'This is the title \\\\label\{tab:description\}')
+modelsummary(models, title = 'This is the title \\\\label{tab:description}')
 
 # add_rows
 rows <- tibble::tribble(~term, ~Bivariate, ~Multivariate,
@@ -607,9 +623,8 @@ gm <- tribble(
   ~raw,        ~clean,      ~fmt,
   "r.squared", "R Squared", 5)
 modelsummary(models, gof_map = gm)
-}\if{html}{\out{</div>}}
+\dontshow{\}) # examplesIf}
 }
-
 \references{
 Arel-Bundock V (2022). “modelsummary: Data and Model Summaries in R.” \emph{Journal of Statistical Software}, \emph{103}(1), 1-23. \doi{10.18637/jss.v103.i01}.'
 }

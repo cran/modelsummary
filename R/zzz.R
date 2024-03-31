@@ -1,14 +1,21 @@
 .onAttach <- function(libname, pkgname){
   msg <- insight::format_message(
-"Version 2.0.0 of `modelsummary`, to be released soon, will introduce a breaking change: The default table-drawing package will be `tinytable` instead of `kableExtra`. All currently supported table-drawing packages will continue to be supported for the foreseeable future, including `kableExtra`, `gt`, `huxtable`, `flextable, and `DT`.",
+"`modelsummary` 2.0.0 now uses `tinytable` as its default table-drawing backend. Learn more at: https://vincentarelbundock.github.io/tinytable/",
 "",
-"You can always call the `config_modelsummary()` function to change the default table-drawing package in persistent fashion. To try `tinytable` now:",
+"Revert to `kableExtra` for one session:",
 "",
-"config_modelsummary(factory_default = 'tinytable')",
+"  options(modelsummary_factory_default = 'kableExtra')",
 "",
-"To set the default back to `kableExtra`:",
+"Change the default backend persistently:",
 "",
-"config_modelsummary(factory_default = 'kableExtra')"
+"  config_modelsummary(factory_default = 'gt')",
+"",
+"Silence this message forever:",
+"",
+"  config_modelsummary(startup_message = FALSE)",
+indent = ""
 )
-  packageStartupMessage(msg)
+  if (isTRUE(config_get("startup_message"))) {
+    packageStartupMessage(msg)
+  }
 }
