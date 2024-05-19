@@ -20,7 +20,10 @@ glance_custom_internal.lm <- function(x, vcov_type = NULL, gof = NULL, ...) {
     if (inherits(gof, "data.frame") && "statistic" %in% colnames(gof)) {
       out[["F"]] <- gof$statistic
     } else {
-      fstat <- try(lmtest::waldtest(x, vcov = stats::vcov)$F[2], silent = TRUE)
+      fstat <- NULL
+      if (isTRUE(check_dependency("lmtest"))) {
+        void <- utils::capture.output(fstat <- try(lmtest::waldtest(x, vcov = stats::vcov)$F[2], silent = TRUE))
+      }
       if (inherits(fstat, "numeric")) {
         out[["F"]] <- fstat
       }

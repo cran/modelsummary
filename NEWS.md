@@ -1,5 +1,28 @@
 # News 
 
+## 2.1.0
+
+New:
+
+* `modelsummary()` gets a `gof_function` argument which accepts functions to extract custom information from models.
+* `flextable`: Support spanning column headers
+* `datasummary_correlation()` gets a `star` argument.
+* `datasummary_correlation()` accepts objects produced by the `correlation` package.
+* `datasummary_balance()`: `formula` can now include variables on the left-hand side to indicate the subset of columns to summarize: `datasummary_balance(mpg + hp ~ am, data = mtcars)` Thanks to @etiennebacher for feature request #751.
+* Unnecessary text printed to screen on some F sta computations is now suppressed.
+* Update to `tinytable` 0.3.0
+
+Bugs:
+
+* `escape` argument not respected in `datasummary_df()`. Thanks to @adamaltmejd for report #740
+* `datasummary_correlation()` supports `data.table`. Thanks to volatilehead on Twitter for report #737.
+* Accepts named `estimate` argument when using shape and statistics are horizontal. Thanks to @iago-pssjd for report #745.
+* Labelled values but no label for variable broke `datasummary()`. Thanks to @marklhc for report #752.
+* `coef_map` does not work when there is a `group`. Thanks to @mccarthy-m-g for report #757.
+* `kableExtra`: fix spanning column headers when using the `shape` argument.
+* Multiple footnotes and line breaks in footnotes are now allowed in `tinytable` output. Thanks to 
+
+
 ## 2.0.0
 
 MAJOR BREAKING CHANGE: The default output format is now `tinytable` instead of `kableExtra`. Learn more about `tinytable` here:
