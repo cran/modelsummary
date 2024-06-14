@@ -79,7 +79,7 @@ See Examples section below.}
 \item{add_columns}{a data.frame (or tibble) with the same number of rows as
 your main table.}
 
-\item{title}{string}
+\item{title}{string. Cross-reference labels should be added with Quarto or Rmarkdown chunk options when applicable. When saving standalone LaTeX files, users can add a label such as \verb{\\\\label\{tab:mytable\}} directly to the title string, while also specifying \code{escape=FALSE}.}
 
 \item{notes}{list or vector of notes to append to the bottom of the table.}
 
@@ -185,21 +185,23 @@ HTML tables:
 
 \code{options(modelsummary_format_numeric_html = "mathjax")}
 }
+}
 
-\subsection{LaTeX preamble}{
+\section{LaTeX preamble}{
 
-When creating LaTeX via the \code{tinytable} backend (default in version 2.0.0 and later), it is useful to include the following commands in the LaTeX preamble of your documents. Note that they are added automatically when compiling Rmarkdown or Quarto documents.
 
-\\usepackage\{tabularray\}
+When creating LaTeX via the \code{tinytable} backend (default in version 2.0.0 and later), it is useful to include the following commands in the LaTeX preamble of your documents. Note that they are added automatically when compiling Rmarkdown or Quarto documents (except when the \code{modelsummary()} calls are cached).
+
+\if{html}{\out{<div class="sourceCode latex">}}\preformatted{\\usepackage\{tabularray\}
 \\usepackage\{float\}
 \\usepackage\{graphicx\}
-\\usepackage\{codehigh\}
 \\usepackage[normalem]\{ulem\}
 \\UseTblrLibrary\{booktabs\}
-\\newcommand\{\\tinytableTabularrayUnderline\}[1]\{\\underline\{#1\}\}
-\\newcommand\{\\tinytableTabularrayStrikeout\}[1]\{\\sout\{#1\}\}
+\\UseTblrLibrary\{siunitx\}
+\newcommand{\tinytableTabularrayUnderline}[1]\{\\underline\{#1\}\}
+\newcommand{\tinytableTabularrayStrikeout}[1]\{\\sout\{#1\}\}
 \\NewTableCommand\{\\tinytableDefineColor\}[3]\{\\definecolor\{#1\}\{#2\}\{#3\}\}
-}
+}\if{html}{\out{</div>}}
 }
 
 \section{Examples}{
