@@ -60,7 +60,10 @@ modelsummary_rbind <- function(
     }
 
     # need the settings for later -- before escape_string
-    sanitize_output(output)
+    tmp <- sanitize_output(output)           # early
+    output_format <- tmp$output_format
+    output_factory <- tmp$output_factory
+    output_file <- tmp$output_file
     sanitize_escape(escape)
 
     # panel names
@@ -85,7 +88,7 @@ modelsummary_rbind <- function(
     } else {
         panel_names <- names(panels)
     }
-    panel_names <- pad(panel_names)
+    panel_names <- pad(panel_names, output_format = output_format)
 
     # If there are no common model names but all the panels have the same number
     # of models, we make assumptions.
@@ -209,7 +212,7 @@ modelsummary_rbind <- function(
     tab[is.na(tab)] <- ""
 
     # pad
-    colnames(tab) <- pad(colnames(tab))
+    colnames(tab) <- pad(colnames(tab), output_format = output_format)
 
     # group rows by panel: kableExtra
     if (isTRUE(nrow(gof_same) > 0)) {
@@ -241,7 +244,7 @@ modelsummary_rbind <- function(
 
     # stars
     if (!isFALSE(stars) && !any(grepl("\\{stars\\}", c(estimate, statistic)))) {
-        stars_note <- make_stars_note(stars)
+        stars_note <- make_stars_note(stars, output_format = output_format)
         if (is.null(notes)) {
             notes <- stars_note
         } else {
@@ -272,11 +275,14 @@ modelsummary_rbind <- function(
         add_rows = add_rows,
         add_columns = add_columns,
         escape = escape,
+        output_factory = output_factory,
+        output_format = output_format,
+        output_file = output_file,
         ...
     )
 
     # invisible return
-    if (!is.null(settings_get("output_file")) ||
+    if (!is.null(output_file) ||
         isTRUE(output == "jupyter") ||
         (output == "default" && settings_equal("output_default", "jupyter"))) {
         settings_rm()

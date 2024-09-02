@@ -10,10 +10,10 @@ Description: Create beautiful and customizable tables to summarize several
     RTF, JPG, or PNG. Tables can easily be embedded in 'Rmarkdown' or 'knitr'
     dynamic documents. Details can be found in Arel-Bundock (2022)
     <doi:10.18637/jss.v103.i01>.
-Version: 2.1.1
+Version: 2.2.0
 Authors@R: c(person("Vincent", "Arel-Bundock", 
                    email = "vincent.arel-bundock@umontreal.ca", 
-                   role = c("aut", "cre"),
+                   role = c("aut", "cre", "cph"),
                    comment = c(ORCID = "0000-0003-2042-7063")),
             person("Joachim", "Gassen", 
                    email = "gassen@wiwi.hu-berlin.de",
@@ -48,9 +48,9 @@ URL: https://modelsummary.com
 BugReports: https://github.com/vincentarelbundock/modelsummary/issues/
 Depends: R (>= 4.0.0)
 Imports: checkmate (>= 2.3.1), data.table (>= 1.15.2), generics, glue,
-        insight (>= 0.19.11), methods, parameters (>= 0.21.7),
+        insight (>= 0.20.3), methods, parameters (>= 0.22.1),
         performance (>= 0.11.0), tables (>= 0.9.17), tinytable (>=
-        0.3.0)
+        0.4.0)
 Suggests: AER, altdoc, Amelia, betareg, bookdown, brms, broom,
         broom.mixed, car, clubSandwich, correlation, covr, did, digest,
         DT, estimatr, fixest, flextable, future, future.apply, gamlss,
@@ -60,12 +60,13 @@ Suggests: AER, altdoc, Amelia, betareg, bookdown, brms, broom,
         mice, nlme, nnet, officer, openxlsx, pandoc, parallel, pscl,
         psych, remotes, rmarkdown, rstanarm, rsvg, sandwich, spelling,
         survey, survival, tibble, tictoc, tidyselect, tidyverse,
-        tinysnapshot, tinytest, tinytex, webshot2, wesanderson
+        tinysnapshot (>= 0.0.6), tinytest, tinytex, webshot2,
+        wesanderson
 License: GPL-3
 Encoding: UTF-8
 Config/testthat/edition: 3
 Language: en-US
-RoxygenNote: 7.3.1
+RoxygenNote: 7.3.2
 Collate: 'bind_est_gof.R' 'coef_rename.R' 'config_modelsummary.R'
         'convenience.R' 'datasummary.R' 'datasummary_balance.R'
         'datasummary_correlation.R' 'datasummary_crosstab.R'
@@ -91,8 +92,8 @@ Collate: 'bind_est_gof.R' 'coef_rename.R' 'config_modelsummary.R'
         'utils_labels.R' 'utils_pad.R' 'utils_print.R'
         'utils_replace.R' 'utils_stats.R' 'utils_warn.R' 'zzz.R'
 NeedsCompilation: no
-Packaged: 2024-06-14 13:59:31 UTC; vincent
-Author: Vincent Arel-Bundock [aut, cre]
+Packaged: 2024-09-02 19:21:47 UTC; vincent
+Author: Vincent Arel-Bundock [aut, cre, cph]
     (<https://orcid.org/0000-0003-2042-7063>),
   Joachim Gassen [ctb] (<https://orcid.org/0000-0003-4364-2911>),
   Nathan Eastwood [ctb],
@@ -103,4 +104,4 @@ Author: Vincent Arel-Bundock [aut, cre]
   Lukas Wallrich [ctb] (<https://orcid.org/0000-0003-2121-5177>)
 Maintainer: Vincent Arel-Bundock <vincent.arel-bundock@umontreal.ca>
 Repository: CRAN
-Date/Publication: 2024-06-14 14:20:06 UTC
+Date/Publication: 2024-09-02 21:20:02 UTC

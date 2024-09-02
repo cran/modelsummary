@@ -1,5 +1,20 @@
 # News 
 
+## 2.2.0
+
+* Bump minimum version requirement for `tinytable`, `parameters`, and `insight` dependencies.
+* `coef_rename()` gets a `poly=TRUE` argument to rename `poly(x, 2)`-style coefficients. Thanks to @mccarthy-m-g for code contribution #778.
+* `get_gof()`: `logLik` column converted to numeric for consistent types. Issue 649 reported on the `mice` Github.
+* `kableExtra` update the `siunitx` commands for `d` columns.
+* `kableExtra` escapes footnotes in HTML when `output="kableExtra")`. Thanks to @dmurdoch and @michaelherndon97 for report #793.
+* New `fmt_equivalence()` function to implement the rounding suggestion of Astier & Wolak (2024). Thanks to Nicolas Astier for code prototype.
+* Fix partial match warnings for some `datasummary_*()` tables. No change in behavior. Thanks to @fkohrt for report #804.
+
+Bugs:
+
+* Stars footnotes get properly escaped in some LaTeX configurations. Thanks to @etiennebacher for report #798.
+* `datasummary_*()` functions can be called as arguments in another `datasummary_*()` arguments, like `add_columns`. Thanks to @mronkko for report #799 
+
 ## 2.1.1
 
 * Documentation improvements

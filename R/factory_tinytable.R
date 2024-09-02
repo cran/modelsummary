@@ -11,11 +11,11 @@ factory_tinytable <- function(tab,
                               notes = NULL,
                               title = NULL,
                               escape = TRUE,
+                              output_format = "tinytable",
+                              output_file = NULL,
                               ...) {
 
   insight::check_if_installed("tinytable")
-
-  output_format <- settings_get("output_format")
 
   span_list <- get_span_kableExtra(tab)
 
@@ -92,16 +92,16 @@ factory_tinytable <- function(tab,
   }
 
   # write to file
-  if (!is.null(settings_get("output_file"))) {
-    tinytable::save_tt(out, output = settings_get("output_file"), overwrite = TRUE)
+  if (!is.null(output_file)) {
+    tinytable::save_tt(out, output = output_file, overwrite = TRUE)
     return(invisible())
   }
 
   # change output format in the S4 object, but return a `tinytable` for when we
   # post-process it with `plot_tt()` in `datasummary_skim()`
-  if (settings_equal("output_format", c("latex", "typst", "html", "markdown"))) {
-    out@output <- settings_get("output_format")
-  } else if (settings_equal("output_format", "latex_tabular")) {
+  if (output_format %in% c("latex", "typst", "html", "markdown")) {
+    out@output <- output_format
+  } else if (output_format %in% "latex_tabular") {
     out@output <- "latex"
     out <- tinytable::theme_tt(out, "tabular")
   }
@@ -130,7 +130,11 @@ escape_everything <- function(tab, output_format, span_list, title, notes) {
   }
   
   for (i in seq_along(notes)) {
-    notes[[i]] <- tinytable::format_tt(notes[[i]], escape = output_format)
+    # hack: avoid escaping stars notes with \num{} in LaTeX
+    flag <- !identical(output_format, "latex") || !grepl("\\\\num\\{", notes[[i]])
+    if (flag) {
+      notes[[i]] <- tinytable::format_tt(notes[[i]], escape = output_format)
+    }
   }
 
   if (isTRUE(checkmate::check_string(title))) {

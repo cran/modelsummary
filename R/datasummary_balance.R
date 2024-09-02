@@ -52,11 +52,15 @@ datasummary_balance <- function(formula,
     settings_init(settings = list("function_called" = "datasummary_balance"))
 
     ## sanity checks
-    sanitize_output(output) # before sanitize_escape
+    tmp <- sanitize_output(output) # before sanitize_escape
+    output_format <- tmp$output_format
+    output_factory <- tmp$output_factory
+    output_file <- tmp$output_file
+
     # this is going to be detected by fmt_mathmode() when we call
     # datasummary(output="dataframe") so we can get siunitx formatting even in
     # internal calls.
-    settings_set("output_format_ultimate", settings_get("output_format"))
+    settings_set("output_format_ultimate", output_format)
 
     sanity_align(align)
     sanitize_escape(escape) # after sanitize_output
@@ -156,7 +160,7 @@ datasummary_balance <- function(formula,
 
         ## datasummary(output="dataframe") changes the output format
         sanitize_output(output)
-        settings_set("output_format_ultimate", settings_get("output_format"))
+        settings_set("output_format_ultimate", output_format)
 
         ## enforce 2-column stub, even when there is only one factor
         idx <- grep("bad_factor_for_stub", tab_fac[[1]])
@@ -203,7 +207,7 @@ datasummary_balance <- function(formula,
 
         ## datasummary(output="dataframe") changes the output format
         sanitize_output(output)
-        settings_set("output_format_ultimate", settings_get("output_format"))
+        settings_set("output_format_ultimate", output_format)
     }
 
     ## combine
@@ -287,10 +291,13 @@ datasummary_balance <- function(formula,
         add_columns = add_columns,
         title = title,
         escape = escape,
+        output_factory = output_factory,
+        output_format = output_format,
+        output_file = output_file,
         ...)
 
     # invisible return
-    if (!is.null(settings_get("output_file")) ||
+    if (!is.null(output_file) ||
         output == "jupyter" ||
         (output == "default" && settings_equal("output_default", "jupyter"))) {
       settings_rm()

@@ -137,7 +137,7 @@ statistics are exponentiated, and the \code{std.error} is transformed to
 \item{stars}{to indicate statistical significance
 \itemize{
 \item FALSE (default): no significance stars.
-\item TRUE: +=.1, *=.05, **=.01, ***=0.001
+\item TRUE: \code{c("+" = .1, "*" = .05, "**" = .01, "***" = 0.001)}
 \item Named numeric vector for custom stars such as \code{c('*' = .1, '+' = .05)}
 \item Note: a legend will not be inserted at the bottom of the table when the \code{estimate} or \code{statistic} arguments use "glue strings" with \code{{stars}}.
 }}
@@ -259,7 +259,7 @@ prevent the file from compiling/displaying. \code{TRUE} escapes all cells, capti
 \itemize{
 \item \code{metrics}, \code{estimator}, etc.
 }
-\item \link[tinytable:tt]{tinytable::tt}, \link[kableExtra:kbl]{kableExtra::kbl} or \link[gt:gt]{gt::gt} draw tables, depending on the value of the \code{output} argument.
+\item \link[tinytable:tt]{tinytable::tt}, \link[kableExtra:kbl]{kableExtra::kbl} or \link[gt:gt]{gt::gt} draw tables, depending on the value of the \code{output} argument. For example, by default \code{modelsummary} creates tables with \link[tinytable:tt]{tinytable::tt}, which accepts a \code{width} and \code{theme} arguments.
 }}
 }
 \value{

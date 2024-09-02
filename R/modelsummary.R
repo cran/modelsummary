@@ -62,7 +62,7 @@ globalVariables(c('.', 'term', 'part', 'estimate', 'conf.high', 'conf.low',
 #' * Note on LaTeX output: To ensure proper typography, all numeric entries are enclosed in the `\num{}` command, which requires the `siunitx` package to be loaded in the LaTeX preamble. This behavior can be altered with global options. See the 'Details' section.
 #' @param stars to indicate statistical significance
 #' * FALSE (default): no significance stars.
-#' * TRUE: +=.1, *=.05, **=.01, ***=0.001
+#' * TRUE: `c("+" = .1, "*" = .05, "**" = .01, "***" = 0.001)`
 #' * Named numeric vector for custom stars such as `c('*' = .1, '+' = .05)`
 #' * Note: a legend will not be inserted at the bottom of the table when the `estimate` or `statistic` arguments use "glue strings" with `{stars}`.
 #' @param statistic vector of strings or `glue` strings which select uncertainty statistics to report vertically below the estimate. NULL omits all uncertainty statistics.
@@ -179,7 +179,7 @@ globalVariables(c('.', 'term', 'part', 'estimate', 'conf.high', 'conf.low',
 #'     - `standardize`, `include_reference`, `centrality`, `dispersion`, `test`, `ci_method`, `prior`, `diagnostic`, `rope_range`, `power`, `cluster`, etc.
 #' + [performance::model_performance] extracts goodness-of-fit statistics. Available arguments depend on model type, but include:
 #'     - `metrics`, `estimator`, etc.
-#' + [tinytable::tt], [kableExtra::kbl] or [gt::gt] draw tables, depending on the value of the `output` argument.
+#' + [tinytable::tt], [kableExtra::kbl] or [gt::gt] draw tables, depending on the value of the `output` argument. For example, by default `modelsummary` creates tables with [tinytable::tt], which accepts a `width` and `theme` arguments.
 #' @return a regression table in a format determined by the `output` argument.
 #' @importFrom generics glance tidy
 #' @examplesIf isTRUE(Sys.getenv("R_NOT_CRAN") == 'true')
@@ -437,7 +437,10 @@ modelsummary <- function(
   ## sanity functions validate variables/settings
   ## sanitize functions validate & modify & initialize
   checkmate::assert_string(gof_omit, null.ok = TRUE)
-  sanitize_output(output)           # early
+  tmp <- sanitize_output(output)           # early
+  output_format <- tmp$output_format
+  output_factory <- tmp$output_factory
+  output_file <- tmp$output_file
 
   # shape="cbind" only available with `tinytable`
   # before sanitize_models()
@@ -495,14 +498,14 @@ modelsummary <- function(
   } else {
     model_names <- names(models)
   }
-  model_names <- pad(model_names)
+  model_names <- pad(model_names, output_format = output_format)
 
   # kableExtra sometimes converts (1), (2) to list items, which breaks formatting
   # insert think white non-breaking space
   # don't do this now when called from modelsummary_rbind() or there are escape issues
   if (!settings_equal("function_called", "modelsummary_rbind") &&
       all(grepl("^\\(\\d+\\)$", model_names)) &&
-      settings_equal("output_format", "kableExtra")) {
+      identical(output_format, "kableExtra")) {
     model_names <- paste0("&nbsp;", model_names)
   }
 
@@ -518,11 +521,12 @@ modelsummary <- function(
                                         gof_function = gof_function,
                                         shape = shape,
                                         coef_rename = coef_rename,
+                                        output_format = output_format,
                                         ...)
   names(msl) <- model_names
 
 
-  if (settings_equal("output_format", "modelsummary_list")) {
+  if (identical(output_format, "modelsummary_list")) {
     if (length(msl) == 1) {
       return(msl[[1]])
     } else {
@@ -719,7 +723,7 @@ modelsummary <- function(
   if (is.null(coef_map) &&
       isFALSE(coef_rename) &&
       "term" %in% colnames(tab) &&
-      !settings_equal("output_format", "rtf")) {
+      !identical(output_format, "rtf")) {
     idx <- tab$part != 'gof'
     # catch for fixest `i()` operator
     tab$term <- ifelse(idx, gsub('::', ' = ', tab$term), tab$term)
@@ -741,7 +745,7 @@ modelsummary <- function(
   # stars
   stars_note <- settings_get("stars_note")
   if (isTRUE(stars_note) && !isFALSE(stars) && !any(grepl("\\{stars\\}", c(estimate, statistic)))) {
-    stars_note <- make_stars_note(stars)
+    stars_note <- make_stars_note(stars, output_format = output_format)
     if (is.null(notes)) {
       notes <- stars_note
     } else {
@@ -754,7 +758,7 @@ modelsummary <- function(
     tab <- redundant_labels(tab, "term")
   }
 
-  if (!settings_equal("output_format", "dataframe") && !settings_equal("function_called", "modelsummary_rbind")) {
+  if (!identical(output_format, "dataframe") && !settings_equal("function_called", "modelsummary_rbind")) {
 
     dups <- c("term", "model", shape$group_name)
     for (d in dups) {
@@ -780,7 +784,7 @@ modelsummary <- function(
   tmp <- setdiff(shape$lhs, c("model", "term"))
   if (length(tmp) == 0) {
     tab$group <- NULL
-  } else if (!settings_equal("output_format", "dataframe")) {
+  } else if (!identical(output_format, "dataframe")) {
     colnames(tab)[colnames(tab) == "group"] <- "        "
   }
 
@@ -830,6 +834,9 @@ modelsummary <- function(
     add_rows = add_rows,
     add_columns = add_columns,
     escape = escape,
+    output_factory = output_factory,
+    output_format = output_format,
+    output_file = output_file,
     ...
   )
 
@@ -839,7 +846,7 @@ modelsummary <- function(
   # invisible return
   if (settings_equal("function_called", "modelsummary_rbind")) {
     return(out)
-  } else if (!is.null(settings_get("output_file")) ||
+  } else if (!is.null(output_file) ||
       isTRUE(output == "jupyter") ||
       (isTRUE(output == "default") && settings_equal("output_default", "jupyter"))) {
     settings_rm()
@@ -853,7 +860,7 @@ modelsummary <- function(
 }
 
 
-get_list_of_modelsummary_lists <- function(models, conf_level, vcov, gof_map, gof_function, shape, coef_rename, ...) {
+get_list_of_modelsummary_lists <- function(models, conf_level, vcov, gof_map, gof_function, shape, coef_rename, output_format, ...) {
 
     number_of_models <- max(length(models), length(vcov))
 

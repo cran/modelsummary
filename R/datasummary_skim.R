@@ -44,7 +44,10 @@ datasummary_skim <- function(data,
 
   ## settings 
   settings_init(settings = list("function_called" = "datasummary_skim"))
-  sanitize_output(output) # before sanitize_escape
+  tmp <- sanitize_output(output) # before sanitize_escape
+  output_format <- tmp$output_format
+  output_factory <- tmp$output_factory
+  output_file <- tmp$output_file
   sanitize_escape(escape) # after sanitize_output
   sanity_align(align)
   checkmate::assert_list(fun_numeric, min.len = 1, names = "unique")
@@ -99,7 +102,7 @@ datasummary_skim <- function(data,
       out <- tinytable::rbind2(a, b, use_names = FALSE)
       out <- tinytable::format_tt(out, replace = "")
       out <- tinytable::style_tt(out, i = nrow(a) + 1, line = "t", line_size = .3)
-      if (settings_equal("output_format", "html")) {
+      if (identical(output_format, "html")) {
           out <- tinytable::style_tt(out, i = nrow(a) + 1, bold = TRUE, line = "bt", line_color = "#d3d8dc")
       }
     } else if (!inherits(a, "tinytable") && !inherits(b, "tinytable")) {
@@ -110,11 +113,11 @@ datasummary_skim <- function(data,
       out <- b
     }
 
-    ofmt <- settings_get("output_format")
+    ofmt <- output_format
     if (isTRUE(ofmt %in% c("latex", "markdown", "html", "typst", "dataframe"))) {
       out@output <- ofmt
     }
-    ofile <- settings_get("output_file")
+    ofile <- output_file
     if (!is.null(ofile)) {
       tinytable::save_tt(out, output = ofile, overwrite = TRUE)
     }
@@ -154,7 +157,7 @@ datasummary_skim <- function(data,
     }
   }
 
-  if (!is.null(settings_get("output_file"))) {
+  if (!is.null(output_file)) {
     settings_rm()
     return(invisible(out))
   } else {
