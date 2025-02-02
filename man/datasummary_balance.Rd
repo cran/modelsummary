@@ -8,17 +8,17 @@ control and treatment groups)}
 datasummary_balance(
   formula,
   data,
-  output = "default",
+  output = getOption("modelsummary_output", default = "default"),
   fmt = fmt_decimal(digits = 1, pdigits = 3),
-  title = NULL,
-  notes = NULL,
-  align = NULL,
-  stars = FALSE,
-  add_columns = NULL,
-  add_rows = NULL,
-  dinm = TRUE,
-  dinm_statistic = "std.error",
-  escape = TRUE,
+  title = getOption("modelsummary_title", default = NULL),
+  notes = getOption("modelsummary_notes", default = NULL),
+  align = getOption("modelsummary_align", default = NULL),
+  stars = getOption("modelsummary_stars", default = FALSE),
+  add_columns = getOption("modelsummary_add_columns", default = NULL),
+  add_rows = getOption("modelsummary_add_rows", default = NULL),
+  dinm = getOption("modelsummary_dinm", default = TRUE),
+  dinm_statistic = getOption("modelsummary_dinm_statistic", default = "std.error"),
+  escape = getOption("modelsummary_escape", default = TRUE),
   ...
 )
 }
@@ -118,26 +118,38 @@ below, and the vignettes on the \code{modelsummary} website:
 \item https://modelsummary.com/articles/datasummary.html
 }
 }
+\section{Version 2.0.0, kableExtra, and tinytable}{
+
+
+Since version 2.0.0, \code{modelsummary} uses \code{tinytable} as its default table-drawing backend.
+Learn more at: https://vincentarelbundock.github.io/tinytable/",
+
+Revert to \code{kableExtra} for one session:
+
+\code{options(modelsummary_factory_default = 'kableExtra')}
+\code{options(modelsummary_factory_latex = 'kableExtra')}
+\code{options(modelsummary_factory_html = 'kableExtra')}
+}
+
 \section{Global Options}{
 
 
-The behavior of \code{modelsummary} can be modified by setting global options. For example:
+The behavior of \code{modelsummary} can be modified by setting global options.  In particular, most of the arguments for most of the package's functions cna be set using global options. For example:
 \itemize{
-\item \code{options(modelsummary_model_labels = "roman")}
+\item \code{options(modelsummary_output = "modelsummary_list")}
+\item \code{options(modelsummary_statistic = '({conf.low}, {conf.high})')}
+\item \code{options(modelsummary_stars = TRUE)}
 }
 
-The rest of this section describes each of the options above.
+Options not specific to given arguments are listed below.
 \subsection{Model labels: default column names}{
 
 These global option changes the style of the default column headers:
 \itemize{
 \item \code{options(modelsummary_model_labels = "roman")}
-\item \code{options(modelsummary_panel_labels = "roman")}
 }
 
-The supported styles are: "model", "panel", "arabic", "letters", "roman", "(arabic)", "(letters)", "(roman)"
-
-The panel-specific option is only used when \code{shape="rbind"}
+The supported styles are: "model", "arabic", "letters", "roman", "(arabic)", "(letters)", "(roman)"
 }
 
 \subsection{Table-making packages}{
@@ -201,7 +213,7 @@ HTML tables:
 \section{LaTeX preamble}{
 
 
-When creating LaTeX via the \code{tinytable} backend (default in version 2.0.0 and later), it is useful to include the following commands in the LaTeX preamble of your documents. Note that they are added automatically when compiling Rmarkdown or Quarto documents (except when the \code{modelsummary()} calls are cached).
+When creating LaTeX via the \code{tinytable} backend (default in version 2.0.0 and later), it is useful to include the following commands in the LaTeX preamble of your documents. These commands are automatically added to the preamble when compiling Rmarkdown or Quarto documents, except when the \code{modelsummary()} calls are cached.
 
 \if{html}{\out{<div class="sourceCode latex">}}\preformatted{\\usepackage\{tabularray\}
 \\usepackage\{float\}

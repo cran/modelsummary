@@ -6,16 +6,17 @@
 \usage{
 datasummary_skim(
   data,
-  output = "default",
-  type = "all",
+  output = getOption("modelsummary_output", default = "default"),
+  type = getOption("modelsummary_type", default = "all"),
   fmt = 1,
-  title = NULL,
-  notes = NULL,
-  align = NULL,
-  escape = TRUE,
-  by = NULL,
-  fun_numeric = list(Unique = NUnique, `Missing Pct.` = PercentMissing, Mean = Mean, SD =
-    SD, Min = Min, Median = Median, Max = Max, Histogram = function(x) ""),
+  title = getOption("modelsummary_title", default = NULL),
+  notes = getOption("modelsummary_notes", default = NULL),
+  align = getOption("modelsummary_align", default = NULL),
+  escape = getOption("modelsummary_escape", default = TRUE),
+  by = getOption("modelsummary_by", default = NULL),
+  fun_numeric = getOption("modelsummary_fun_numeric", default = list(Unique = NUnique,
+    `Missing Pct.` = PercentMissing, Mean = Mean, SD = SD, Min = Min, Median = Median,
+    Max = Max, Histogram = function(x) "")),
   ...
 )
 }
@@ -71,7 +72,7 @@ prevent the file from compiling/displaying. \code{TRUE} escapes all cells, capti
 
 \item{by}{Character vector of grouping variables to compute statistics over.}
 
-\item{fun_numeric}{Named list of funtions to apply to each column of \code{data}. If \code{fun_numeric} includes "Histogram" or "Density", inline plots are inserted.}
+\item{fun_numeric}{Named list of funtions to apply to each numeric column of \code{data}. If \code{fun_numeric} includes "Histogram" or "Density", inline plots are inserted. This argument is only used when \code{type="numeric"} or \code{"all"}.}
 
 \item{...}{all other arguments are passed through to the table-making
 functions \link[tinytable:tt]{tinytable::tt}, \link[kableExtra:kbl]{kableExtra::kbl}, \link[gt:gt]{gt::gt}, \link[DT:datatable]{DT::datatable}, etc. depending on the \code{output} argument.
@@ -87,26 +88,38 @@ See the Details and Examples sections below, and the vignettes on the
 \item https://modelsummary.com/articles/datasummary.html
 }
 }
+\section{Version 2.0.0, kableExtra, and tinytable}{
+
+
+Since version 2.0.0, \code{modelsummary} uses \code{tinytable} as its default table-drawing backend.
+Learn more at: https://vincentarelbundock.github.io/tinytable/",
+
+Revert to \code{kableExtra} for one session:
+
+\code{options(modelsummary_factory_default = 'kableExtra')}
+\code{options(modelsummary_factory_latex = 'kableExtra')}
+\code{options(modelsummary_factory_html = 'kableExtra')}
+}
+
 \section{Global Options}{
 
 
-The behavior of \code{modelsummary} can be modified by setting global options. For example:
+The behavior of \code{modelsummary} can be modified by setting global options.  In particular, most of the arguments for most of the package's functions cna be set using global options. For example:
 \itemize{
-\item \code{options(modelsummary_model_labels = "roman")}
+\item \code{options(modelsummary_output = "modelsummary_list")}
+\item \code{options(modelsummary_statistic = '({conf.low}, {conf.high})')}
+\item \code{options(modelsummary_stars = TRUE)}
 }
 
-The rest of this section describes each of the options above.
+Options not specific to given arguments are listed below.
 \subsection{Model labels: default column names}{
 
 These global option changes the style of the default column headers:
 \itemize{
 \item \code{options(modelsummary_model_labels = "roman")}
-\item \code{options(modelsummary_panel_labels = "roman")}
 }
 
-The supported styles are: "model", "panel", "arabic", "letters", "roman", "(arabic)", "(letters)", "(roman)"
-
-The panel-specific option is only used when \code{shape="rbind"}
+The supported styles are: "model", "arabic", "letters", "roman", "(arabic)", "(letters)", "(roman)"
 }
 
 \subsection{Table-making packages}{
@@ -170,7 +183,7 @@ HTML tables:
 \section{LaTeX preamble}{
 
 
-When creating LaTeX via the \code{tinytable} backend (default in version 2.0.0 and later), it is useful to include the following commands in the LaTeX preamble of your documents. Note that they are added automatically when compiling Rmarkdown or Quarto documents (except when the \code{modelsummary()} calls are cached).
+When creating LaTeX via the \code{tinytable} backend (default in version 2.0.0 and later), it is useful to include the following commands in the LaTeX preamble of your documents. These commands are automatically added to the preamble when compiling Rmarkdown or Quarto documents, except when the \code{modelsummary()} calls are cached.
 
 \if{html}{\out{<div class="sourceCode latex">}}\preformatted{\\usepackage\{tabularray\}
 \\usepackage\{float\}

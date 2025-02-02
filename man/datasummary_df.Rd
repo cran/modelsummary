@@ -6,15 +6,15 @@
 \usage{
 datasummary_df(
   data,
-  output = "default",
+  output = getOption("modelsummary_output", default = "default"),
   fmt = 2,
-  align = NULL,
-  hrule = NULL,
-  title = NULL,
-  notes = NULL,
-  add_rows = NULL,
-  add_columns = NULL,
-  escape = TRUE,
+  align = getOption("modelsummary_align", default = NULL),
+  hrule = getOption("modelsummary_hrule", default = NULL),
+  title = getOption("modelsummary_title", default = NULL),
+  notes = getOption("modelsummary_notes", default = NULL),
+  add_rows = getOption("modelsummary_add_rows", default = NULL),
+  add_columns = getOption("modelsummary_add_columns", default = NULL),
+  escape = getOption("modelsummary_escape", default = TRUE),
   ...
 )
 }
@@ -84,6 +84,19 @@ affect the behavior of other functions behind the scenes.}
 \description{
 Draw a table from a data.frame
 }
+\section{Version 2.0.0, kableExtra, and tinytable}{
+
+
+Since version 2.0.0, \code{modelsummary} uses \code{tinytable} as its default table-drawing backend.
+Learn more at: https://vincentarelbundock.github.io/tinytable/",
+
+Revert to \code{kableExtra} for one session:
+
+\code{options(modelsummary_factory_default = 'kableExtra')}
+\code{options(modelsummary_factory_latex = 'kableExtra')}
+\code{options(modelsummary_factory_html = 'kableExtra')}
+}
+
 \references{
 Arel-Bundock V (2022). “modelsummary: Data and Model Summaries in R.” \emph{Journal of Statistical Software}, \emph{103}(1), 1-23. \doi{10.18637/jss.v103.i01}.'
 }

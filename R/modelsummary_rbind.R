@@ -69,26 +69,13 @@ modelsummary_rbind <- function(
     # panel names
     # model names dictionary: use unique names for manipulation
     if (is.null(names(panels))) {
-        modelsummary_panel_labels <- getOption("modelsummary_panel_labels", default = "panel")
-        checkmate::assert_choice(
-            modelsummary_panel_labels,
-            choices = c("panel", "arabic", "letters", "roman", "(arabic)", "(letters)", "(roman)"))
-        if (modelsummary_panel_labels == "panel") {
-            panel_names <- paste("Panel", LETTERS[1:number_of_panels])
-        } else if (grepl("arabic", modelsummary_panel_labels)) {
-            panel_names <- as.character(1:number_of_panels)
-        } else if (grepl("letters", modelsummary_panel_labels)) {
-            panel_names <- LETTERS[1:number_of_panels]
-        } else if (grepl("roman", modelsummary_panel_labels)) {
-            panel_names <- as.character(utils::as.roman(1:number_of_panels))
-        }
-        if (grepl("\\(", modelsummary_panel_labels)) {
-            panel_names <- sprintf("(%s)", panel_names)
-        }
+        panel_names <- NULL
     } else {
         panel_names <- names(panels)
     }
-    panel_names <- pad(panel_names, output_format = output_format)
+    if (!is.null(panel_names)) {
+        panel_names <- pad(panel_names, output_format = output_format)
+    }
 
     # If there are no common model names but all the panels have the same number
     # of models, we make assumptions.
@@ -244,7 +231,7 @@ modelsummary_rbind <- function(
 
     # stars
     if (!isFALSE(stars) && !any(grepl("\\{stars\\}", c(estimate, statistic)))) {
-        stars_note <- make_stars_note(stars, output_format = output_format)
+        stars_note <- make_stars_note(stars, output_format = output_format, output_factory = output_factory)
         if (is.null(notes)) {
             notes <- stars_note
         } else {
