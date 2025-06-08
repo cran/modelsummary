@@ -1,6 +1,7 @@
 
 
 <p align="center">
+
 <a href="https://modelsummary.com">
 <img src="man/figures/modelsummary_gallery.gif" height = "350" class = "center">
 </a> <br> <br>
@@ -38,23 +39,22 @@ statistics* and to summarize *statistical models* in `R`.
 `modelsummary` includes two families of functions:
 
 1.  Model Summary
-    -   `modelsummary`: Regression tables with side-by-side models.
-    -   `modelplot`: Coefficient plots.
+    - `modelsummary`: Regression tables with side-by-side models.
+    - `modelplot`: Coefficient plots.
 2.  Data Summary
-    -   `datasummary`: Powerful tool to create (multi-level) cross-tabs
-        and data summaries.
-    -   `datasummary_crosstab`: Cross-tabulations.
-    -   `datasummary_balance`: Balance tables with subgroup statistics
-        and difference in means (aka “Table 1”).
-    -   `datasummary_correlation`: Correlation tables.
-    -   `datasummary_skim`: Quick overview (“skim”) of a dataset.
-    -   `datasummary_df`: Turn dataframes into nice tables with titles,
-        notes, etc.
+    - `datasummary`: Powerful tool to create (multi-level) cross-tabs
+      and data summaries.
+    - `datasummary_crosstab`: Cross-tabulations.
+    - `datasummary_balance`: Balance tables with subgroup statistics and
+      difference in means (aka “Table 1”).
+    - `datasummary_correlation`: Correlation tables.
+    - `datasummary_skim`: Quick overview (“skim”) of a dataset.
+    - `datasummary_df`: Turn dataframes into nice tables with titles,
+      notes, etc.
 
 ## Why?
 
-Here are a few benefits of `modelsummary` over some [alternative
-packages](#alternative-packages):
+Here are a few benefits of `modelsummary`:
 
 #### Easy
 
@@ -87,7 +87,7 @@ modelsummary(mod, output = "table.tex")
 
 *Information*: The package offers many intuitive and powerful utilities
 to [customize the
-information](https://modelsummary.com/articles/modelsummary.html)
+information](https://modelsummary.com/vignettes/modelsummary.html)
 reported in a summary table. You can rename, reorder, subset or omit
 parameter estimates; choose the set of goodness-of-fit statistics to
 include; display various “robust” standard errors or confidence
@@ -103,7 +103,7 @@ rows with supplemental information about your models.
 [`flextable`](https://davidgohel.github.io/flextable/), and
 [`DT`](https://rstudio.github.io/DT/) packages, the appearance of
 `modelsummary` tables is endlessly customizable. The [appearance
-customization page](https://modelsummary.com/articles/appearance.html)
+customization page](https://modelsummary.com/vignettes/appearance.html)
 shows tables with colored cells, weird text, spanning column labels, row
 groups, titles, source notes, footnotes, significance stars, and more.
 This only scratches the surface of possibilities.
@@ -115,19 +115,19 @@ supports *hundreds* of statistical models out-of-the-box. Installing
 other packages can extend the capabilities further (e.g.,
 [`broom.mixed`](https://CRAN.R-project.org/package=broom.mixed)). It is
 also very easy to [add or customize your own
-models.](https://modelsummary.com/articles/modelsummary.html#adding-new-models-1)
+models.](https://modelsummary.com/vignettes/modelsummary.html#adding-new-models-1)
 
 *Output formats*: `modelsummary` tables can be saved to HTML, LaTeX,
 Text/Markdown, Microsoft Word, Powerpoint, RTF, JPG, or PNG formats.
 They can also be inserted seamlessly in Rmarkdown documents to produce
 [automated documents and reports in PDF, HTML, RTF, or Microsoft Word
-formats.](https://modelsummary.com/articles/modelsummary.html#rmarkdown-and-knitr-1)
+formats.](https://modelsummary.com/vignettes/modelsummary.html#rmarkdown-quarto-org-mode)
 
 #### Dangerous
 
 `modelsummary` is dangerous! It allows users to do stupid stuff like
 [inserting squirrels in all your
-tables.](https://modelsummary.com/articles/appearance.html#gt-1)
+tables.](https://modelsummary.com/vignettes/appearance.html#gt-1)
 
 <img src="man/figures/squirrel.png" width="40%" class = "center">
 
@@ -188,12 +188,11 @@ plots produced by `modelsummary`, but [the Get Started
 page](https://modelsummary.com/vignettes/get_started.html) only
 scratches the surface. For details, see the vignettes:
 
--   [Data
-    Summaries](https://modelsummary.com/vignettes/datasummary.html)
--   [Model
-    Summaries](https://modelsummary.com/vignettes/modelsummary.html)
--   [Model Plots](https://modelsummary.com/vignettes/modelplot.html)
--   [`modelsummary` extensions and
-    customization](https://modelsummary.com/vignettes/modelsummary_extension.html)
--   [Themes and
-    Styles](https://modelsummary.com/vignettes/appearance.html)
+- [Data Summaries](https://modelsummary.com/vignettes/datasummary.html)
+- [Model
+  Summaries](https://modelsummary.com/vignettes/modelsummary.html)
+- [Model Plots](https://modelsummary.com/vignettes/modelplot.html)
+- [`modelsummary` extensions and
+  customization](https://modelsummary.com/vignettes/modelsummary_extension.html)
+- [Themes and
+  Styles](https://modelsummary.com/vignettes/appearance.html)

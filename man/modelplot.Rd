@@ -85,12 +85,15 @@ sections below):
 \item{exponentiate}{TRUE, FALSE, or logical vector of length equal to the
 number of models. If TRUE, the \code{estimate}, \code{conf.low}, and \code{conf.high}
 statistics are exponentiated, and the \code{std.error} is transformed to
-\code{exp(estimate)*std.error}.}
+\code{exp(estimate)*std.error}. The \code{exponentiate} argument is ignored for
+distributional random effects parameters (SD and Cor).}
 
-\item{add_rows}{a data.frame (or tibble) with the same number of columns as
-your main table. By default, rows are appended to the bottom of the table.
-You can define a "position" attribute of integers to set the row positions.
-See Examples section below.}
+\item{add_rows}{a data.frame (or tibble) with the same number of columns as your main table. By default, rows are appended to the bottom of the table. Positions can be defined using integers. In the \code{modelsummary()} function (only), you can also use string shortcuts: "coef_start", "coef_end", "gof_start", "gof_end"
+\itemize{
+\item \code{attr(new_rows, 1:2)}
+\item \code{attr(new_rows, "gof_start")}
+See Examples section below.
+}}
 
 \item{facet}{TRUE or FALSE. When the 'models' argument includes several
 model objects, TRUE draws terms in separate facets, and FALSE draws terms
@@ -122,7 +125,7 @@ more information, see the Details and Examples sections below, and the
 vignettes on the \code{modelsummary} website:
 https://modelsummary.com/
 \itemize{
-\item \href{https://modelsummary.com/articles/modelplot.html}{modelplot Vignette.}
+\item \href{https://modelsummary.com/vignettes/modelplot.html}{modelplot Vignette.}
 }
 }
 \section{Examples}{

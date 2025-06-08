@@ -87,10 +87,12 @@ the table (e.g., \code{align = "lcc"}).  Valid characters: l, c, r, d.
 \item{add_columns}{a data.frame (or tibble) with the same number of rows as
 your main table.}
 
-\item{add_rows}{a data.frame (or tibble) with the same number of columns as
-your main table. By default, rows are appended to the bottom of the table.
-You can define a "position" attribute of integers to set the row positions.
-See Examples section below.}
+\item{add_rows}{a data.frame (or tibble) with the same number of columns as your main table. By default, rows are appended to the bottom of the table. Positions can be defined using integers. In the \code{modelsummary()} function (only), you can also use string shortcuts: "coef_start", "coef_end", "gof_start", "gof_end"
+\itemize{
+\item \code{attr(new_rows, 1:2)}
+\item \code{attr(new_rows, "gof_start")}
+See Examples section below.
+}}
 
 \item{dinm}{TRUE calculates a difference in means with uncertainty
 estimates. This option is only available if the \code{estimatr} package is
@@ -115,7 +117,7 @@ summary tables for full data sets. See the Details and Examples sections
 below, and the vignettes on the \code{modelsummary} website:
 \itemize{
 \item https://modelsummary.com/
-\item https://modelsummary.com/articles/datasummary.html
+\item https://modelsummary.com/vignettes/datasummary.html
 }
 }
 \section{Version 2.0.0, kableExtra, and tinytable}{
@@ -168,7 +170,7 @@ format, you can use ' the \code{options} function:
 
 \subsection{Table themes}{
 
-Change the look of tables in an automated and replicable way, using the \code{modelsummary} theming functionality. See the vignette: https://modelsummary.com/articles/appearance.html
+Change the look of tables in an automated and replicable way, using the \code{modelsummary} theming functionality. See the vignette: https://modelsummary.com/vignettes/appearance.html
 \itemize{
 \item \code{modelsummary_theme_gt}
 \item \code{modelsummary_theme_kableExtra}
