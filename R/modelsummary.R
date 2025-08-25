@@ -80,7 +80,7 @@ globalVariables(c(
 #'   - `fmt = fmt_term("(Intercept)" = 1, "X" = 2)`: Format terms differently
 #'   - `fmt = fmt_statistic("estimate" = 1, "r.squared" = 6)`: Format statistics differently.
 #'   - `fmt = fmt_identity()`: unformatted raw values
-#' * string:
+#' * string: Passing the string `s` is equivalent to passing `fmt_sprintf(s)`
 #' * Note on LaTeX output: To ensure proper typography, all numeric entries are enclosed in the `\num{}` command, which requires the `siunitx` package to be loaded in the LaTeX preamble. This behavior can be altered with global options. See the 'Details' section.
 #' @param stars to indicate statistical significance
 #' * FALSE (default): no significance stars.
@@ -117,14 +117,17 @@ globalVariables(c(
 #' number of models. If TRUE, the `estimate`, `conf.low`, and `conf.high`
 #' statistics are exponentiated, and the `std.error` is transformed to
 #' `exp(estimate)*std.error`. The `exponentiate` argument is ignored for
-#' distributional random effects parameters (SD and Cor).
+#' distributional random effects parameters (SD and Cor) and dispersions parameters.
 #' @param coef_map character vector. Subset, rename, and reorder coefficients.
 #' Coefficients omitted from this vector are omitted from the table. The order
 #' of the vector determines the order of the table. `coef_map` can be a named
 #' or an unnamed character vector. If `coef_map` is a named vector, its values
 #' define the labels that must appear in the table, and its names identify the
-#' original term names stored in the model object: `c("hp:mpg"="HPxM/G")`. See
-#' Examples section below.
+#' original term names stored in the model object: `c("hp:mpg"="HPxM/G")`.
+#' If `coef_map` is an unnamed vector, its values must be raw variable
+#' names if `coef_rename=FALSE` and variable labels if `coef_rename=TRUE`.
+#' See `modelsummary::get_estimates` to get the coefficient out of a model.
+#' See Examples section below.
 #' @param coef_omit integer vector or regular expression to identify which coefficients to omit (or keep) from the table. Positive integers determine which coefficients to omit. Negative integers determine which coefficients to keep. A regular expression can be used to omit coefficients, and perl-compatible "negative lookaheads" can be used to specify which coefficients to *keep* in the table. Examples:
 #' * c(2, 3, 5): omits the second, third, and fifth coefficients.
 #' * c(-2, -3, -5): negative values keep the second, third, and fifth coefficients.
@@ -136,7 +139,7 @@ globalVariables(c(
 #' * `"^(?!.*ei|.*pt)"`: keep coefficients matching either the "ei" or the "pt" substrings.
 #' * See the Examples section below for complete code.
 #' @param coef_rename logical, named or unnamed character vector, or function
-#' * Logical: TRUE renames variables based on the "label" attribute of each column. See the Example section below.
+#' * Logical: TRUE renames variables based on the "label" attribute of each column. See the Example section below. Note: renaming is done by the `parameters` package at the extraction stage, before other arguments are applied like `coef_omit`. Therefore, this only works for models with builtin support and not for custom models.
 #' * Unnamed character vector of length equal to the number of coefficients in the final table, after `coef_omit` is applied.
 #' * Named character vector: Values refer to the variable names that will appear in the table. Names refer to the original term names stored in the model object. Ex: c("hp:mpg"="hp X mpg")
 #' * Function: Accepts a character vector of the model's term names and returns a named vector like the one described above. The `modelsummary` package supplies a `coef_rename()` function which can do common cleaning tasks: `modelsummary(model, coef_rename = coef_rename)`
@@ -146,7 +149,7 @@ globalVariables(c(
 #' * character vector: "all", "none", or a vector of statistics such as `c("rmse", "nobs", "r.squared")`. Elements correspond to colnames in the data.frame produced by `get_gof(model)`. The `modelsummary::gof_map` default dictionary is used to format and rename statistics.
 #' * NA: excludes all statistics from the bottom part of the table.
 #' * data.frame with 3 columns named "raw", "clean", "fmt". Unknown statistics are omitted. See the 'Examples' section below. The `fmt` column in this data frame only accepts integers. For more flexibility, use a list of lists, as described in the next bullet.
-#' * list of lists, each of which includes 3 elements named "raw", "clean", "fmt". Unknown statistics are omitted. See the 'Examples section below'.
+#' * list of lists, each of which includes 3 elements named "raw", "clean", "fmt". Unknown statistics are omitted. The `fmt` element can be a string (`?fmt_sprintf`), numeric value (`?fmt_decimal`), or function which will be used to round/format the string in question. See the 'Examples section below'.
 #' @param gof_omit string regular expression (perl-compatible) used to determine which statistics to omit from the bottom section of the table. A "negative lookahead" can be used to specify which statistics to *keep* in the table. Examples:
 #' * `"IC"`: omit statistics matching the "IC" substring.
 #' * `"BIC|AIC"`: omit statistics matching the "AIC" or "BIC" substrings.
@@ -203,7 +206,8 @@ globalVariables(c(
 #' + [performance::model_performance] extracts goodness-of-fit statistics. Available arguments depend on model type, but include:
 #'     - `metrics`, `estimator`, etc.
 #' + [tinytable::tt], [kableExtra::kbl] or [gt::gt] draw tables, depending on the value of the `output` argument. For example, by default `modelsummary` creates tables with [tinytable::tt], which accepts a `width` and `theme` arguments.
-#' @return a regression table in a format determined by the `output` argument.
+#' @return a regression table in a format determined by the `output` argument. 
+#'         The `backend` attribute includes the backend used to extract estimates and goodness-of-fit measure.
 #' @importFrom generics glance tidy
 #' @examplesIf isTRUE(Sys.getenv("R_NOT_CRAN") == "true")
 #' # The `modelsummary` website includes \emph{many} examples and tutorials:
@@ -572,6 +576,12 @@ modelsummary <- function(
   )
   names(msl) <- model_names
 
+  # propagate backends from the models
+  attr(msl, "backend") <- list()
+  for(mod_name in names(msl)) {
+    attr(msl, "backend")[[mod_name]] <- attr(msl[[mod_name]], "backend")
+  }
+
   if (identical(output_format, "modelsummary_list")) {
     if (length(msl) == 1) {
       return(msl[[1]])
@@ -607,7 +617,8 @@ modelsummary <- function(
       coef_rename = coef_rename,
       coef_map = coef_map,
       coef_omit = coef_omit,
-      group_map = group_map
+      group_map = group_map,
+      shape = shape
     )
 
     colnames(tmp)[match("modelsummary_value", colnames(tmp))] <- model_names[i]
@@ -948,6 +959,9 @@ modelsummary <- function(
     ...
   )
 
+  ## propagate backend information
+  attr(out, "backend") <- attr(msl, "backend")
+
   # after factory call
   out <- set_span_cbind(out, span_cbind)
 
@@ -992,6 +1006,7 @@ get_list_of_modelsummary_lists <- function(
         tidy = models[[j]][["tidy"]],
         glance = models[[j]][["glance"]]
       )
+      attr(out, "backend") <- attr(models[[j]], "backend") 
       return(out)
     }
 
@@ -1015,6 +1030,7 @@ get_list_of_modelsummary_lists <- function(
 
     out <- list("tidy" = tid, "glance" = gla)
     class(out) <- "modelsummary_list"
+    attr(out, "backend") <- list(est=attr(tid, "backend"), gof=attr(gla, "backend"))
     return(out)
   }
 
@@ -1027,7 +1043,7 @@ get_list_of_modelsummary_lists <- function(
       mc.cores = dots[["mc.cores"]]
     )
 
-    # {future}
+  # {future}
   } else if (
     isTRUE(check_dependency("future.apply")) &&
       future::nbrOfWorkers() > 1 &&
@@ -1047,7 +1063,7 @@ get_list_of_modelsummary_lists <- function(
       out <- lapply(seq_len(number_of_models), inner_loop)
     }
 
-    # sequential
+  # sequential
   } else {
     out <- lapply(seq_len(number_of_models), inner_loop)
   }

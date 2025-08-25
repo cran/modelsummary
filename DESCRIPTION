@@ -10,7 +10,7 @@ Description: Create beautiful and customizable tables to summarize several
     RTF, JPG, or PNG. Tables can easily be embedded in 'Rmarkdown' or 'knitr'
     dynamic documents. Details can be found in Arel-Bundock (2022)
     <doi:10.18637/jss.v103.i01>.
-Version: 2.4.0
+Version: 2.5.0
 Authors@R: c(person("Vincent", "Arel-Bundock", 
                    email = "vincent.arel-bundock@umontreal.ca", 
                    role = c("aut", "cre"),
@@ -47,21 +47,21 @@ Authors@R: c(person("Vincent", "Arel-Bundock",
 URL: https://modelsummary.com
 BugReports: https://github.com/vincentarelbundock/modelsummary/issues/
 Depends: R (>= 4.0.0)
-Imports: checkmate (>= 2.3.1), data.table (>= 1.16.4), generics, glue,
-        insight (>= 1.3.0), methods, parameters (>= 0.26.0),
-        performance (>= 0.14.0), tables (>= 0.9.31), tinytable (>=
-        0.9.0)
+Imports: checkmate (>= 2.3.1), data.table (>= 1.17.8), generics, glue,
+        insight (>= 1.4.0), methods, parameters (>= 0.28.0),
+        performance (>= 0.15.0), tables (>= 0.9.31), tinytable (>=
+        0.13.0)
 Suggests: AER, altdoc, Amelia, betareg, bookdown, brms, broom,
         broom.mixed, car, clubSandwich, correlation, covr, did, digest,
         DT, estimatr, fixest, flextable, future, future.apply, gamlss,
-        ggdist, ggplot2, gh, gt (>= 0.8.0), gtExtras, haven, huxtable,
-        labelled, IRdisplay, ivreg, kableExtra, knitr, lavaan, lfe,
-        lme4, lmtest, magick, magrittr, marginaleffects, MASS, mgcv,
-        mice, nlme, nnet, officer, openxlsx, pandoc, parallel, pscl,
-        psych, randomizr, remotes, rmarkdown, rstanarm, rsvg, sandwich,
-        spelling, survey, survival, tibble, tictoc, tidyselect,
-        tidyverse, tinysnapshot (>= 0.1.0), tinytest, tinytex,
-        webshot2, wesanderson
+        ggdist, ggplot2, glmmTMB, gh, gt (>= 0.8.0), gtExtras, haven,
+        huxtable, labelled, IRdisplay, ivreg, kableExtra, knitr,
+        lavaan, lfe, lme4, lmtest, magick, magrittr, marginaleffects,
+        MASS, mgcv, mice, nlme, nnet, officer, openxlsx, pandoc,
+        parallel, pscl, psych, randomizr, Rdatasets, remotes,
+        rmarkdown, rstanarm, rsvg, sandwich, spelling, survey,
+        survival, tibble, tictoc, tidyselect, tidyverse, tinysnapshot
+        (>= 0.2.0), tinytest, tinytex, webshot2, wesanderson
 License: GPL-3
 Encoding: UTF-8
 Config/testthat/edition: 3
@@ -92,7 +92,7 @@ Collate: 'bind_est_gof.R' 'coef_rename.R' 'config_modelsummary.R'
         'utils_print.R' 'utils_replace.R' 'utils_stats.R'
         'utils_warn.R' 'zzz.R'
 NeedsCompilation: no
-Packaged: 2025-06-08 18:45:41 UTC; vincent
+Packaged: 2025-08-25 02:40:16 UTC; vincent
 Author: Vincent Arel-Bundock [aut, cre] (ORCID:
     <https://orcid.org/0000-0003-2042-7063>),
   Joachim Gassen [ctb] (ORCID: <https://orcid.org/0000-0003-4364-2911>),
@@ -105,4 +105,4 @@ Author: Vincent Arel-Bundock [aut, cre] (ORCID:
   Lukas Wallrich [ctb] (ORCID: <https://orcid.org/0000-0003-2121-5177>)
 Maintainer: Vincent Arel-Bundock <vincent.arel-bundock@umontreal.ca>
 Repository: CRAN
-Date/Publication: 2025-06-08 19:10:02 UTC
+Date/Publication: 2025-08-25 05:00:09 UTC

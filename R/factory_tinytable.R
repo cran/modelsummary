@@ -108,7 +108,6 @@ factory_tinytable <- function(
   # write to file
   if (!is.null(output_file)) {
     tinytable::save_tt(out, output = output_file, overwrite = TRUE)
-    return(invisible())
   }
 
   # change output format in the S4 object, but return a `tinytable` for when we
@@ -117,7 +116,7 @@ factory_tinytable <- function(
     out@output <- output_format
   } else if (output_format %in% "latex_tabular") {
     out@output <- "latex"
-    out <- tinytable::theme_tt(out, "tabular")
+    out <- tinytable::theme_latex(out, environment = "tabular", environment_table = FALSE)
   }
 
   return(invisible(out))

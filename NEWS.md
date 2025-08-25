@@ -2,6 +2,30 @@
 
 # News
 
+## 2.5.0
+
+- Quarto: better format detection when users explicitly use
+  `output="tinytable"`. Thanks to @mvuorre for report \#886.
+- More flexible in allowing duplicate labels with `coef_rename` when
+  users specify `component` in the `shape` argument. Thanks to @raffaem
+  for report \#892.
+- Miscellaneous docs improvements.
+- `flextable` output uses `hline` instead of `border`. This fixes report
+  \#693 from the `flextable` Github issue tracker. Thanks to @davidgohel
+  for the fix.
+- Result of `get_estimates()`, `get_gof()` and `modelsummary()` gets a
+  “backend” attribute with info about the extraction method. Thanks to
+  @raffaem for contribution \#914.
+- Result of `get_estimates()` and `get_gof()` gets a “backend” attribute
+  with info about the extraction method. Thanks to @raffaem for
+  contribution \#914.
+- Update to `tinytable` 0.13.0, which fixes Issue \#912.
+- `flextable`: Added support for spanning headers in `modelsummary()`,
+  `datasummary()`, and other functions, matching the functionality
+  available in `tinytable`.
+- Dispersion parameters are no longer exponentiated when
+  `exponentiate=TRUE`. Thanks to @raffaem for report \#896.
+
 ## 2.4.0
 
 New:

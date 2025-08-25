@@ -63,7 +63,7 @@ sections below):
 
 \item{coef_rename}{logical, named or unnamed character vector, or function
 \itemize{
-\item Logical: TRUE renames variables based on the "label" attribute of each column. See the Example section below.
+\item Logical: TRUE renames variables based on the "label" attribute of each column. See the Example section below. Note: renaming is done by the \code{parameters} package at the extraction stage, before other arguments are applied like \code{coef_omit}. Therefore, this only works for models with builtin support and not for custom models.
 \item Unnamed character vector of length equal to the number of coefficients in the final table, after \code{coef_omit} is applied.
 \item Named character vector: Values refer to the variable names that will appear in the table. Names refer to the original term names stored in the model object. Ex: c("hp:mpg"="hp X mpg")
 \item Function: Accepts a character vector of the model's term names and returns a named vector like the one described above. The \code{modelsummary} package supplies a \code{coef_rename()} function which can do common cleaning tasks: \code{modelsummary(model, coef_rename = coef_rename)}
@@ -82,9 +82,12 @@ sections below):
 \item \link[tinytable:tt]{tinytable::tt}, \link[kableExtra:kbl]{kableExtra::kbl} or \link[gt:gt]{gt::gt} draw tables, depending on the value of the \code{output} argument. For example, by default \code{modelsummary} creates tables with \link[tinytable:tt]{tinytable::tt}, which accepts a \code{width} and \code{theme} arguments.
 }}
 }
+\value{
+A dataframe with model estimates.
+The \code{backend} attribute of the returned object contains the backend that was used to extract parameters from the model.
+Moreover, for some models, \code{get_estimates} attaches useful attributes to the output.
+You can access this information by calling the \code{attributes} function: \code{attributes(get_estimates(model))}.
+}
 \description{
-A unified approach to extract results from a wide variety of models. For
-some models \code{get_estimates} attaches useful attributes to the output. You
-can access this information by calling the \code{attributes} function:
-\code{attributes(get_estimates(model))}
+A unified approach to extract results from a wide variety of models.
 }

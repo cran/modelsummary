@@ -1,12 +1,13 @@
 #' Extract model estimates in a tidy format.
 #'
-#' A unified approach to extract results from a wide variety of models. For
-#' some models `get_estimates` attaches useful attributes to the output. You
-#' can access this information by calling the `attributes` function:
-#' `attributes(get_estimates(model))`
+#' A unified approach to extract results from a wide variety of models. 
 #'
 #' @inheritParams modelsummary
 #' @param model a single model object
+#' @returns A dataframe with model estimates.
+#'          The `backend` attribute of the returned object contains the backend that was used to extract parameters from the model.
+#'          Moreover, for some models, `get_estimates` attaches useful attributes to the output. 
+#'          You can access this information by calling the `attributes` function: `attributes(get_estimates(model))`.
 #'
 #' @export
 get_estimates <- function(
@@ -44,10 +45,10 @@ get_estimates <- function(
   if (
     inherits(
       model,
-      c("comparisons", "marginaleffects", "predictions", "marginalmeans")
+      c("comparisons", "slopes", "predictions", "hypotheses")
     )
   ) {
-    funs <- list(get_estimates_broom)
+    funs <- list("broom" = get_estimates_broom)
   } else {
     get_priority <- getOption("modelsummary_get", default = "easystats")
     checkmate::assert_choice(
@@ -55,23 +56,23 @@ get_estimates <- function(
       choices = c("broom", "easystats", "parameters", "performance", "all")
     )
     if (get_priority %in% c("easystats", "parameters", "performance")) {
-      funs <- list(get_estimates_parameters, get_estimates_broom)
+      funs <- list("parameters"=get_estimates_parameters, "broom"=get_estimates_broom)
     } else {
-      funs <- list(get_estimates_broom, get_estimates_parameters)
+      funs <- list("broom"=get_estimates_broom, "parameters"=get_estimates_parameters)
     }
   }
 
   warning_msg <- NULL
   out <- NULL
 
-  for (f in funs) {
+  for (f in names(funs)) {
     if (!inherits(out, "data.frame") || nrow(out) == 0) {
       if (is.matrix(vcov)) {
         V <- vcov
       } else {
         V <- NULL
       }
-      out <- f(
+      out <- funs[[f]](
         model,
         conf_int = conf_int,
         conf_level = conf_level,
@@ -79,6 +80,7 @@ get_estimates <- function(
         coef_rename = coef_rename,
         ...
       )
+      attr(out, "backend") <- f
       if (is.character(out)) {
         warning_msg <- c(warning_msg, out)
       }
@@ -286,7 +288,9 @@ get_estimates_parameters <- function(
       dots[["pretty_names"]] <- "labels"
     }
     inner <- parameters::parameters
-    out <- do.call("inner", dots)
+    # void to sink output from {did} package
+    void <- utils::capture.output(out <- do.call("inner", dots), silent = TRUE)
+    if (inherits(out, "try-error")) return(NULL)
     out <- insight::standardize_names(out, style = "broom")
 
     # S-value (Greenland 2019)
@@ -299,10 +303,10 @@ get_estimates_parameters <- function(
   if (is.character(vcov) || is.matrix(vcov)) {
     args[["vcov"]] <- vcov
   }
-  out <- hush(tryCatch(
+  out <- tryCatch(
     do.call("tidy_easystats", args),
     error = function(e) NULL
-  ))
+  )
 
   if (isTRUE(coef_rename)) {
     labs <- attr(out, "pretty_labels")
